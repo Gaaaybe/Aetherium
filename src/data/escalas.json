@@ -1,0 +1,110 @@
+{
+  "acao": {
+    "nome": "Ação",
+    "descricao": "Quanto tempo leva para ativar o poder",
+    "escala": [
+      {
+        "valor": 0,
+        "nome": "Completa",
+        "descricao": "Requer sua ação completa (você não pode fazer mais nada no turno)"
+      },
+      {
+        "valor": 1,
+        "nome": "Padrão",
+        "descricao": "Requer uma ação padrão (você ainda pode se mover)"
+      },
+      {
+        "valor": 2,
+        "nome": "Movimento",
+        "descricao": "Requer uma ação de movimento (equivalente a se mover)"
+      },
+      {
+        "valor": 3,
+        "nome": "Livre",
+        "descricao": "Requer uma ação livre (instantâneo, sem custo de ação)"
+      },
+      {
+        "valor": 4,
+        "nome": "Reação",
+        "descricao": "Ativa como reação a um gatilho específico"
+      },
+      {
+        "valor": 5,
+        "nome": "Nenhuma",
+        "descricao": "Sempre ativo, não requer ativação"
+      }
+    ]
+  },
+  "alcance": {
+    "nome": "Alcance",
+    "descricao": "Até onde o poder pode atingir",
+    "escala": [
+      {
+        "valor": 0,
+        "nome": "Pessoal",
+        "descricao": "Afeta apenas você mesmo"
+      },
+      {
+        "valor": 1,
+        "nome": "Corpo-a-corpo",
+        "descricao": "Você precisa tocar o alvo (alcance de toque)"
+      },
+      {
+        "valor": 2,
+        "nome": "À Distância (Curto)",
+        "descricao": "Pode atingir alvos à distância (baseado no Grau)"
+      },
+    {
+        "valor": 3,
+        "nome": "À Distância (Médio)",
+        "descricao": "Pode atingir alvos à distância (baseado no Grau)"
+      },
+          {
+        "valor": 4,
+        "nome": "À Distância (Longo)",
+        "descricao": "Pode atingir alvos à distância (baseado no Grau)"
+      },
+      {
+        "valor": 5,
+        "nome": "Percepção",
+        "descricao": "Afeta qualquer alvo que você possa perceber (ver, ouvir, etc)"
+      },
+      {
+        "valor": 6,
+        "nome": "Grau",
+        "descricao": "Baseado no Grau do poder (ver tabela universal)"
+      }
+    ]
+  },
+  "duracao": {
+    "nome": "Duração",
+    "descricao": "Quanto tempo o efeito dura",
+    "escala": [
+      {
+        "valor": 0,
+        "nome": "Instantâneo",
+        "descricao": "O efeito acontece e termina imediatamente (mas consequências podem persistir)"
+      },
+      {
+        "valor": 1,
+        "nome": "Mantida (Concentração)",
+        "descricao": "Dura enquanto você mantiver concentração ativa"
+      },
+      {
+        "valor": 2,
+        "nome": "Mantida (Sustentada)",
+        "descricao": "Dura enquanto você mantiver o poder ativo (sem precisar de concentração total)"
+      },
+      {
+        "valor": 3,
+        "nome": "Ativado",
+        "descricao": "Você ativa e o efeito dura uma cena/encontro sem precisar manutenção"
+      },
+      {
+        "valor": 4,
+        "nome": "Permanente",
+        "descricao": "O efeito é permanente e não pode ser desativado"
+      }
+    ]
+  }
+}

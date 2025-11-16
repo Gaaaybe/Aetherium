@@ -1,0 +1,1550 @@
+[
+  {
+    "id": "afeta-corporeo",
+    "nome": "Afeta Corpóreo",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Se você está intangível, este extra permite que seus efeitos afetem o mundo físico. O grau do seu efeito usado contra um alvo físico é limitado pelo grau que você tiver em Afeta Corpóreo.",
+    "requerParametros": false,
+    "observacoes": "Personagens com poucos graus em Intangibilidade (1 a 3) geralmente não precisam disso para seus efeitos, mas podem usar este extra para poder interagir fisicamente enquanto estão intangíveis.",
+    "categoria": "Interação"
+  },
+  {
+    "id": "afeta-intangivel",
+    "nome": "Afeta Intangível",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Permite que seu efeito afete alvos Intangíveis (fantasmas, seres fora de fase etc.).",
+    "requerParametros": true,
+    "tipoParametro": "select",
+    "opcoes": ["Metade da eficiência (+1 Fixo)", "Eficiência total (+2 Fixo)"],
+    "detalhesGrau": "1 Ponto: O efeito funciona com metade da sua eficiência contra alvos intangíveis (arredonde para baixo). 2 Pontos: O efeito funciona com seu grau total contra alvos intangíveis.",
+    "categoria": "Interação"
+  },
+  {
+    "id": "afeta-objetos",
+    "nome": "Afeta Objetos",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Permite que um efeito que normalmente só afeta criaturas (como Cura ou Enfraquecer) funcione também em objetos inanimados. Objetos não têm direito a testes de resistência e são afetados automaticamente.",
+    "requerParametros": false,
+    "observacoes": "Custo Alternativo: Se o seu efeito afeta apenas objetos e não criaturas, este extra tem custo +0.",
+    "categoria": "Alvos"
+  },
+  {
+    "id": "afeta-outros",
+    "nome": "Afeta Outros",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Permite que você compartilhe um poder de alcance Pessoal com outra pessoa. Você precisa tocar o alvo (uma ação padrão) para ativar o efeito. O alvo pode controlar o poder, mas você pode cancelá-lo a qualquer momento (ação livre). Esse efeito vale para o poder como um todo.",
+    "requerParametros": false,
+    "observacoes": "Custo Alternativo: Se o poder só pode ser usado nos outros e nunca em você mesmo, este extra tem custo +0.",
+    "categoria": "Alvos"
+  },
+  {
+    "id": "corpo-a-corpo-estendido",
+    "nome": "Corpo-a-corpo Estendido",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Aumenta o alcance de um efeito Corpo-a-corpo. Cada ponto neste extra aumenta seu alcance em 1,5 metros. É ideal para representar o alcance de armas como chicotes, lanças ou tentáculos.",
+    "requerParametros": false,
+    "categoria": "Alcance e Área"
+  },
+  {
+    "id": "a-distancia-estendido",
+    "nome": "À Distância Estendido",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Dobra as distâncias base (em negrito) de um efeito de Alcance (À Distância) para cada ponto gasto.",
+    "requerParametros": false,
+    "observacoes": "Normal: Curto (grau x 3m), Médio (grau x 6m), Longo (grau x 9m). Com 1 Ponto: Curto (grau x 6m), Médio (grau x 12m), Longo (grau x 18m). O Mestre pode limitar o alcance máximo pela linha do horizonte (cerca de 6 km).",
+    "categoria": "Alcance e Área"
+  },
+  {
+    "id": "area",
+    "nome": "Área",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Transforma um efeito de alvo único em um efeito de área. Todos na área têm direito a teste de resistência. Quem passar sofre metade do efeito (para efeitos ligados como Aflição + Dano, sofre metade do dano e não sofre aflição).",
+    "requerParametros": true,
+    "tipoParametro": "grau",
+    "grauMinimo": 1,
+    "grauMaximo": 20,
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Formato da Área",
+      "opcoes": [
+        {
+          "id": "circulo",
+          "nome": "Círculo/Esfera",
+          "modificadorCusto": 0,
+          "descricao": "Área em formato de esfera. Se a origem for no chão, forma meia-esfera. O grau determina o raio (grau 1 = 1,5m, grau 2 = 3m, etc)."
+        },
+        {
+          "id": "cone",
+          "nome": "Cone",
+          "modificadorCusto": 0,
+          "descricao": "Cone que se estende a partir de você. O grau determina o alcance do cone."
+        },
+        {
+          "id": "cilindro",
+          "nome": "Cilindro",
+          "modificadorCusto": 0,
+          "descricao": "Área cilíndrica. O grau determina raio e altura do cilindro."
+        },
+        {
+          "id": "linha",
+          "nome": "Linha",
+          "modificadorCusto": 0,
+          "descricao": "Linha reta com 1,5m de largura. O grau determina o comprimento (mínimo grau 2).",
+          "grauMinimo": 2
+        },
+        {
+          "id": "percepcao",
+          "nome": "Percepção",
+          "modificadorCusto": 0,
+          "descricao": "Afeta qualquer um que possa perceber o alvo com um sentido específico. Teste de Esquiva bem-sucedido nega totalmente (não metade). Já inclui a falha 'Dependente de Sentido'. Escolha se é bloqueado por cobertura ou camuflagem."
+        }
+      ]
+    },
+    "detalhesGrau": "O grau da modificação determina o tamanho da área. Para Percepção, é baseado em sentido, não distância. Áreas podem ser criadas em diferentes locais dependendo do alcance do efeito base (À Distância: qualquer ponto no alcance; Corpo-a-corpo: a partir de você; Percepção: onde você puder perceber).",
+    "observacoes": "ÁREA E ALCANCE: À Distância = cria área em qualquer ponto no alcance. Corpo-a-corpo = área começa em você (imune por padrão, +1/grau para se incluir). Percepção = área surge onde você puder perceber (escolha se bloqueado por cobertura ou camuflagem).",
+    "categoria": "Alcance e Área"
+  },
+  {
+    "id": "aumentar-massa",
+    "nome": "Aumentar Massa",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Aumenta a quantidade de peso que você pode levar consigo ao usar efeitos de movimento. Cada grau neste extra aumenta em +1 o grau de massa que você pode carregar.",
+    "requerParametros": false,
+    "observacoes": "Exemplo: Com Aumentar Massa 3 em seu Teleporte, você poderia levar até 4g extras com você (Lembrando que sua força também impacta nisso de acordo com o mestre).",
+    "categoria": "Movimento"
+  },
+  {
+    "id": "caracteristica",
+    "nome": "Característica",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Adiciona uma pequena habilidade ou benefício (uma Característica) diretamente a um efeito. A chave é que o benefício deve ser um efeito de jogo real, e não apenas uma consequência do descritor do poder.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: Marca rastreável, Bioluminescência, Som característico",
+    "observacoes": "Basicamente efeitos pequenos que não entram em nenhuma das categorias. Não é Característica: Uma bola de fogo que coloca coisas em chamas (isso é apenas parte do descritor 'fogo'). É Característica: Um raio de energia que deixa uma marca visível e rastreável.",
+    "categoria": "Versatilidade"
+  },
+  {
+    "id": "contagioso",
+    "nome": "Contagioso",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Seu efeito se espalha por contato. Quem tocar no alvo original também será afetado, tendo direito a um teste de resistência normal. O efeito pode continuar se espalhando de pessoa para pessoa.",
+    "requerParametros": false,
+    "categoria": "Alcance e Área"
+  },
+  {
+    "id": "descritor-variavel",
+    "nome": "Descritor Variável",
+    "tipo": "extra",
+    "custoFixo": 2,
+    "custoPorGrau": 0,
+    "descricao": "Permite que você mude o descritor do seu efeito (como de fogo para gelo, ou de sônico para elétrico) como uma ação livre.",
+    "requerParametros": true,
+    "tipoParametro": "select",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Abrangência dos Descritores",
+      "opcoes": [
+        {
+          "id": "grupo-pequeno",
+          "nome": "Grupo Pequeno e Relacionado",
+          "modificadorCusto": 0,
+          "descricao": "Qualquer descritor de um grupo pequeno e relacionado (ex: qualquer tipo de clima, qualquer tipo de metal)"
+        },
+        {
+          "id": "grupo-amplo",
+          "nome": "Grupo Amplo",
+          "modificadorCusto": 2,
+          "descricao": "Qualquer descritor de um grupo amplo (ex: qualquer tipo de magia, qualquer tipo de tecnologia)"
+        }
+      ]
+    },
+    "categoria": "Versatilidade"
+  },
+  {
+    "id": "dimensional",
+    "nome": "Dimensional",
+    "tipo": "extra",
+    "custoFixo": 2,
+    "custoPorGrau": 0,
+    "descricao": "Permite que seu efeito afete alvos em outras dimensões. Você geralmente precisará de um sentido especial (como Sentido Remoto Dimensional) para conseguir mirar em alvos que não pode perceber.",
+    "requerParametros": true,
+    "tipoParametro": "select",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Abrangência Dimensional",
+      "opcoes": [
+        {
+          "id": "dimensao-especifica",
+          "nome": "Uma Dimensão Específica",
+          "modificadorCusto": 0,
+          "descricao": "Afeta uma outra dimensão específica"
+        },
+        {
+          "id": "grupo-dimensoes",
+          "nome": "Grupo de Dimensões Relacionadas",
+          "modificadorCusto": 2,
+          "descricao": "Afeta um grupo de dimensões relacionadas (ex: todos os planos celestiais, todas as dimensões infernais)"
+        },
+        {
+          "id": "qualquer-dimensao",
+          "nome": "Qualquer Dimensão",
+          "modificadorCusto": 4,
+          "descricao": "Afeta qualquer dimensão"
+        }
+      ]
+    },
+    "categoria": "Alcance e Área"
+  },
+  {
+    "id": "dividido",
+    "nome": "Dividido",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Modificação de PODER. Permite que você divida os graus de um poder entre múltiplos alvos. Se o poder exige um teste de efeito, você faz um único teste e o compara contra o teste de resistência ou defesa de cada alvo.",
+    "requerParametros": true,
+    "tipoParametro": "grau",
+    "grauMinimo": 1,
+    "grauMaximo": 10,
+    "detalhesGrau": "1 Ponto: Divide entre 2 alvos. 2 Pontos: Divide entre 3 alvos, e assim por diante. Você decide como os graus são distribuídos (ex: poder grau 10 pode ser grau 6 em um alvo e grau 4 em outro).",
+    "categoria": "Alvos"
+  },
+  {
+    "id": "descarga",
+    "nome": "Descarga",
+    "tipo": "extra",
+    "custoFixo": 2,
+    "custoPorGrau": 0,
+    "descricao": "Aplica-se a efeitos com duração Instantânea que rolam dados (Dano, Recuperação de Dano). Ao ativar, você pode 'descarregar' poder pagando o custo de PE múltiplas vezes em uma única Ação Padrão, multiplicando a quantidade de dados rolados.",
+    "requerParametros": true,
+    "tipoParametro": "grau",
+    "grauMinimo": 1,
+    "grauMaximo": 10,
+    "detalhesGrau": "O grau determina o máximo de vezes que você pode multiplicar (máximo 10 dados). Bônus fixos como +Mod. Atributo não são multiplicados. Exemplo: Descarga 5 permite pagar 5x o PE para rolar 5x os dados.",
+    "observacoes": "Uso: Declare quantas vezes paga o PE (até o grau). Pague PE total (Custo × Multiplicador). Multiplique dados (máximo 10d). Bônus fixos somam apenas 1x. Se dados são modulares (ex: 4d32), você rola aquela quantidade múltiplas vezes.",
+    "categoria": "Combate"
+  },
+  {
+    "id": "efeito-secundario",
+    "nome": "Efeito Secundário",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 3,
+    "descricao": "O efeito atinge o alvo duas vezes: uma vez imediatamente e uma segunda vez no final do seu próximo turno. O alvo tem direito a um teste de resistência normal contra cada um dos efeitos.",
+    "requerParametros": false,
+    "observacoes": "IMPORTANTE: Efeitos secundários NÃO se acumulam. Se você acertar o mesmo alvo de novo no turno seguinte, ele sofrerá o novo efeito, e o efeito secundário do golpe anterior é adiado por mais uma rodada (não é atingido três vezes).",
+    "categoria": "Ação e Tempo"
+  },
+  {
+    "id": "engatilhado",
+    "nome": "Engatilhado",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Permite que você 'arme' um efeito para que ele dispare automaticamente quando uma condição específica acontecer (ex: 'quando alguém abrir esta porta').",
+    "requerParametros": true,
+    "tipoParametro": "select",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Tipo de Gatilho",
+      "opcoes": [
+        {
+          "id": "gatilho-fixo",
+          "nome": "Gatilho Fixo",
+          "modificadorCusto": 0,
+          "descricao": "A condição de disparo é escolhida na criação do efeito e não pode ser mudada. Você pode usar o efeito engatilhado uma vez por grau neste extra."
+        },
+        {
+          "id": "gatilho-variavel",
+          "nome": "Gatilho Variável",
+          "modificadorCusto": 1,
+          "descricao": "Você pode mudar a condição do gatilho cada vez que armar o efeito. Você pode usar o efeito engatilhado uma vez por grau neste extra."
+        }
+      ]
+    },
+    "observacoes": "Detecção: Inimigos podem tentar encontrar seu efeito armado com um teste de Percepção contra o teste do efeito. Desarme: Com um teste de perícia apropriada.",
+    "categoria": "Ação e Tempo"
+  },
+  {
+    "id": "inato",
+    "nome": "Inato",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Modificador de PODER. O poder é uma parte natural e inseparável de você, como as asas de um anjo ou a força de um gigante. Efeitos Inatos não podem ser anulados ou desativados por poderes como Nulificar.",
+    "requerParametros": false,
+    "observacoes": "O Mestre tem a palavra final sobre o que pode ser considerado inato.",
+    "categoria": "Ação e Tempo"
+  },
+  {
+    "id": "incuravel",
+    "nome": "Incurável",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 2,
+    "descricao": "O dano ou aflição causado por este efeito não pode ser curado por efeitos como Cura ou Regeneração. A recuperação deve ser natural, com o tempo. Apenas o extra Persistente ou Verdadeiro pode curar um dano Incurável.",
+    "requerParametros": false,
+    "categoria": "Combate"
+  },
+  {
+    "id": "indireto",
+    "nome": "Indireto",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Seu ataque se origina de um ponto diferente de onde você está, permitindo ignorar cobertura.",
+    "requerParametros": true,
+    "tipoParametro": "select",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Nível de Flexibilidade",
+      "opcoes": [
+        {
+          "id": "origem-fixa",
+          "nome": "Origem Fixa",
+          "modificadorCusto": 0,
+          "descricao": "O ataque sempre vem do mesmo lugar (ex: sempre do céu)"
+        },
+        {
+          "id": "qualquer-lugar-ou-direcao-fixa",
+          "nome": "Qualquer Lugar OU Direção Fixa",
+          "modificadorCusto": 1,
+          "descricao": "O ataque pode vir de qualquer lugar OU de uma direção fixa em relação ao alvo (ex: sempre por trás)"
+        },
+        {
+          "id": "qualquer-lugar-direcao-fixa",
+          "nome": "Qualquer Lugar + Direção Fixa",
+          "modificadorCusto": 2,
+          "descricao": "O ataque pode vir de qualquer lugar em uma direção fixa (ex: por trás, por cima, etc)"
+        },
+        {
+          "id": "totalmente-imprevisivel",
+          "nome": "Totalmente Imprevisível",
+          "modificadorCusto": 3,
+          "descricao": "O ataque pode vir de qualquer lugar e de qualquer direção"
+        }
+      ]
+    },
+    "categoria": "Combate"
+  },
+  {
+    "id": "inevitavel",
+    "nome": "Inevitável",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 4,
+    "descricao": "Este efeito se torna absoluto e não pode ser evitado ativamente. Sem Teste de Efeito (não rola ataque) e sem Teste de Resistência (efeito simplesmente acontece). Aplica-se a efeitos que normalmente miram um alvo (Dano, Aflição, Enfraquecer, etc).",
+    "requerParametros": false,
+    "observacoes": "LIMITES: NÃO ignora defesas passivas (RD, Imunidade, Resistência). Para ignorar isso, use Penetrante ou Verdadeiro. Devido ao poder extremo, o Mestre deve aprovar. Alvos ainda têm direito a testes de recuperação conforme regras padrão.",
+    "categoria": "Combate"
+  },
+  {
+    "id": "penetrante-persistente",
+    "nome": "Penetrante/Persistente",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 3,
+    "descricao": "Permite que efeitos de dano ignorem a RD de um alvo. Efeitos de recuperação podem curar efeitos incuráveis. Efeitos penetrantes/persistentes podem evoluir para Verdadeiros.",
+    "requerParametros": false,
+    "categoria": "Combate"
+  },
+  {
+    "id": "verdadeiro",
+    "nome": "Verdadeiro",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 6,
+    "descricao": "Efeitos de dano ignoram RD, resistências e imunidades (ainda necessário teste de efeito). Efeitos de recuperação podem recuperar qualquer coisa, inclusive lesões (dependente do descritor). Não podem ser respondidos por reações ou absorvidos. Não podem ser nulificados, exceto por Nulificar Verdadeiro ou Caos.",
+    "requerParametros": false,
+    "observacoes": "Requer grau mínimo 5 no efeito. Verdadeiro e Inato são modificações diferentes.",
+    "categoria": "Combate"
+  },
+  {
+    "id": "preciso",
+    "nome": "Preciso",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Permite que você use um efeito para tarefas delicadas e de controle fino. O Mestre pode exigir um teste de perícia para determinar o sucesso da ação.",
+    "requerParametros": false,
+    "observacoes": "Exemplos: Usar um raio de Dano para soldar, usar Mover Alvo para digitar em um teclado ou arrombar uma fechadura.",
+    "categoria": "Controle e Precisão"
+  },
+  {
+    "id": "reversivel",
+    "nome": "Reversível",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Você pode, como uma ação livre, cancelar instantaneamente os efeitos causados por este efeito em um alvo, desde que ele esteja dentro do seu alcance.",
+    "requerParametros": false,
+    "categoria": "Controle e Precisão"
+  },
+  {
+    "id": "ricochetear",
+    "nome": "Ricochetear",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Permite que seu ataque à distância ricocheteie em superfícies para atingir alvos fora da sua linha de visão, superando cobertura. Cada grau neste extra permite um ricochete.",
+    "requerParametros": true,
+    "tipoParametro": "grau",
+    "grauMinimo": 1,
+    "grauMaximo": 5,
+    "detalhesGrau": "Cada grau permite 1 ricochete adicional. Exemplo: Grau 3 = até 3 ricochetes.",
+    "categoria": "Combate"
+  },
+  {
+    "id": "seletivo",
+    "nome": "Seletivo",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Permite que você escolha quem é afetado ou não por seu efeito. É essencial para efeitos de Área, permitindo que você atinja apenas os inimigos e poupe seus aliados.",
+    "requerParametros": false,
+    "categoria": "Controle e Precisão"
+  },
+  {
+    "id": "sutil",
+    "nome": "Sutil",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Torna seu efeito difícil ou impossível de ser percebido. Ideal para ataques surpresa.",
+    "requerParametros": false,
+    "categoria": "Furtividade",
+    "configuracoes": {
+      "tipo": "radio",
+      "label": "Nível de Sutileza",
+      "opcoes": [
+        {
+          "id": "dificil-notar",
+          "nome": "Difícil de Notar",
+          "descricao": "O efeito é difícil de notar ou só é perceptível por sentidos exóticos",
+          "modificadorCusto": 1
+        },
+        {
+          "id": "indetectavel",
+          "nome": "Completamente Indetectável",
+          "descricao": "O efeito é completamente impossível de detectar",
+          "modificadorCusto": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "teleguiado",
+    "nome": "Teleguiado",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Dá ao seu ataque à distância uma segunda chance. Se você errar, o ataque tentará acertar o mesmo alvo novamente no início do seu próximo turno (você só precisa de uma ação livre para mantê-lo). Cada grau adicional concede mais uma tentativa em turnos subsequentes.",
+    "requerParametros": true,
+    "tipoParametro": "grau",
+    "grauMinimo": 1,
+    "grauMaximo": 10,
+    "detalhesGrau": "Cada grau concede +1 tentativa adicional em turnos subsequentes. Exemplo: Grau 3 permite até 3 novas tentativas.",
+    "categoria": "Combate"
+  },
+  {
+    "id": "traicoeiro",
+    "nome": "Traiçoeiro",
+    "tipo": "extra",
+    "custoFixo": 2,
+    "custoPorGrau": 0,
+    "descricao": "Diferente de Sutil (que esconde o efeito), Traiçoeiro esconde o resultado do efeito. O alvo sabe que foi atingido, mas não percebe o que o efeito realmente causou até que seja tarde demais. Exemplo: Um alvo atingido por um Dano Traiçoeiro não percebe que foi ferido. Alguém afetado por um Enfraquecer Traiçoeiro se sente bem, até tentar levantar algo e perceber que sua força sumiu.",
+    "requerParametros": false,
+    "categoria": "Furtividade"
+  },
+  {
+    "id": "distancia-reduzida",
+    "nome": "À Distância Reduzida",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Reduz drasticamente os multiplicadores de distância de um poder de Alcance (À Distância). Normal: Curto (grau × 3m), Médio (grau × 6m), Longo (grau × 9m). Com 1 Grau: Curto (grau × 1m), Médio (grau × 3m), Longo (grau × 4m).",
+    "requerParametros": true,
+    "tipoParametro": "grau",
+    "grauMinimo": 1,
+    "grauMaximo": 3,
+    "detalhesGrau": "Cada grau reduz ainda mais os multiplicadores de alcance.",
+    "categoria": "Limitações"
+  },
+  {
+    "id": "ativacao",
+    "nome": "Ativação",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Seu poder precisa ser 'ligado' antes de poder ser usado. Ativar o poder apenas o deixa pronto para uso. Você ainda precisa gastar a ação normal para usar cada um de seus efeitos. Se o poder for desativado, você precisa gastar a ação de ativação novamente.",
+    "requerParametros": false,
+    "categoria": "Ação e Tempo",
+    "configuracoes": {
+      "tipo": "radio",
+      "label": "Tipo de Ação para Ativação",
+      "opcoes": [
+        {
+          "id": "acao-movimento",
+          "nome": "Ação de Movimento",
+          "descricao": "A ativação exige uma Ação de Movimento",
+          "modificadorCusto": -1
+        },
+        {
+          "id": "acao-padrao",
+          "nome": "Ação Padrão",
+          "descricao": "A ativação exige uma Ação Padrão",
+          "modificadorCusto": -2
+        },
+        {
+          "id": "acao-completa",
+          "nome": "Ação Completa",
+          "descricao": "A ativação exige uma Ação Completa",
+          "modificadorCusto": -3
+        }
+      ]
+    }
+  },
+  {
+    "id": "baseado-agarrar",
+    "nome": "Baseado em Agarrar",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Seu poder só pode ser usado em um alvo que você esteja agarrando com sucesso. Primeiro você precisa gastar sua ação para fazer uma manobra de Agarrar no oponente. Se o agarrão for bem-sucedido, o poder é ativado imediatamente e de graça (como uma reação) no alvo. Esta falha exige que o poder seja de alcance Corpo-a-Corpo.",
+    "requerParametros": false,
+    "categoria": "Limitações"
+  },
+  {
+    "id": "cansativo",
+    "nome": "Cansativo",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Usar este poder é desgastante, você fica fatigado após ativá-lo. A condição Fatigado surge no turno seguinte ao uso do poder. Você pode gastar inspiração para ignorar a fadiga. Perfeito para criar um 'ataque especial' ou 'modo supremo' que você não pode usar o tempo todo.",
+    "requerParametros": false,
+    "categoria": "Risco e Consequência"
+  },
+  {
+    "id": "dependente-sentido",
+    "nome": "Dependente de Sentido",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "O alvo precisa ser capaz de perceber seu poder (vê-lo, ouvi-lo, etc.) para ser afetado. O alvo tem direito a um teste de Esquiva para simplesmente desviar o olhar ou tapar os ouvidos. Um alvo que conhece seu poder pode bloqueá-lo ativamente (+10 no teste de resistência). Alvos que não possuem o sentido necessário são totalmente imunes.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: Visual, Auditivo, Olfativo...",
+    "categoria": "Limitações"
+  },
+  {
+    "id": "dissipacao",
+    "nome": "Dissipação",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Seu efeito perde força a cada uso, como se tivesse munição limitada. Toda vez que você ativa o poder (ou a cada rodada, para efeitos de longa duração), ele perde 1 grau de eficácia. Quando o grau chegar a zero, o poder para de funcionar. Para recuperar os graus, você precisa de tempo (geralmente uma hora fora de combate) ou pode gastar inspiração para uma recarga instantânea.",
+    "requerParametros": false,
+    "categoria": "Limitações"
+  },
+  {
+    "id": "distracao",
+    "nome": "Distração",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Usar este poder exige tanta concentração que você baixa sua guarda. Você fica vulnerável até o início do seu próximo turno.",
+    "requerParametros": false,
+    "categoria": "Risco e Consequência"
+  },
+  {
+    "id": "efeito-colateral",
+    "nome": "Efeito Colateral",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Quando seu efeito falha, ele dá terrivelmente errado e se volta contra você. O efeito colateral deve ser uma consequência negativa com um valor de PdA e grau similar ao do efeito original (geralmente o próprio efeito te atingindo).",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Descreva o efeito colateral...",
+    "categoria": "Risco e Consequência",
+    "configuracoes": {
+      "tipo": "radio",
+      "label": "Quando o Efeito Colateral Ocorre",
+      "opcoes": [
+        {
+          "id": "ao-falhar",
+          "nome": "Apenas ao Falhar",
+          "descricao": "O efeito colateral acontece apenas quando o poder falha (você erra o ataque ou o alvo resiste)",
+          "modificadorCusto": -1
+        },
+        {
+          "id": "sempre",
+          "nome": "Toda Vez",
+          "descricao": "O efeito colateral acontece toda vez que você usa o poder, independentemente de ter acertado ou não",
+          "modificadorCusto": -2
+        }
+      ]
+    }
+  },
+  {
+    "id": "exige-teste",
+    "nome": "Exige Teste",
+    "tipo": "falha",
+    "custoFixo": -1,
+    "custoPorGrau": 0,
+    "descricao": "Seu efeito é difícil de controlar e exige um teste de perícia para ser ativado. Toda vez que for usar o efeito, você precisa primeiro passar em um teste de perícia. Se você falhar no teste (ou tirar um 1 natural), você gasta sua ação, mas o efeito não funciona. Este teste de ativação não substitui outros testes que o poder possa exigir.",
+    "requerParametros": true,
+    "tipoParametro": "select",
+    "opcoes": ["Acrobacia", "Enganação", "Especialidade", "Tecnologia", "Outra (especificar)"],
+    "categoria": "Limitações"
+  },
+  {
+    "id": "inconstante",
+    "nome": "Inconstante",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Seu efeito é instável e pode falhar nos piores momentos. Você pode gastar inspiração para garantir que o poder funcione ou recarregá-lo instantaneamente.",
+    "requerParametros": false,
+    "categoria": "Controle e Precisão",
+    "configuracoes": {
+      "tipo": "radio",
+      "label": "Tipo de Instabilidade",
+      "opcoes": [
+        {
+          "id": "teste-falha-normal",
+          "nome": "Teste de Falha 50%",
+          "descricao": "Role d20: 11+ funciona, 10 ou menos falha. Você gasta sua ação, mas nada acontece",
+          "modificadorCusto": -2
+        },
+        {
+          "id": "teste-falha-drastico",
+          "nome": "Teste de Falha Drástico",
+          "descricao": "Role d20: apenas 17+ funciona. Falha crítica em qualquer resultado menor",
+          "modificadorCusto": -3
+        },
+        {
+          "id": "usos-limitados-1",
+          "nome": "1 Uso Limitado",
+          "descricao": "Funciona perfeitamente por 1 vez. Depois para até Descanso Curto",
+          "modificadorCusto": -2
+        },
+        {
+          "id": "usos-limitados-2",
+          "nome": "2 Usos Limitados",
+          "descricao": "Funciona perfeitamente por 2 vezes. Depois para até Descanso Curto",
+          "modificadorCusto": -1
+        }
+      ]
+    }
+  },
+  {
+    "id": "incontrolavel",
+    "nome": "Incontrolável",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Você não tem controle sobre este efeito. Ele se torna uma ferramenta de trama nas mãos do Mestre, que decide quando e como ele se manifesta. Esta falha é ideal para poderes misteriosos, instáveis ou de origem desconhecida, que o personagem ainda não domina.",
+    "requerParametros": false,
+    "categoria": "Controle e Precisão"
+  },
+  {
+    "id": "impreciso",
+    "nome": "Impreciso",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Seu efeito é difícil de mirar ou controlar. Para cada grau que você tiver nesta falha, você recebe uma penalidade de +2 desvantagens nos testes com este efeito.",
+    "requerParametros": true,
+    "tipoParametro": "grau",
+    "grauMinimo": 1,
+    "grauMaximo": 5,
+    "detalhesGrau": "Cada grau = +2 de penalidade nos testes. Grau 3 = -6 nos testes.",
+    "categoria": "Controle e Precisão"
+  },
+  {
+    "id": "limitado",
+    "nome": "Limitado",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Seu efeito só funciona sob circunstâncias ou requisitos específicos, perdendo sua utilidade em muitas situações. Para ser válida, a limitação deve reduzir a utilidade do poder em aproximadamente metade. Exemplos: Apenas contra mortos-vivos, apenas sob a luz da lua, apenas enquanto estiver voando, apenas contra alvos do sexo masculino.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: Apenas contra mortos-vivos, apenas sob luz da lua...",
+    "categoria": "Limitações"
+  },
+  {
+    "id": "peculiaridade",
+    "nome": "Peculiaridade",
+    "tipo": "falha",
+    "custoFixo": -1,
+    "custoPorGrau": 0,
+    "descricao": "É uma falha pequena, inconveniente e temática, mas que não chega a ser uma grande desvantagem. Importante: Uma Peculiaridade não é uma consequência óbvia do descritor do poder. Exemplo: Um telepata que não consegue mentir ao usar seu poder mental é uma Peculiaridade.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Descreva a peculiaridade...",
+    "categoria": "Versatilidade"
+  },
+  {
+    "id": "perceptivel",
+    "nome": "Perceptível",
+    "tipo": "falha",
+    "custoFixo": -1,
+    "custoPorGrau": 0,
+    "descricao": "Seu efeito 'sempre ativo' (Contínuo ou Permanente) tem uma manifestação óbvia. Inimigos podem notar facilmente que você possui uma habilidade especial. Exemplo: Sua Proteção não é invisível; ela se manifesta como uma pele rochosa ou uma armadura visível.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Como o efeito se manifesta visivelmente?",
+    "categoria": "Furtividade"
+  },
+  {
+    "id": "resistivel",
+    "nome": "Resistível",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Esta falha adiciona um teste de resistência extra para o alvo se defender do seu poder, tornando-o menos confiável. Para poderes que normalmente NÃO permitem teste de resistência, esta falha concede ao alvo um teste para anular o poder. Para poderes que JÁ permitem teste, adiciona um segundo teste (o alvo usa o melhor resultado).",
+    "requerParametros": true,
+    "tipoParametro": "select",
+    "opcoes": ["Fortitude", "Reflexo", "Vontade", "Esquiva"],
+    "categoria": "Combate"
+  },
+  {
+    "id": "retroalimentacao",
+    "nome": "Retroalimentação",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Quando uma manifestação física do seu poder (como um objeto criado, uma ilusão ou uma criatura invocada) sofre dano, você também sofre o mesmo dano.",
+    "requerParametros": false,
+    "categoria": "Risco e Consequência"
+  },
+  {
+    "id": "suscetibilidade",
+    "nome": "Suscetibilidade",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -2,
+    "descricao": "Esta falha só pode ser aplicada a efeitos com Duração Manutenção (Sustentada/Concentração), Ativada ou permanente. Enquanto este efeito estiver ativo, seu personagem é considerado sob a condição Vulnerável (definida no Cap. 8) apenas contra danos ou efeitos que possuam o Descritor escolhido.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: Fogo, Frio, Sagrado, Mental, Eletricidade...",
+    "categoria": "Risco e Consequência"
+  },
+  {
+    "id": "condicao-extra",
+    "nome": "Condição Extra",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Sua Aflição impõe uma condição adicional por grau de sucesso. Com uma aplicação deste extra, sua Aflição impõe duas condições. Com duas aplicações, ela impõe três condições, e assim por diante. Ideal para Aflições mais versáteis e poderosas.",
+    "requerParametros": true,
+    "tipoParametro": "grau",
+    "grauMinimo": 1,
+    "grauMaximo": 3,
+    "detalhesGrau": "Cada grau adiciona +1 condição por grau de sucesso. Grau 1 = 2 condições, Grau 2 = 3 condições, Grau 3 = 4 condições.",
+    "categoria": "Aflição",
+    "observacoes": "Apenas para o efeito Aflição (Afligir)."
+  },
+  {
+    "id": "progressiva",
+    "nome": "Progressiva",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 2,
+    "descricao": "Esta modificação faz com que uma Aflição aumente sem qualquer esforço da sua parte (lembrando que nem todas as condições evoluem). Caso o alvo falhe em um teste de resistência para encerrar a Aflição, ela não apenas continua, mas também evolui! Um teste de resistência bem-sucedido ainda encerra a Aflição.",
+    "requerParametros": false,
+    "categoria": "Aflição",
+    "observacoes": "Apenas para o efeito Aflição (Afligir). A condição deve ser capaz de evoluir (ex: Ferido → Machucado → Morrendo)."
+  },
+  {
+    "id": "dano-continuo",
+    "nome": "Dano Contínuo",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 2,
+    "descricao": "Ao aplicar este Extra ao seu Efeito Afligir, você não escolhe mais uma condição padrão (como Caído ou Atordoado). Em vez disso, você aplica uma condição de dano (como Ferido, Queimando, Envenenado, etc., baseado no seu descritor). No início de cada turno subsequente do alvo, ele sofre dano (do tipo do seu poder). A quantidade de dano é ditada pela coluna 'Dano e Cura' da Tabela Universal de Grau, correspondente ao Grau deste poder Afligir, pela metade.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: Queimando, Envenenado, Sangrando, Congelando...",
+    "categoria": "Aflição",
+    "observacoes": "Apenas para o efeito Aflição (Afligir). O dano é metade do valor da Tabela Universal."
+  },
+  {
+    "id": "recuperacao-instantanea",
+    "nome": "Recuperação Instantânea",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "O alvo do efeito de Aflição se recupera automaticamente, sem a necessidade de teste, no fim da rodada em que a duração acaba.",
+    "requerParametros": false,
+    "categoria": "Aflição",
+    "observacoes": "Apenas para o efeito Aflição (Afligir)."
+  },
+  {
+    "id": "baseado-atributos",
+    "nome": "Poderes Baseados em Atributos",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Você pode somar seu modificador de atributo ao dano final. A fonte do bônus depende da natureza do poder: Poderes Espirituais usam atributos mentais (Intelecto, Presença, Vontade). Técnicas usam atributos físicos (Força, Agilidade, Vigor).",
+    "requerParametros": true,
+    "tipoParametro": "select",
+    "opcoes": ["Força", "Agilidade", "Vigor", "Intelecto", "Presença", "Vontade"],
+    "categoria": "Combate",
+    "observacoes": "Apenas para poderes que causam dano."
+  },
+  {
+    "id": "escalonamento-dano",
+    "nome": "Escalonamento de Dano",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Além de somar modificadores, os poderes também podem escalonar seu dano base. Isso permite que o dano do poder aumente conforme o personagem evolui.",
+    "requerParametros": false,
+    "categoria": "Combate",
+    "observacoes": "Apenas para poderes que causam dano. Veja regras completas no manual."
+  },
+  {
+    "id": "dano-critico",
+    "nome": "Causando Dano Crítico com Poderes",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "É possível causar dano crítico com poderes, desde que seja um poder baseado em uma arma. O dado de dano máximo desse poder deve ser igual ao dano da arma, ainda limitado pelo grau de dano.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: Espada, Machado, Lança...",
+    "categoria": "Combate",
+    "observacoes": "Apenas para poderes baseados em armas. Custo gratuito (+0)."
+  },
+  {
+    "id": "amplo",
+    "nome": "Amplo",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Permite enfraquecer um conjunto amplo de características, uma de cada vez de acordo com o descritor (serve apenas para enfraquecimento de dano). Exemplo: Enfraquecer danos Mentais, enfraquecer danos Físicos. O jogador pode escolher livremente o dano (apenas um do alvo, além de que o personagem deve ter conhecimento ou visto o dano) que quer enfraquecer dentro do conjunto ao usar o efeito.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: Danos Mentais, Danos Físicos, Danos Elementais...",
+    "categoria": "Enfraquecer",
+    "observacoes": "Apenas para o efeito Enfraquecer (enfraquecimento de dano). Escolhe UMA característica por vez dentro do conjunto."
+  },
+  {
+    "id": "simultaneo",
+    "nome": "Simultâneo",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Usado junto com Amplo. Enfraquece todas as características do conjunto ao mesmo tempo. Exemplo: Enfraquecer Fogo Simultâneo reduz pontos de todos os efeitos de fogo que o alvo possua em um único teste (vale apenas para dano).",
+    "requerParametros": false,
+    "categoria": "Enfraquecer",
+    "observacoes": "Apenas para o efeito Enfraquecer (enfraquecimento de dano). Requer o extra Amplo."
+  },
+  {
+    "id": "aleatorio",
+    "nome": "Aleatório",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Em vez de contra-atacar, efeitos atingidos recebem a falha Incontrolável e saem do controle (a critério do mestre).",
+    "requerParametros": false,
+    "categoria": "Combate",
+    "observacoes": "Custo gratuito (+0). Para efeitos de Contra-ataque/Deflexão."
+  },
+  {
+    "id": "enfraquecimento-colateral",
+    "nome": "Enfraquecimento",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Uma ou mais de suas características é diminuída enquanto outras são aumentadas. Esta falha vale tantos pontos quanto a redução na(s) característica(s) afetada(s), use isso como efeito colateral enfraquecimento em si mesmo.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Descreva qual característica é enfraquecida...",
+    "categoria": "Limitações",
+    "observacoes": "Custo fixo igual aos pontos de Enfraquecer usado em si mesmo."
+  },
+  {
+    "id": "estabilizar",
+    "nome": "Estabilizar",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Você é automaticamente bem-sucedido em testes para estabilizar um personagem morrendo, usando esse efeito.",
+    "requerParametros": false,
+    "categoria": "Recuperação",
+    "observacoes": "Apenas para o efeito Recuperação (Cura). +1 fixo."
+  },
+  {
+    "id": "ressurreicao",
+    "nome": "Ressurreição",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Você pode restaurar a vida dos mortos! Caso o alvo esteja morto a uma quantidade de minutos igual ou menor que o grau em Recuperação, faça um teste de efeito (A CD desse teste é a maior CD do alvo). Caso seja bem-sucedido, a condição do paciente se torna Estabilizado com 1PV, isso por si só não recupera lesões ou condições anteriores, como se tivesse acabado de ser estabilizado (esse efeito apenas vale para outros alvos).",
+    "requerParametros": false,
+    "categoria": "Recuperação",
+    "observacoes": "Apenas para o efeito Recuperação (Cura). Não funciona em si mesmo."
+  },
+  {
+    "id": "empatico",
+    "nome": "Empático",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -2,
+    "descricao": "Quando recupera outra pessoa, você adquire a condição (exceto Morrendo) ou recebe a quantidade de dano (como condição ou dano verdadeiro). Isso vale inclusive para Ressurreição.",
+    "requerParametros": false,
+    "categoria": "Recuperação",
+    "observacoes": "Apenas para o efeito Recuperação (Cura)."
+  },
+  {
+    "id": "temporario",
+    "nome": "Temporário",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Os benefícios de sua recuperação são temporários, durando um tempo. O alvo então sofre todas as condições ou o dano recuperado (como condição ou dano verdadeiro), o que pode resultar em dano mais severo ou até mesmo na morte.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: 1 hora, 1 dia, até o próximo descanso...",
+    "categoria": "Recuperação",
+    "observacoes": "Apenas para o efeito Recuperação (Cura). Especifique a duração."
+  },
+  {
+    "id": "projecao",
+    "nome": "Projeção",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Seus Membros Extras são uma projeção de seu poder em vez de uma extensão de seu corpo. Assim, qualquer dano direcionado especificamente contra seu(s) Membro(s) Extra(s) não tem efeito. Por exemplo, um dos seus membros adicionais poderia entrar em um container de ácido ou em uma fornalha em chamas para pegar um objeto sem que você sofra dano. O mestre pode exigir que Membros Extras com este extra modifique sua duração para contínuo ou sustentado. É possível que Membros Extras com este extra não possa ter o modificador Inato.",
+    "requerParametros": false,
+    "categoria": "Membros Extras",
+    "observacoes": "Apenas para o efeito Membros Extras. Pode exigir duração contínua/sustentada."
+  },
+  {
+    "id": "lento",
+    "nome": "Lento",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Você só pode reconfigurar seu efeito fora do tempo de ação. Você pode ter de acessar um laboratório, arsenal, grimório ou outro equipamento especial, ou ter de realizar certos procedimentos ou rituais. Isso leva pelo menos um minuto, possivelmente até uma hora ou mais. O tempo específico é definido pelo Mestre, mas deveria ser curto o suficiente para reconfigurar entre cenas, mas longo o suficiente para que não possa fazê-lo durante o tempo de ação. O mestre pode permitir que você gaste inspiração para reconfigurar durante o tempo de ação como uma façanha de poder.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: 1 minuto, 10 minutos, 1 hora...",
+    "categoria": "Versatilidade",
+    "observacoes": "Para efeitos com Variável/Alternativo. Especifique o tempo necessário."
+  },
+  {
+    "id": "multi-formas",
+    "nome": "Multi Formas",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Funciona exatamente como o extra Tipo Variável de Invocar. Cada forma alternativa é idêntica em termos de custo de PdA (Grau × 10), mas pode ter distribuições, Domínios e aparências diferentes.",
+    "requerParametros": false,
+    "categoria": "Metamorfose",
+    "observacoes": "Apenas para o efeito Metamorfose/Transformação.",
+    "configuracoes": {
+      "tipo": "radio",
+      "label": "Amplitude das Formas",
+      "opcoes": [
+        {
+          "id": "tipo-especifico",
+          "nome": "Tipo Específico",
+          "descricao": "Formas limitadas a um tipo específico (ex: animais, humanoides)",
+          "modificadorCusto": 1
+        },
+        {
+          "id": "tipo-amplo",
+          "nome": "Tipo Amplo",
+          "descricao": "Permite alternar entre um grupo amplo (ex: qualquer animal, qualquer humanoide)",
+          "modificadorCusto": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "reversao-involuntaria",
+    "nome": "Reversão Involuntária",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Se você sofrer um Acerto Crítico ou falhar em um Teste de Resistência importante (a critério do Mestre), você deve fazer um teste de Vontade ou reverte imediatamente para sua forma original.",
+    "requerParametros": false,
+    "categoria": "Metamorfose",
+    "observacoes": "Apenas para o efeito Metamorfose/Transformação."
+  },
+  {
+    "id": "forca-ausente",
+    "nome": "Força Ausente",
+    "tipo": "falha",
+    "custoFixo": -1,
+    "custoPorGrau": 0,
+    "descricao": "Esta falha se aplica apenas à Intangibilidade com grau 1 e remove a sua Força efetiva nesta forma. Isto limita sua habilidade de afetar o mundo físico, como os efeitos de grau mais alto.",
+    "requerParametros": false,
+    "categoria": "Intangibilidade",
+    "observacoes": "Apenas para Intangibilidade grau 1. -1 fixo."
+  },
+  {
+    "id": "reflexao",
+    "nome": "Reflexão",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Você pode refletir os ataques contra os quais é imune de volta ao atacante como uma ação livre. Faça um teste de ataque normal usando seu próprio modificador para acertar com o ataque refletido. O ataque tem seus efeitos normais caso acerte.",
+    "requerParametros": false,
+    "categoria": "Imunidade",
+    "observacoes": "Apenas para o efeito Imunidade."
+  },
+  {
+    "id": "redirecionar",
+    "nome": "Redirecionar",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Você pode redirecionar ataques contra os quais é imune para qualquer alvo dentro do alcance normal do ataque, como em Reflexão. Você deve ter o extra Reflexão para comprar este aqui.",
+    "requerParametros": false,
+    "categoria": "Imunidade",
+    "observacoes": "Apenas para o efeito Imunidade. Requer o extra Reflexão."
+  },
+  {
+    "id": "resistencia-limitada",
+    "nome": "Resistência (Limitado à Metade do Efeito)",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Você sofre metade do efeito em vez de ser imune a ele. Para efeitos ambientais, você faz testes apenas na metade do tempo e tem +2 vantagens no teste. Para outros efeitos como dano, você sofre metade.",
+    "requerParametros": false,
+    "categoria": "Imunidade",
+    "observacoes": "Apenas para o efeito Imunidade. Custo: -Metade do custo do efeito (sem as modificações)."
+  },
+  {
+    "id": "passiva",
+    "nome": "Passiva",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Sua camuflagem dura apenas até que você faça algo que exija um teste de ataque ou de efeito, quando então para de funcionar até ser reativada (o que você pode fazer na rodada seguinte).",
+    "requerParametros": false,
+    "categoria": "Furtividade",
+    "observacoes": "Apenas para o efeito Camuflagem."
+  },
+  {
+    "id": "resistivel-camuflagem",
+    "nome": "Resistível",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Sua Camuflagem oferece um teste de resistência (escolha uma defesa quando esta falha for comprada) para qualquer um procurando ativamente por você. Camuflagem Resistível por Vontade representa algum tipo de ilusão mental.",
+    "requerParametros": true,
+    "tipoParametro": "select",
+    "opcoes": ["Fortitude", "Reflexo", "Vontade", "Esquiva"],
+    "categoria": "Furtividade",
+    "observacoes": "Apenas para o efeito Camuflagem."
+  },
+  {
+    "id": "comunicacao-rapida",
+    "nome": "Rápida",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Sua Comunicação ocorre 5 vezes mais rápido que a fala normal. Cada grau adicional aumenta a velocidade da comunicação em um fator de 5 (5, 25, 125...). Isto é útil para ligações de computador de alta velocidade, compreensão psíquica profunda, e assim por diante.",
+    "requerParametros": false,
+    "categoria": "Percepção",
+    "observacoes": "Apenas para o efeito Comunicação. +1 fixo."
+  },
+  {
+    "id": "cumulativo",
+    "nome": "Cumulativo",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Sua Leitura Mental soma quaisquer níveis de sucesso posteriores aos níveis presente no alvo, em vez de usar apenas o resultado do novo teste oposto. Por exemplo, caso você tenha 1 nível de contato e faça outro teste de Leitura Mental com um nível, você agora tem dois níveis de contato.",
+    "requerParametros": false,
+    "categoria": "Percepção",
+    "observacoes": "Apenas para o efeito Leitura Mental."
+  },
+  {
+    "id": "ligacao-sensorial",
+    "nome": "Ligação Sensorial",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Você pode 'entrar' nos sentidos de seus alvos, percebendo o que eles percebem como no efeito Sentido Remoto, desde que você tenha pelo menos um nível de contato. Seus próprios sentidos ficam inativos enquanto você está usando sua ligação sensorial e você pode perceber através dos sentidos de um alvo de cada vez.",
+    "requerParametros": false,
+    "categoria": "Percepção",
+    "observacoes": "Apenas para o efeito Leitura Mental."
+  },
+  {
+    "id": "sem-esforco",
+    "nome": "Sem Esforço",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Tentar de novo depois de duas ou mais falhas não exige inspiração. Você pode tentar um número ilimitado de vezes.",
+    "requerParametros": false,
+    "categoria": "Percepção",
+    "observacoes": "Apenas para o efeito Leitura Mental."
+  },
+  {
+    "id": "nao-condutor",
+    "nome": "Não Condutor",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Efeitos sensoriais mirados contra o local para onde você deslocou seus sentidos não afetam você, mas você também não pode usar efeitos de percepção à distância via seu Sentido Remoto. Independentemente da limitação embutida, este é um extra, pois permite que você use seu Sentido Remoto para observar alvos com relativa segurança.",
+    "requerParametros": false,
+    "categoria": "Percepção",
+    "observacoes": "Apenas para o efeito Sentido Remoto."
+  },
+  {
+    "id": "meio-sentido",
+    "nome": "Meio",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Você exige um meio para seu Sentido Remoto, como sombras, chamas, espelhos, água aberta, telas de TV, e assim por diante. Você só pode perceber locais em que seu meio escolhido exista.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: Sombras, Chamas, Espelhos, Água, TVs...",
+    "categoria": "Percepção",
+    "observacoes": "Apenas para o efeito Sentido Remoto."
+  },
+  {
+    "id": "obscurecido",
+    "nome": "Obscurecido",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Você não precisa conhecer nem sentir com precisão seu destino para se teleportar para ele, apenas deve ser capaz de descrevê-lo em linhas gerais, como 'dentro do lobby do capitólio' ou 'no topo da Torre Esmeralda'. Caso o destino não esteja dentro do alcance de seu Teleporte, nada acontece.",
+    "requerParametros": false,
+    "categoria": "Teleporte",
+    "observacoes": "Apenas para o efeito Teleporte."
+  },
+  {
+    "id": "teleporte-estendido",
+    "nome": "Estendido",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Você pode usar uma ação completa para fazer um teleporte estendido com um grau de distância igual a seu grau neste efeito +2. Você fica atordoado e vulnerável na rodada seguinte ao teleporte estendido.",
+    "requerParametros": false,
+    "categoria": "Teleporte",
+    "observacoes": "Apenas para o efeito Teleporte. Grau de distância = grau do efeito +2."
+  },
+  {
+    "id": "teleporte-facil",
+    "nome": "Fácil",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Você não fica tonto ou vulnerável quando faz teleportes estendidos.",
+    "requerParametros": false,
+    "categoria": "Teleporte",
+    "observacoes": "Apenas para o efeito Teleporte. Requer o extra Estendido."
+  },
+  {
+    "id": "giro",
+    "nome": "Giro",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Você pode se teleportar, usar uma ação padrão e se teleportar de volta a seu ponto de origem em uma mesma rodada, desde que a distância total percorrida não exceda o alcance de seu Teleporte.",
+    "requerParametros": false,
+    "categoria": "Teleporte",
+    "observacoes": "Apenas para o efeito Teleporte. +1 fixo."
+  },
+  {
+    "id": "massa-aumentada",
+    "nome": "Massa Aumentada",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Você pode carregar uma quantidade de massa adicional quando se teleporta igual a seu grau neste extra.",
+    "requerParametros": true,
+    "tipoParametro": "grau",
+    "grauMinimo": 1,
+    "grauMaximo": 10,
+    "detalhesGrau": "Cada grau aumenta a massa que você pode transportar. Consulte a Tabela Universal.",
+    "categoria": "Teleporte",
+    "observacoes": "Apenas para o efeito Teleporte. +1 fixo por grau de Massa Aumentada."
+  },
+  {
+    "id": "mudar-direcao",
+    "nome": "Mudar a Direção",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Você pode mudar sua direção ou orientação depois de um teleporte.",
+    "requerParametros": false,
+    "categoria": "Teleporte",
+    "observacoes": "Apenas para o efeito Teleporte. +1 fixo."
+  },
+  {
+    "id": "mudar-velocidade",
+    "nome": "Mudar a Velocidade",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Você pode se teleportar 'em descanso' para o seu destino. Entre outras coisas, isso significa que você pode se teleportar para fora de uma queda e não sofrer nenhum dano.",
+    "requerParametros": false,
+    "categoria": "Teleporte",
+    "observacoes": "Apenas para o efeito Teleporte. +1 fixo."
+  },
+  {
+    "id": "portal",
+    "nome": "Portal",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 2,
+    "descricao": "Você abre um portal ou passagem entre dois pontos como uma ação livre. O portal tem 1,5 metros de largura. Qualquer um tentando atravessar o portal (uma ação de movimento) é transportado. O portal permanece aberto enquanto você se concentrar, usando uma ação padrão por turno para mantê-lo.",
+    "requerParametros": false,
+    "categoria": "Teleporte",
+    "observacoes": "Apenas para o efeito Teleporte."
+  },
+  {
+    "id": "medio-teleporte",
+    "nome": "Médio",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Você precisa de um meio para seu teleporte, como cabos elétricos ou de telefone, raízes profundas, canais, sombras, chamas, espelhos, e assim por diante. Você só pode se teleportar de uma localização para locais em que seu meio existe.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: Cabos elétricos, Sombras, Espelhos, Água...",
+    "categoria": "Teleporte",
+    "observacoes": "Apenas para o efeito Teleporte."
+  },
+  {
+    "id": "aquatico",
+    "nome": "Aquático",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Você pode se mover embaixo d'água tão facilmente quanto se move pelo ar. Você tem uma velocidade na água igual à sua Grau em Voo -2, sujeita a todas as regras normais para nadar (veja a descrição da perícia Atletismo para detalhes).",
+    "requerParametros": false,
+    "categoria": "Voo",
+    "observacoes": "Apenas para o efeito Voo. +1 fixo. Velocidade = Grau em Voo -2."
+  },
+  {
+    "id": "levitacao",
+    "nome": "Levitação",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Você só consegue se mover na vertical, diretamente para cima ou para baixo, mas não para os lados, embora possa se permitir ser levado na direção do vento na horizontal.",
+    "requerParametros": false,
+    "categoria": "Voo",
+    "observacoes": "Apenas para o efeito Voo."
+  },
+  {
+    "id": "planar",
+    "nome": "Planar",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Você voa planando nas correntes de vento. Sua distância máxima planando é limitada pela distância da sua altura inicial de voo, mais sua velocidade de voo. Você pode ser capaz de ganhar altitude de vez em quando, usando ventos e correntes térmicas ascendentes, de acordo com o mestre. Caso contrário, você pousa no fim de sua distância máxima.",
+    "requerParametros": false,
+    "categoria": "Voo",
+    "observacoes": "Apenas para o efeito Voo."
+  },
+  {
+    "id": "plataforma",
+    "nome": "Plataforma",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Seu Voo depende de algum tipo de plataforma sobre o qual você fica de pé ou sentado. Caso falhe em um teste de resistência enquanto voa, ou caso você seja agarrado por alguém que esteja no chão, você é derrubado ou empurrado de sua plataforma e não pode voar. Você pode recuperar o uso de sua plataforma voadora reativando seu efeito Voo no seu próximo turno.",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: Disco voador, Vassoura, Skate, Prancha...",
+    "categoria": "Voo",
+    "observacoes": "Apenas para o efeito Voo."
+  },
+  {
+    "id": "amarrar",
+    "nome": "Amarrar",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Permite que você mova seus objetos criados usando sua própria Força (desde que possível).",
+    "requerParametros": false,
+    "categoria": "Criar",
+    "observacoes": "Apenas para o efeito Criar. +1 fixo."
+  },
+  {
+    "id": "estacionario",
+    "nome": "Estacionário",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Reforça a natureza imóvel dos seus objetos. Eles resistem ativamente a serem movidos.",
+    "requerParametros": false,
+    "categoria": "Criar",
+    "observacoes": "Apenas para o efeito Criar. Custo +0 (gratuito)."
+  },
+  {
+    "id": "movel",
+    "nome": "Móvel",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Concede a você um efeito de Mover Alvo com grau igual ao seu grau de Criar, permitindo que você mova suas criações telecineticamente.",
+    "requerParametros": false,
+    "categoria": "Criar",
+    "observacoes": "Apenas para o efeito Criar."
+  },
+  {
+    "id": "fabricacao-rapida",
+    "nome": "Fabricação Rápida",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Você é incrivelmente veloz. O tempo de fabricação de seus itens é reduzido em uma categoria (de dias para horas, de horas para minutos, assim podendo ser usado em combate com pelo menos uma ação completa).",
+    "requerParametros": false,
+    "categoria": "Fabricar",
+    "observacoes": "Apenas para o efeito Fabricar."
+  },
+  {
+    "id": "oficina-portatil",
+    "nome": "Oficina Portátil",
+    "tipo": "extra",
+    "custoFixo": 2,
+    "custoPorGrau": 0,
+    "descricao": "Você não precisa de uma forja ou laboratório. Suas ferramentas são mágicas ou compactas o suficiente para que você possa criar seus itens em qualquer lugar.",
+    "requerParametros": false,
+    "categoria": "Fabricar",
+    "observacoes": "Apenas para o efeito Fabricar. +2 fixo."
+  },
+  {
+    "id": "improvisacao-genial",
+    "nome": "Improvisação Genial",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 2,
+    "descricao": "Você pode criar um item temporário e de uso único sem ter uma Receita prévia. Isso exige um teste de perícia apropriada e o item se desfaz após a cena.",
+    "requerParametros": false,
+    "categoria": "Fabricar",
+    "observacoes": "Apenas para o efeito Fabricar."
+  },
+  {
+    "id": "materiais-raros",
+    "nome": "Materiais Raros",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Suas criações exigem um componente exótico, difícil de encontrar e que não pode ser simplesmente comprado (ex: escama de dragão, pó de estrela, o coração de um Golem).",
+    "requerParametros": true,
+    "tipoParametro": "texto",
+    "placeholder": "Ex: Escama de dragão, Pó de estrela, Coração de Golem...",
+    "categoria": "Fabricar",
+    "observacoes": "Apenas para o efeito Fabricar."
+  },
+  {
+    "id": "independente",
+    "nome": "Independente",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Suas ilusões ativas exigem apenas uma ação livre para serem mantidas.",
+    "requerParametros": false,
+    "categoria": "Ilusão",
+    "observacoes": "Apenas para o efeito Ilusão."
+  },
+  {
+    "id": "lacaios-multiplos",
+    "nome": "Lacaios Múltiplos",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 2,
+    "descricao": "Você pode invocar mais de um Lacaio. Cada aplicação deste extra dobra sua quantidade de Lacaios. Por exemplo com Lacaios Múltiplos 1, você pode invocar dois Lacaios, com Lacaios Múltiplos 2, quatro e assim por diante. Invocar cada lacaio leva uma ação padrão, a menos que você tenha o extra Horda.",
+    "requerParametros": true,
+    "tipoParametro": "grau",
+    "grauMinimo": 1,
+    "grauMaximo": 5,
+    "detalhesGrau": "Cada grau dobra a quantidade. Grau 1 = 2 lacaios, Grau 2 = 4, Grau 3 = 8, Grau 4 = 16, Grau 5 = 32.",
+    "categoria": "Invocar",
+    "observacoes": "Apenas para o efeito Invocar."
+  },
+  {
+    "id": "controlado",
+    "nome": "Controlado",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Seus Lacaios têm todos a condição controlado. Eles não têm vontade própria e estão completamente sob suas ordens.",
+    "requerParametros": false,
+    "categoria": "Invocar",
+    "observacoes": "Apenas para o efeito Invocar."
+  },
+  {
+    "id": "elo-mental",
+    "nome": "Elo Mental",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Você tem um elo mental com seus Lacaios, o que permite que você se comunique com eles e dê ordens telepaticamente como o efeito Elo de Comunicação.",
+    "requerParametros": false,
+    "categoria": "Invocar",
+    "observacoes": "Apenas para o efeito Invocar. +1 fixo."
+  },
+  {
+    "id": "heroico",
+    "nome": "Heroico",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 3,
+    "descricao": "As criaturas invocadas por você não estão sujeitas às regras de Lacaios, sendo tratadas como personagens normais. Com esta modificação, você deve pagar o custo por criatura invocada, possuindo o mesmo nível que você, incluindo PVs normais para o nível.",
+    "requerParametros": false,
+    "categoria": "Invocar",
+    "observacoes": "Apenas para o efeito Invocar. Lacaios = personagens completos."
+  },
+  {
+    "id": "horda",
+    "nome": "Horda",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 1,
+    "descricao": "Caso tenha Lacaios Múltiplos, você pode usar uma ação padrão para invocar qualquer número de Lacaios até sua quantidade máxima. Você fica vulnerável (veja a falha Distração) até o início de seu próximo turno quando invoca uma horda. Esta modificação e Heroico não podem estar no mesmo poder.",
+    "requerParametros": false,
+    "categoria": "Invocar",
+    "observacoes": "Apenas para o efeito Invocar. Requer Lacaios Múltiplos. Incompatível com Heroico."
+  },
+  {
+    "id": "sacrificio",
+    "nome": "Sacrifício",
+    "tipo": "extra",
+    "custoFixo": 1,
+    "custoPorGrau": 0,
+    "descricao": "Quando você é atingido por um efeito que exija um teste de resistência, pode direcionar o teste para um de seus Lacaios. O Lacaio deve estar dentro do alcance do efeito e ser um alvo viável. Esse efeito combina bem com personagens de sacrilégio.",
+    "requerParametros": false,
+    "categoria": "Invocar",
+    "observacoes": "Apenas para o efeito Invocar. +1 fixo."
+  },
+  {
+    "id": "tipo-variavel-invocar",
+    "nome": "Tipo Variável",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Os Lacaios são idênticos em termos de características (embora possam diferir cosmeticamente). Com este modificador, você pode invocar Lacaios diferentes de um mesmo tipo geral (como elementais, pássaros, peixes etc.), ou até mesmo de um tipo amplo (como animais, demônios, humanoides etc.).",
+    "requerParametros": false,
+    "categoria": "Invocar",
+    "observacoes": "Apenas para o efeito Invocar.",
+    "configuracoes": {
+      "tipo": "radio",
+      "label": "Amplitude dos Tipos",
+      "opcoes": [
+        {
+          "id": "tipo-geral",
+          "nome": "Tipo Geral",
+          "descricao": "Mesmo tipo geral (ex: elementais, pássaros, peixes)",
+          "modificadorCusto": 1
+        },
+        {
+          "id": "tipo-amplo",
+          "nome": "Tipo Amplo",
+          "descricao": "Tipo amplo (ex: animais, demônios, humanoides)",
+          "modificadorCusto": 2
+        }
+      ]
+    }
+  },
+  {
+    "id": "atitude",
+    "nome": "Atitude",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": 0,
+    "descricao": "Seus Lacaios invocados são menos que cooperativos: indiferentes ou até mesmo inamistosos. Você pode usar perícias de interação e outros efeitos para fazer seus Lacaios invocados cooperarem, mas o sucesso não é de maneira nenhuma garantido!",
+    "requerParametros": false,
+    "categoria": "Invocar",
+    "observacoes": "Apenas para o efeito Invocar.",
+    "configuracoes": {
+      "tipo": "radio",
+      "label": "Nível de Atitude",
+      "opcoes": [
+        {
+          "id": "indiferente",
+          "nome": "Indiferente",
+          "descricao": "Lacaios indiferentes, podem não cooperar",
+          "modificadorCusto": -1
+        },
+        {
+          "id": "inamistoso",
+          "nome": "Inamistoso",
+          "descricao": "Lacaios inamistosos, difíceis de controlar",
+          "modificadorCusto": -2
+        }
+      ]
+    }
+  },
+  {
+    "id": "corrupcao-instantanea",
+    "nome": "Corrupção Instantânea",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 2,
+    "descricao": "Altera a Duração deste poder de Manutenção para Instantâneo (você não recebe o desconto de duração). A mudança que você faz no poder do alvo é permanente (ou até ser consertada por Imbuir Poder ou um descanso longo). Este é um Extra de poder imenso, digno de um vilão final.",
+    "requerParametros": false,
+    "categoria": "Mudar Efeito",
+    "observacoes": "Apenas para o efeito Mudar Efeito. Mudança permanente!"
+  },
+  {
+    "id": "manipulacao-ampla",
+    "nome": "Manipulação Ampla",
+    "tipo": "extra",
+    "custoFixo": 0,
+    "custoPorGrau": 2,
+    "descricao": "Permite que você manipule um Extra ou Falha adicional (ex: adicionar duas Falhas, ou remover um Extra e adicionar uma Falha).",
+    "requerParametros": false,
+    "categoria": "Mudar Efeito",
+    "observacoes": "Apenas para o efeito Mudar Efeito. Manipula 2 modificações em vez de 1."
+  },
+  {
+    "id": "apenas-falhas",
+    "nome": "Apenas Falhas",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -1,
+    "descricao": "Você só pode adicionar Falhas aos poderes dos alvos; você não pode remover Extras ou alterar Descritores.",
+    "requerParametros": false,
+    "categoria": "Mudar Efeito",
+    "observacoes": "Apenas para o efeito Mudar Efeito. Limitado a adicionar Falhas."
+  },
+  {
+    "id": "apenas-descritores",
+    "nome": "Apenas Descritores",
+    "tipo": "falha",
+    "custoFixo": 0,
+    "custoPorGrau": -2,
+    "descricao": "Você só pode usar este poder para Alterar Descritores (Opção 3). Não pode adicionar/remover Extras ou Falhas.",
+    "requerParametros": false,
+    "categoria": "Mudar Efeito",
+    "observacoes": "Apenas para o efeito Mudar Efeito. Limitado a alterar descritores."
+  }
+]

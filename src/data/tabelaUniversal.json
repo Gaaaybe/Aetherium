@@ -1,0 +1,222 @@
+[
+    {
+        "grau": 1,
+        "pe": 1,
+        "espacos": 1,
+        "dano": "1d8",
+        "distancia": "2m",
+        "massa": "1kg",
+        "tempo": "1 segundo",
+        "velocidade": "10km/h",
+        "deslocamento": "2m"
+    },
+    {
+        "grau": 2,
+        "pe": 2,
+        "espacos": 2,
+        "dano": "1d16",
+        "distancia": "4m",
+        "massa": "2kg",
+        "tempo": "3 segundos",
+        "velocidade": "50km/h",
+        "deslocamento": "4m"
+    },
+    {
+        "grau": 3,
+        "pe": 3,
+        "espacos": 2,
+        "dano": "1d32",
+        "distancia": "8m",
+        "massa": "4kg",
+        "tempo": "6 segundos",
+        "velocidade": "100km/h",
+        "deslocamento": "6m"
+    },
+    {
+        "grau": 4,
+        "pe": 4,
+        "espacos": 3,
+        "dano": "1d64",
+        "distancia": "15m",
+        "massa": "8kg",
+        "tempo": "12 segundos",
+        "velocidade": "500km/h",
+        "deslocamento": "8m"
+    },
+    {
+        "grau": 5,
+        "pe": 6,
+        "espacos": 3,
+        "dano": "1d128",
+        "distancia": "30m",
+        "massa": "15kg",
+        "tempo": "30 segundos",
+        "velocidade": "1000km/h",
+        "deslocamento": "10m"
+    },
+    {
+        "grau": 6,
+        "pe": 8,
+        "espacos": 4,
+        "dano": "1d256",
+        "distancia": "60m",
+        "massa": "30kg",
+        "tempo": "1 minuto",
+        "velocidade": "2000km/h",
+        "deslocamento": "12m"
+    },
+    {
+        "grau": 7,
+        "pe": 10,
+        "espacos": 4,
+        "dano": "1d512",
+        "distancia": "120m",
+        "massa": "60kg",
+        "tempo": "2 minutos",
+        "velocidade": "5000km/h",
+        "deslocamento": "14m"
+    },
+    {
+        "grau": 8,
+        "pe": 12,
+        "espacos": 5,
+        "dano": "1d1024",
+        "distancia": "250m",
+        "massa": "120kg",
+        "tempo": "4 minutos",
+        "velocidade": "10000km/h",
+        "deslocamento": "16m"
+    },
+    {
+        "grau": 9,
+        "pe": 14,
+        "espacos": 5,
+        "dano": "1d2048",
+        "distancia": "500m",
+        "massa": "250kg",
+        "tempo": "8 minutos",
+        "velocidade": "25000km/h",
+        "deslocamento": "18m"
+    },
+    {
+        "grau": 10,
+        "pe": 16,
+        "espacos": 6,
+        "dano": "1d4096",
+        "distancia": "1km",
+        "massa": "1T",
+        "tempo": "15 minutos",
+        "velocidade": "50000km/h",
+        "deslocamento": "20m"
+    },
+    {
+        "grau": 11,
+        "pe": 19,
+        "espacos": 9,
+        "dano": "1d4096",
+        "distancia": "2km",
+        "massa": "2T",
+        "tempo": "30 minutos",
+        "velocidade": "100000km/h",
+        "deslocamento": "40m"
+    },
+    {
+        "grau": 12,
+        "pe": 22,
+        "espacos": 12,
+        "dano": "1d4096",
+        "distancia": "4km",
+        "massa": "4T",
+        "tempo": "1 hora",
+        "velocidade": "200000km/h",
+        "deslocamento": "80m"
+    },
+    {
+        "grau": 13,
+        "pe": 25,
+        "espacos": 15,
+        "dano": "1d4096",
+        "distancia": "8km",
+        "massa": "8T",
+        "tempo": "2 horas",
+        "velocidade": "400000km/h",
+        "deslocamento": "160m"
+    },
+    {
+        "grau": 14,
+        "pe": 28,
+        "espacos": 18,
+        "dano": "1d4096",
+        "distancia": "16km",
+        "massa": "16T",
+        "tempo": "4 horas",
+        "velocidade": "800000km/h",
+        "deslocamento": "320m"
+    },
+    {
+        "grau": 15,
+        "pe": 31,
+        "espacos": 21,
+        "dano": "1d4096",
+        "distancia": "32km",
+        "massa": "32T",
+        "tempo": "8 horas",
+        "velocidade": "1600000km/h",
+        "deslocamento": "640m"
+    },
+    {
+        "grau": 16,
+        "pe": 34,
+        "espacos": 24,
+        "dano": "1d4096",
+        "distancia": "64km",
+        "massa": "64T",
+        "tempo": "16 horas",
+        "velocidade": "3200000km/h",
+        "deslocamento": "1280m"
+    },
+    {
+        "grau": 17,
+        "pe": 37,
+        "espacos": 27,
+        "dano": "1d4096",
+        "distancia": "128km",
+        "massa": "128T",
+        "tempo": "32 horas",
+        "velocidade": "6400000km/h",
+        "deslocamento": "2560m"
+    },
+    {
+        "grau": 18,
+        "pe": 40,
+        "espacos": 30,
+        "dano": "1d4096",
+        "distancia": "256km",
+        "massa": "256T",
+        "tempo": "64 horas",
+        "velocidade": "12800000km/h",
+        "deslocamento": "5120m"
+    },
+    {
+        "grau": 19,
+        "pe": 43,
+        "espacos": 33,
+        "dano": "1d4096",
+        "distancia": "512km",
+        "massa": "512T",
+        "tempo": "128 horas",
+        "velocidade": "25600000km/h",
+        "deslocamento": "10240m"
+    },
+    {
+        "grau": 20,
+        "pe": 46,
+        "espacos": 36,
+        "dano": "1d4096",
+        "distancia": "1024km",
+        "massa": "1024T",
+        "tempo": "256 horas",
+        "velocidade": "51200000km/h",
+        "deslocamento": "20480m"
+    }
+]
