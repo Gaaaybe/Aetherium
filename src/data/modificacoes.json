@@ -201,8 +201,8 @@
     "id": "dimensional",
     "nome": "Dimensional",
     "tipo": "extra",
-    "custoFixo": 2,
-    "custoPorGrau": 0,
+    "custoFixo": 0,
+    "custoPorGrau": 2,
     "descricao": "Permite que seu efeito afete alvos em outras dimensões. Você geralmente precisará de um sentido especial (como Sentido Remoto Dimensional) para conseguir mirar em alvos que não pode perceber.",
     "requerParametros": true,
     "tipoParametro": "select",
@@ -250,8 +250,8 @@
     "id": "descarga",
     "nome": "Descarga",
     "tipo": "extra",
-    "custoFixo": 2,
-    "custoPorGrau": 0,
+    "custoFixo": 0,
+    "custoPorGrau": 2,
     "descricao": "Aplica-se a efeitos com duração Instantânea que rolam dados (Dano, Recuperação de Dano). Ao ativar, você pode 'descarregar' poder pagando o custo de PE múltiplas vezes em uma única Ação Padrão, multiplicando a quantidade de dados rolados.",
     "requerParametros": true,
     "tipoParametro": "grau",
@@ -327,8 +327,8 @@
     "id": "indireto",
     "nome": "Indireto",
     "tipo": "extra",
-    "custoFixo": 1,
-    "custoPorGrau": 0,
+    "custoFixo": 0,
+    "custoPorGrau": 1,
     "descricao": "Seu ataque se origina de um ponto diferente de onde você está, permitindo ignorar cobertura.",
     "requerParametros": true,
     "tipoParametro": "select",
@@ -627,8 +627,8 @@
     "id": "exige-teste",
     "nome": "Exige Teste",
     "tipo": "falha",
-    "custoFixo": -1,
-    "custoPorGrau": 0,
+    "custoFixo": 0,
+    "custoPorGrau": -1,
     "descricao": "Seu efeito é difícil de controlar e exige um teste de perícia para ser ativado. Toda vez que for usar o efeito, você precisa primeiro passar em um teste de perícia. Se você falhar no teste (ou tirar um 1 natural), você gasta sua ação, mas o efeito não funciona. Este teste de ativação não substitui outros testes que o poder possa exigir.",
     "requerParametros": true,
     "tipoParametro": "select",
@@ -892,24 +892,11 @@
     "observacoes": "Custo gratuito (+0). Para efeitos de Contra-ataque/Deflexão."
   },
   {
-    "id": "enfraquecimento-colateral",
-    "nome": "Enfraquecimento",
-    "tipo": "falha",
-    "custoFixo": 0,
-    "custoPorGrau": 0,
-    "descricao": "Uma ou mais de suas características é diminuída enquanto outras são aumentadas. Esta falha vale tantos pontos quanto a redução na(s) característica(s) afetada(s), use isso como efeito colateral enfraquecimento em si mesmo.",
-    "requerParametros": true,
-    "tipoParametro": "texto",
-    "placeholder": "Descreva qual característica é enfraquecida...",
-    "categoria": "Limitações",
-    "observacoes": "Custo fixo igual aos pontos de Enfraquecer usado em si mesmo."
-  },
-  {
     "id": "estabilizar",
     "nome": "Estabilizar",
     "tipo": "extra",
-    "custoFixo": 1,
-    "custoPorGrau": 0,
+    "custoFixo": 0,
+    "custoPorGrau": 1,
     "descricao": "Você é automaticamente bem-sucedido em testes para estabilizar um personagem morrendo, usando esse efeito.",
     "requerParametros": false,
     "categoria": "Recuperação",
@@ -1056,7 +1043,49 @@
     "descricao": "Você sofre metade do efeito em vez de ser imune a ele. Para efeitos ambientais, você faz testes apenas na metade do tempo e tem +2 vantagens no teste. Para outros efeitos como dano, você sofre metade.",
     "requerParametros": false,
     "categoria": "Imunidade",
-    "observacoes": "Apenas para o efeito Imunidade. Custo: -Metade do custo do efeito (sem as modificações)."
+    "observacoes": "Apenas para o efeito Imunidade. Escolha o patamar correspondente ao patamar do efeito Imunidade.",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Patamar de Imunidade",
+      "opcoes": [
+        {
+          "id": "patamar-1",
+          "nome": "Patamar 1",
+          "modificadorCusto": -1,
+          "descricao": "Envelhecimento, doença, veneno, condições ambientais, etc."
+        },
+        {
+          "id": "patamar-2",
+          "nome": "Patamar 2",
+          "modificadorCusto": -2,
+          "descricao": "Acertos críticos, sufocamento total, descritores incomuns, etc."
+        },
+        {
+          "id": "patamar-3",
+          "nome": "Patamar 3",
+          "modificadorCusto": -3,
+          "descricao": "Efeitos de alteração, aflição sensorial, fadiga, dano específico, etc."
+        },
+        {
+          "id": "patamar-4",
+          "nome": "Patamar 4",
+          "modificadorCusto": -4,
+          "descricao": "Descritores comuns, suporte vital completo, condições extremas, etc."
+        },
+        {
+          "id": "patamar-5",
+          "nome": "Patamar 5",
+          "modificadorCusto": -5,
+          "descricao": "Descritores de poder comuns (impacto, espiritual, etc.)."
+        },
+        {
+          "id": "patamar-total",
+          "nome": "Imunidade Total",
+          "modificadorCusto": -11,
+          "descricao": "Todos os efeitos resistidos por alguma perícia de resistência."
+        }
+      ]
+    }
   },
   {
     "id": "passiva",
