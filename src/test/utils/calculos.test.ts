@@ -15,13 +15,24 @@ function calcularCustoModificacao(
   let custoTotal = mod.custoFixo + (mod.custoPorGrau * grauEfeito)
 
   // Se tem configuração, aplicar o modificador
-  if (configuracao && 'configuracoes' in mod && Array.isArray(mod.configuracoes)) {
-    const config = mod.configuracoes.find(c => 
-      c.opcoes.some((o: any) => o.id === configuracao)
-    )
+  if (configuracao && 'configuracoes' in mod) {
+    const configs = mod.configuracoes
     
-    if (config) {
-      const opcao = config.opcoes.find((o: any) => o.id === configuracao)
+    // Suporta tanto array de configurações (formato antigo) quanto objeto com opcoes (formato novo)
+    if (Array.isArray(configs)) {
+      const config = configs.find(c => 
+        c.opcoes.some((o: any) => o.id === configuracao)
+      )
+      
+      if (config) {
+        const opcao = config.opcoes.find((o: any) => o.id === configuracao)
+        if (opcao) {
+          custoTotal += opcao.modificadorCusto
+        }
+      }
+    } else if (configs && 'opcoes' in configs && Array.isArray(configs.opcoes)) {
+      // Formato novo: configuracoes é um objeto com propriedade opcoes
+      const opcao = configs.opcoes.find((o: any) => o.id === configuracao)
       if (opcao) {
         custoTotal += opcao.modificadorCusto
       }
@@ -33,8 +44,8 @@ function calcularCustoModificacao(
 
 describe('Cálculo de Custo de Modificações', () => {
   it('deve calcular custo por grau corretamente', () => {
-    // Afeta Corpóreo tem +1 por grau
-    const custo = calcularCustoModificacao('afeta-corporeo', 5)
+    // Afeta Intangível tem 0 fixo + 1 por grau
+    const custo = calcularCustoModificacao('afeta-intangivel', 5)
     expect(custo).toBe(5) // 0 fixo + (1 * 5)
   })
 
@@ -66,7 +77,19 @@ describe('Cálculo de Custo de Modificações', () => {
     const falhas = modificacoes.filter(m => m.tipo === 'falha')
     
     falhas.forEach(falha => {
-      const custo = calcularCustoModificacao(falha.id, 5)
+      // Para falhas que requerem configuração, usar a primeira opção disponível
+      let configuracaoParaTestar: string | undefined
+      
+      if ('configuracoes' in falha) {
+        const configs = falha.configuracoes
+        if (Array.isArray(configs) && configs.length > 0) {
+          configuracaoParaTestar = configs[0].opcoes[0]?.id
+        } else if (configs && 'opcoes' in configs && Array.isArray(configs.opcoes) && configs.opcoes.length > 0) {
+          configuracaoParaTestar = configs.opcoes[0].id
+        }
+      }
+      
+      const custo = calcularCustoModificacao(falha.id, 5, configuracaoParaTestar)
       expect(custo).toBeLessThanOrEqual(0)
     })
   })
