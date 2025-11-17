@@ -3,8 +3,8 @@
     "id": "afeta-corporeo",
     "nome": "Afeta Corpóreo",
     "tipo": "extra",
-    "custoFixo": 0,
-    "custoPorGrau": 1,
+    "custoFixo": 1,
+    "custoPorGrau": 0,
     "descricao": "Se você está intangível, este extra permite que seus efeitos afetem o mundo físico. O grau do seu efeito usado contra um alvo físico é limitado pelo grau que você tiver em Afeta Corpóreo.",
     "requerParametros": false,
     "observacoes": "Personagens com poucos graus em Intangibilidade (1 a 3) geralmente não precisam disso para seus efeitos, mas podem usar este extra para poder interagir fisicamente enquanto estão intangíveis.",
@@ -15,11 +15,27 @@
     "nome": "Afeta Intangível",
     "tipo": "extra",
     "custoFixo": 0,
-    "custoPorGrau": 0,
+    "custoPorGrau": 1,
     "descricao": "Permite que seu efeito afete alvos Intangíveis (fantasmas, seres fora de fase etc.).",
-    "requerParametros": true,
-    "tipoParametro": "select",
-    "opcoes": ["Metade da eficiência (+1 Fixo)", "Eficiência total (+2 Fixo)"],
+    "requerParametros": false,
+    "configuracoes":{
+      "tipo":"select",
+      "label":"Nível de eficiência",
+      "opcoes":[
+        {
+          "id":"metade-eficiencia",
+          "nome":"Metade da Eficiência",
+          "modificadorCusto":0,
+          "descricao":"O efeito funciona com metade da sua eficiência contra alvos intangíveis (arredonde para baixo)."
+        },
+        {
+          "id":"grau-total",
+          "nome":"Grau Total",
+          "modificadorCusto":1,
+          "descricao":"O efeito funciona com seu grau total contra alvos intangíveis."
+        }
+      ]
+    },
     "detalhesGrau": "1 Ponto: O efeito funciona com metade da sua eficiência contra alvos intangíveis (arredonde para baixo). 2 Pontos: O efeito funciona com seu grau total contra alvos intangíveis.",
     "categoria": "Interação"
   },
@@ -70,8 +86,8 @@
     "id": "area",
     "nome": "Área",
     "tipo": "extra",
-    "custoFixo": 1,
-    "custoPorGrau": 0,
+    "custoFixo": 0,
+    "custoPorGrau": 1,
     "descricao": "Transforma um efeito de alvo único em um efeito de área. Todos na área têm direito a teste de resistência. Quem passar sofre metade do efeito (para efeitos ligados como Aflição + Dano, sofre metade do dano e não sofre aflição).",
     "requerParametros": true,
     "tipoParametro": "grau",
@@ -156,8 +172,8 @@
     "id": "descritor-variavel",
     "nome": "Descritor Variável",
     "tipo": "extra",
-    "custoFixo": 2,
-    "custoPorGrau": 0,
+    "custoFixo": 0,
+    "custoPorGrau": 2,
     "descricao": "Permite que você mude o descritor do seu efeito (como de fogo para gelo, ou de sônico para elétrico) como uma ação livre.",
     "requerParametros": true,
     "tipoParametro": "select",

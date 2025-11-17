@@ -9,6 +9,9 @@
       "alcance": 1,
       "duracao": 0
     },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Qual condição?",
     "categorias": ["Ataque", "Debuff", "Suporte"],
     "exemplos": "Envenenar, paralisar, queimar"
   },
