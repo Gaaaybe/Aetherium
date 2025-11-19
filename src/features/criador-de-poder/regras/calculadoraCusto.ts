@@ -1,4 +1,5 @@
 import { Efeito, Modificacao, TABELA_UNIVERSAL } from '../../../data';
+import { calcularModificadorParametro } from './escalas';
 
 /**
  * Representa uma Modificação aplicada (com seus parâmetros customizados)
@@ -211,10 +212,11 @@ export function calcularCustoPoder(
   
   // Calcula o modificador GLOBAL de parâmetros (UMA VEZ para o poder inteiro)
   // Modificador = (parâmetros atuais do poder) - (parâmetros padrão do poder)
+  // Usa função que considera custoEquivalente (ex: Permanente = Ativado)
   const modificadorParametrosGlobal = 
-    (poder.acao - parametrosPadraoPoder.acao) +
-    (poder.alcance - parametrosPadraoPoder.alcance) +
-    (poder.duracao - parametrosPadraoPoder.duracao);
+    calcularModificadorParametro(parametrosPadraoPoder.acao, poder.acao, 'acao') +
+    calcularModificadorParametro(parametrosPadraoPoder.alcance, poder.alcance, 'alcance') +
+    calcularModificadorParametro(parametrosPadraoPoder.duracao, poder.duracao, 'duracao');
   
   for (const efeito of poder.efeitos) {
     const efeitoBase = todosEfeitos.find(e => e.id === efeito.efeitoBaseId);
@@ -307,10 +309,11 @@ export function calcularDetalhesPoder(
   const parametrosPadraoPoder = calcularParametrosPadraoPoder(poder.efeitos, todosEfeitos);
   
   // Calcula o modificador GLOBAL de parâmetros (UMA VEZ para o poder inteiro)
+  // Usa função que considera custoEquivalente (ex: Permanente = Ativado)
   const modificadorParametrosGlobal = 
-    (poder.acao - parametrosPadraoPoder.acao) +
-    (poder.alcance - parametrosPadraoPoder.alcance) +
-    (poder.duracao - parametrosPadraoPoder.duracao);
+    calcularModificadorParametro(parametrosPadraoPoder.acao, poder.acao, 'acao') +
+    calcularModificadorParametro(parametrosPadraoPoder.alcance, poder.alcance, 'alcance') +
+    calcularModificadorParametro(parametrosPadraoPoder.duracao, poder.duracao, 'duracao');
   
   const efeitosDetalhados = poder.efeitos.map(efeito => {
     const efeitoBase = todosEfeitos.find(e => e.id === efeito.efeitoBaseId);

@@ -3,7 +3,7 @@ import { Button, Card, CardHeader, CardTitle, CardContent, Badge, Input, Textare
 import { usePoderCalculator } from '../hooks/usePoderCalculator';
 import { useBibliotecaPoderes } from '../hooks/useBibliotecaPoderes';
 import { useKeyboardShortcuts } from '../../../shared/hooks/useKeyboardShortcuts';
-import { ESCALAS } from '../../../data';
+import { ESCALAS, MODIFICACOES } from '../../../data';
 import { SeletorEfeito } from './SeletorEfeito';
 import { CardEfeito } from './CardEfeito';
 import { SeletorModificacao } from './SeletorModificacao';
@@ -349,27 +349,33 @@ export function CriadorDePoder() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
-              {poder.modificacoesGlobais.map((mod) => (
-                <Badge 
-                  key={mod.id} 
-                  variant="info"
-                  className="flex items-center gap-2"
-                >
-                  {mod.modificacaoBaseId}
-                  {mod.grauModificacao && (
-                    <span className="text-xs font-bold">Grau {mod.grauModificacao}</span>
-                  )}
-                  {mod.parametros?.opcao && (
-                    <span className="text-xs opacity-75">({mod.parametros.opcao})</span>
-                  )}
-                  <button
-                    onClick={() => removerModificacaoGlobal(mod.id)}
-                    className="hover:text-red-600"
+              {poder.modificacoesGlobais.map((mod) => {
+                const modBase = MODIFICACOES.find(m => m.id === mod.modificacaoBaseId);
+                return (
+                  <Badge 
+                    key={mod.id} 
+                    variant={modBase?.tipo === 'extra' ? 'success' : 'warning'}
+                    className="flex items-center gap-2"
                   >
-                    ✕
-                  </button>
-                </Badge>
-              ))}
+                    {modBase?.nome || mod.modificacaoBaseId}
+                    {mod.grauModificacao && (
+                      <span className="text-xs font-bold">Grau {mod.grauModificacao}</span>
+                    )}
+                    {mod.parametros?.descricao && (
+                      <span className="text-xs opacity-75">: {mod.parametros.descricao}</span>
+                    )}
+                    {mod.parametros?.opcao && (
+                      <span className="text-xs opacity-75">({mod.parametros.opcao})</span>
+                    )}
+                    <button
+                      onClick={() => removerModificacaoGlobal(mod.id)}
+                      className="hover:text-red-600"
+                    >
+                      ✕
+                    </button>
+                  </Badge>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
