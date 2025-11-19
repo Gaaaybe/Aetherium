@@ -103,7 +103,8 @@
       {
         "valor": 4,
         "nome": "Permanente",
-        "descricao": "O efeito é permanente e não pode ser desativado"
+        "descricao": "O efeito é permanente e não pode ser desativado",
+        "custoEquivalente": 3
       }
     ]
   }
