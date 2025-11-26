@@ -1,6 +1,9 @@
 import { Modal, ModalFooter, Button, Badge, Input, EmptyState } from '../../../shared/ui';
 import { EFEITOS } from '../../../data';
 import { useState, useMemo } from 'react';
+import { useFavoritos, useCustomItems } from '../../../shared/hooks';
+import { FormEfeitoCustomizado } from './FormEfeitoCustomizado';
+import type { Efeito } from '../../../data';
 
 interface SeletorEfeitoProps {
   isOpen: boolean;
@@ -9,18 +12,27 @@ interface SeletorEfeitoProps {
 }
 
 type OrdenacaoTipo = 'nome-asc' | 'nome-desc' | 'custo-asc' | 'custo-desc' | 'relevancia';
-type FiltroCustomTipo = 'todos' | 'com-config' | 'com-input' | 'sem-extras';
+type FiltroCustomTipo = 'todos' | 'com-config' | 'com-input' | 'sem-extras' | 'favoritos';
 
 export function SeletorEfeito({ isOpen, onClose, onAdicionar }: SeletorEfeitoProps) {
+  const { isFavoritoEfeito, toggleFavoritoEfeito } = useFavoritos();
+  const { customEfeitos, addCustomEfeito } = useCustomItems();
   const [busca, setBusca] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('');
   const [ordenacao, setOrdenacao] = useState<OrdenacaoTipo>('relevancia');
   const [filtroCustom, setFiltroCustom] = useState<FiltroCustomTipo>('todos');
   const [custoMinimo, setCustoMinimo] = useState<number>(0);
   const [custoMaximo, setCustoMaximo] = useState<number>(20);
+  const [showFormCustom, setShowFormCustom] = useState(false);
+
+  // Combina efeitos base com customizados
+  const todosEfeitos = useMemo(
+    () => [...EFEITOS, ...customEfeitos],
+    [customEfeitos]
+  );
 
   const efeitosFiltrados = useMemo(() => {
-    const resultado = EFEITOS.filter(efeito => {
+    const resultado = todosEfeitos.filter(efeito => {
       // Busca por nome, descrição ou exemplos
       const matchBusca = busca === '' || 
                          efeito.nome.toLowerCase().includes(busca.toLowerCase()) ||
@@ -41,6 +53,8 @@ export function SeletorEfeito({ isOpen, onClose, onAdicionar }: SeletorEfeitoPro
         matchCustom = !!efeito.requerInput;
       } else if (filtroCustom === 'sem-extras') {
         matchCustom = !efeito.configuracoes && !efeito.requerInput;
+      } else if (filtroCustom === 'favoritos') {
+        matchCustom = isFavoritoEfeito(efeito.id);
       }
       
       return matchBusca && matchCategoria && matchCusto && matchCustom;
@@ -71,7 +85,7 @@ export function SeletorEfeito({ isOpen, onClose, onAdicionar }: SeletorEfeitoPro
     });
 
     return resultado;
-  }, [busca, categoriaFiltro, ordenacao, filtroCustom, custoMinimo, custoMaximo]);
+  }, [todosEfeitos, busca, categoriaFiltro, ordenacao, filtroCustom, custoMinimo, custoMaximo, isFavoritoEfeito]);
 
   // Extrai todas as categorias únicas, ordenadas alfabeticamente
   const categorias = useMemo(() => 
@@ -168,6 +182,13 @@ export function SeletorEfeito({ isOpen, onClose, onAdicionar }: SeletorEfeitoPro
               Todos
             </Button>
             <Button
+              variant={filtroCustom === 'favoritos' ? 'primary' : 'ghost'}
+              size="sm"
+              onClick={() => setFiltroCustom('favoritos')}
+            >
+              ⭐ Favoritos
+            </Button>
+            <Button
               variant={filtroCustom === 'com-config' ? 'primary' : 'ghost'}
               size="sm"
               onClick={() => setFiltroCustom('com-config')}
@@ -262,23 +283,23 @@ export function SeletorEfeito({ isOpen, onClose, onAdicionar }: SeletorEfeitoPro
             {/* Grid de Efeitos */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-2">
               {efeitosFiltrados.map((efeito) => (
-                <button
-                  key={efeito.id}
-                  className="p-4 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-espirito-500 hover:bg-espirito-50 dark:hover:bg-espirito-900/20 transition-colors text-left group"
-                  onClick={() => onAdicionar(efeito.id)}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-espirito-700 dark:group-hover:text-espirito-300">
-                        {efeito.nome}
-                      </h4>
-                      {efeito.configuracoes && (
-                        <span className="text-xs" title="Tem configurações">⚙️</span>
-                      )}
-                      {efeito.requerInput && (
-                        <span className="text-xs" title="Requer input">📝</span>
-                      )}
-                    </div>
+                <div key={efeito.id} className="relative">
+                  <button
+                    className="w-full p-4 pr-12 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-espirito-500 hover:bg-espirito-50 dark:hover:bg-espirito-900/20 transition-colors text-left group"
+                    onClick={() => onAdicionar(efeito.id)}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-espirito-700 dark:group-hover:text-espirito-300">
+                          {efeito.nome}
+                        </h4>
+                        {efeito.configuracoes && (
+                          <span className="text-xs" title="Tem configurações">⚙️</span>
+                        )}
+                        {efeito.requerInput && (
+                          <span className="text-xs" title="Requer input">📝</span>
+                        )}
+                      </div>
                     <Badge variant="espirito" size="sm">
                       {efeito.custoBase} PdA/grau
                     </Badge>
@@ -309,6 +330,22 @@ export function SeletorEfeito({ isOpen, onClose, onAdicionar }: SeletorEfeitoPro
                     </p>
                   )}
                 </button>
+                
+                {/* Botão de favoritar */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavoritoEfeito(efeito.id);
+                  }}
+                  className="absolute top-2 right-2 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  title={isFavoritoEfeito(efeito.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                  aria-label={isFavoritoEfeito(efeito.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                >
+                  <span className="text-xl">
+                    {isFavoritoEfeito(efeito.id) ? '⭐' : '☆'}
+                  </span>
+                </button>
+              </div>
               ))}
             </div>
           </div>
@@ -316,10 +353,23 @@ export function SeletorEfeito({ isOpen, onClose, onAdicionar }: SeletorEfeitoPro
       </div>
 
       <ModalFooter>
+        <Button variant="secondary" onClick={() => setShowFormCustom(true)}>
+          + Criar Efeito Customizado
+        </Button>
         <Button variant="ghost" onClick={onClose}>
-          Cancelar
+          Fechar
         </Button>
       </ModalFooter>
+
+      {/* Modal de criação de efeito customizado */}
+      <FormEfeitoCustomizado
+        isOpen={showFormCustom}
+        onClose={() => setShowFormCustom(false)}
+        onSave={(efeito) => {
+          addCustomEfeito(efeito);
+          setShowFormCustom(false);
+        }}
+      />
     </Modal>
   );
 }

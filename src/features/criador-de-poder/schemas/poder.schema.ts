@@ -49,7 +49,7 @@ export const poderSchema = z.object({
     .max(10, 'Máximo de 10 efeitos por poder'),
   modificacoesGlobais: z.array(modificacaoAplicadaSchema).default([]),
   acao: z.number().int().min(0).max(5),
-  alcance: z.number().int().min(0).max(3),
+  alcance: z.number().int().min(0).max(6),
   duracao: z.number().int().min(0).max(4),
 });
 

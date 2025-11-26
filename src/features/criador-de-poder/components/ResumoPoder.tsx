@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Modal, ModalFooter, Button, Badge, Card, CardContent, toast } from '../../../shared/ui';
 import { Poder } from '../regras/calculadoraCusto';
 import { MODIFICACOES, obterNomeParametro, buscarGrauNaTabela } from '../../../data';
+import { useCustomItems } from '../../../shared/hooks';
 import type { DetalhesPoder } from '../types';
 
 interface ResumoPoderProps {
@@ -11,6 +13,12 @@ interface ResumoPoderProps {
 }
 
 export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderProps) {
+  const { customModificacoes } = useCustomItems();
+  const todasModificacoes = useMemo(
+    () => [...MODIFICACOES, ...customModificacoes],
+    [customModificacoes]
+  );
+  
   const copiarResumo = () => {
     const texto = gerarTextoResumo();
     navigator.clipboard.writeText(texto);
@@ -45,7 +53,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
       // Modificações locais
       if (ef.efeito.modificacoesLocais.length > 0) {
         const mods = ef.efeito.modificacoesLocais.map((mod: any) => {
-          const modBase = MODIFICACOES.find(m => m.id === mod.modificacaoBaseId);
+          const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
           let modTexto = modBase?.nome || mod.modificacaoBaseId;
           
           if (mod.grauModificacao && mod.grauModificacao > 1) {
@@ -79,7 +87,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
     // Modificações globais
     if (poder.modificacoesGlobais.length > 0) {
       const modsGlobais = poder.modificacoesGlobais.map(mod => {
-        const modBase = MODIFICACOES.find(m => m.id === mod.modificacaoBaseId);
+        const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
         let modTexto = modBase?.nome || mod.modificacaoBaseId;
         
         if (mod.grauModificacao && mod.grauModificacao > 1) {
@@ -125,7 +133,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
     if (poder.modificacoesGlobais.length > 0) {
       texto += `MODIFICAÇÕES GLOBAIS:\n`;
       poder.modificacoesGlobais.forEach(mod => {
-        const modBase = MODIFICACOES.find(m => m.id === mod.modificacaoBaseId);
+        const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
         let linha = `- ${modBase?.nome || mod.modificacaoBaseId}`;
         if (mod.grauModificacao) {
           linha += ` (Grau ${mod.grauModificacao})`;
@@ -179,7 +187,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
       if (ef.efeito.modificacoesLocais.length > 0) {
         texto += `  Modificações:\n`;
         ef.efeito.modificacoesLocais.forEach((mod: any) => {
-          const modBase = MODIFICACOES.find(m => m.id === mod.modificacaoBaseId);
+          const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
           let linha = `    - ${modBase?.nome || mod.modificacaoBaseId}`;
           if (mod.grauModificacao) {
             linha += ` (Grau ${mod.grauModificacao})`;
@@ -272,7 +280,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
             </div>
             <div className="flex flex-wrap gap-2">
               {poder.modificacoesGlobais.map((mod) => {
-                const modBase = MODIFICACOES.find(m => m.id === mod.modificacaoBaseId);
+                const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
                 return (
                   <Badge key={mod.id} variant="info" size="lg">
                     ✨ {modBase?.nome || mod.modificacaoBaseId}
@@ -492,7 +500,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">🔧 Modificações:</p>
                       <div className="flex flex-wrap gap-2">
                         {ef.efeito.modificacoesLocais.map((mod: any) => {
-                          const modBase = MODIFICACOES.find(m => m.id === mod.modificacaoBaseId);
+                          const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
                           const isExtra = modBase?.tipo === 'extra';
                           return (
                             <Badge 

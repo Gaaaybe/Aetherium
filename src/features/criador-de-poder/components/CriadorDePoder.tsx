@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button, Card, CardHeader, CardTitle, CardContent, Badge, Input, Textarea, Select, toast, HelpIcon, Tooltip, ConfirmDialog, InlineHelp, EmptyState } from '../../../shared/ui';
 import { usePoderCalculator } from '../hooks/usePoderCalculator';
 import { usePoderValidation } from '../hooks/usePoderValidation';
 import { useBibliotecaPoderes } from '../hooks/useBibliotecaPoderes';
-import { useKeyboardShortcuts } from '../../../shared/hooks';
+import { useKeyboardShortcuts, useCustomItems } from '../../../shared/hooks';
 import { ESCALAS, MODIFICACOES } from '../../../data';
 import { SeletorEfeito } from './SeletorEfeito';
 import { CardEfeito } from './CardEfeito';
@@ -12,6 +12,12 @@ import { ResumoPoder } from './ResumoPoder';
 import { ModalAtalhos } from './ModalAtalhos';
 
 export function CriadorDePoder() {
+  const { customModificacoes } = useCustomItems();
+  const todasModificacoes = useMemo(
+    () => [...MODIFICACOES, ...customModificacoes],
+    [customModificacoes]
+  );
+  
   const {
     poder,
     detalhes,
@@ -362,7 +368,7 @@ export function CriadorDePoder() {
           <CardContent>
             <div className="flex flex-wrap gap-2">
               {poder.modificacoesGlobais.map((mod) => {
-                const modBase = MODIFICACOES.find(m => m.id === mod.modificacaoBaseId);
+                const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
                 return (
                   <Badge 
                     key={mod.id} 

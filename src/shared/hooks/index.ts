@@ -10,3 +10,5 @@ export { useMediaQuery, useIsTouchDevice } from './useMediaQuery';
 export { useMetaTags } from './useMetaTags';
 export { useScrollToTop } from './useScrollToTop';
 export { useSwipeToDismiss } from './useSwipeToDismiss';
+export { useFavoritos } from './useFavoritos';
+export { useCustomItems } from './useCustomItems';

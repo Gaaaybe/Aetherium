@@ -1,6 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Button, Slider, Select, Input } from '../../../shared/ui';
 import { MODIFICACOES, buscarGrauNaTabela } from '../../../data';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useCustomItems } from '../../../shared/hooks';
 import { SeletorModificacao } from './SeletorModificacao';
 import type { EfeitoDetalhado } from '../types';
 
@@ -23,6 +24,12 @@ export function CardEfeito({
   onAtualizarInputCustomizado,
   onAtualizarConfiguracao,
 }: CardEfeitoProps) {
+  const { customModificacoes } = useCustomItems();
+  const todasModificacoes = useMemo(
+    () => [...MODIFICACOES, ...customModificacoes],
+    [customModificacoes]
+  );
+  
   const { efeito, efeitoBase, custoPorGrau, custoFixo, custoTotal } = efeitoDetalhado;
   const [modalModificacao, setModalModificacao] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -70,7 +77,7 @@ export function CardEfeito({
                   {!isExpanded && efeito.modificacoesLocais.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {efeito.modificacoesLocais.map((mod: any) => {
-                        const modBase = MODIFICACOES.find(m => m.id === mod.modificacaoBaseId);
+                        const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
                         return (
                           <Badge 
                             key={mod.id}
@@ -244,7 +251,7 @@ export function CardEfeito({
               </p>
               <div className="flex flex-wrap gap-2">
                 {efeito.modificacoesLocais.map((mod: any) => {
-                  const modBase = MODIFICACOES.find(m => m.id === mod.modificacaoBaseId);
+                  const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
                   return (
                     <Badge 
                       key={mod.id}

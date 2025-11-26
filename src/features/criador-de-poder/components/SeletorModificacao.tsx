@@ -1,6 +1,9 @@
 import { Modal, ModalFooter, Button, Badge, Input, Textarea, Select, Slider, InlineHelp, EmptyState } from '../../../shared/ui';
 import { MODIFICACOES } from '../../../data';
 import { useState, useMemo } from 'react';
+import { useFavoritos, useCustomItems } from '../../../shared/hooks';
+import { FormModificacaoCustomizada } from './FormModificacaoCustomizada';
+import type { Modificacao } from '../../../data';
 
 interface SeletorModificacaoProps {
   isOpen: boolean;
@@ -17,30 +20,41 @@ export function SeletorModificacao({
   onSelecionar,
   titulo = "Selecionar Modificação" 
 }: SeletorModificacaoProps) {
+  const { isFavoritoModificacao, toggleFavoritoModificacao } = useFavoritos();
+  const { customModificacoes, addCustomModificacao } = useCustomItems();
   const [busca, setBusca] = useState('');
   const [tipoFiltro, setTipoFiltro] = useState<string>('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>('');
+  const [favoritosOnly, setFavoritosOnly] = useState(false);
   const [ordenacao, setOrdenacao] = useState<OrdenacaoTipo>('nome-asc');
   const [modSelecionada, setModSelecionada] = useState<string | null>(null);
   const [parametros, setParametros] = useState<Record<string, string | number>>({});
   const [configuracaoSelecionada, setConfiguracaoSelecionada] = useState<string>('');
+  const [showFormCustom, setShowFormCustom] = useState(false);
+
+  // Combina modificações base com customizadas
+  const todasModificacoes = useMemo(
+    () => [...MODIFICACOES, ...customModificacoes],
+    [customModificacoes]
+  );
 
   // Categorias únicas
   const categorias = useMemo(() => {
-    const cats = new Set(MODIFICACOES.map(m => m.categoria));
+    const cats = new Set(todasModificacoes.map(m => m.categoria));
     return Array.from(cats).sort();
-  }, []);
+  }, [todasModificacoes]);
 
   // Filtrar e ordenar modificações
   const modificacoesFiltradas = useMemo(() => {
-    const resultado = MODIFICACOES.filter(mod => {
+    const resultado = todasModificacoes.filter(mod => {
       const matchBusca = busca === '' ||
                          mod.nome.toLowerCase().includes(busca.toLowerCase()) ||
                          mod.descricao.toLowerCase().includes(busca.toLowerCase()) ||
                          (mod.categoria && mod.categoria.toLowerCase().includes(busca.toLowerCase()));
       const matchTipo = !tipoFiltro || mod.tipo === tipoFiltro;
       const matchCategoria = !categoriaFiltro || mod.categoria === categoriaFiltro;
-      return matchBusca && matchTipo && matchCategoria;
+      const matchFavorito = !favoritosOnly || isFavoritoModificacao(mod.id);
+      return matchBusca && matchTipo && matchCategoria && matchFavorito;
     });
 
     // Ordenar
@@ -62,9 +76,9 @@ export function SeletorModificacao({
     });
 
     return resultado;
-  }, [busca, tipoFiltro, categoriaFiltro, ordenacao]);
+  }, [todasModificacoes, busca, tipoFiltro, categoriaFiltro, ordenacao, favoritosOnly, isFavoritoModificacao]);
 
-  const modBase = modSelecionada ? MODIFICACOES.find(m => m.id === modSelecionada) : null;
+  const modBase = modSelecionada ? todasModificacoes.find(m => m.id === modSelecionada) : null;
 
   const limparFiltros = () => {
     setBusca('');
@@ -171,6 +185,21 @@ export function SeletorModificacao({
                   </Button>
                 </div>
               </div>
+              
+              {/* Filtro de Favoritos */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Filtros
+                </label>
+                <Button
+                  variant={favoritosOnly ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setFavoritosOnly(!favoritosOnly)}
+                  fullWidth
+                >
+                  ⭐ {favoritosOnly ? 'Mostrar Todas' : 'Apenas Favoritos'}
+                </Button>
+              </div>
 
               {/* Filtro de Categoria */}
               <div>
@@ -221,54 +250,70 @@ export function SeletorModificacao({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto">
                 {modificacoesFiltradas.map((mod) => (
-                  <button
-                    key={mod.id}
-                    className={`p-4 border-2 rounded-lg transition-colors text-left group ${
-                      mod.tipo === 'extra'
-                        ? 'border-green-200 dark:border-green-800 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20'
-                        : 'border-orange-200 dark:border-orange-800 hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20'
-                    }`}
-                    onClick={() => setModSelecionada(mod.id)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-espirito-700 dark:group-hover:text-espirito-300">
-                          {mod.nome}
-                        </h4>
-                        {mod.configuracoes && (
-                          <span className="text-xs" title="Tem configurações">⚙️</span>
-                        )}
-                        {mod.requerParametros && (
-                          <span className="text-xs" title="Requer parâmetros">📝</span>
-                        )}
+                  <div key={mod.id} className="relative">
+                    <button
+                      className={`w-full p-4 pr-12 border-2 rounded-lg transition-colors text-left group ${
+                        mod.tipo === 'extra'
+                          ? 'border-green-200 dark:border-green-800 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20'
+                          : 'border-orange-200 dark:border-orange-800 hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                      }`}
+                      onClick={() => setModSelecionada(mod.id)}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-espirito-700 dark:group-hover:text-espirito-300">
+                            {mod.nome}
+                          </h4>
+                          {mod.configuracoes && (
+                            <span className="text-xs" title="Tem configurações">⚙️</span>
+                          )}
+                          {mod.requerParametros && (
+                            <span className="text-xs" title="Requer parâmetros">📝</span>
+                          )}
+                        </div>
+                        <Badge variant={mod.tipo === 'extra' ? 'success' : 'warning'} size="sm">
+                          {mod.tipo === 'extra' ? '✨' : '⚠️'}
+                        </Badge>
                       </div>
-                      <Badge variant={mod.tipo === 'extra' ? 'success' : 'warning'} size="sm">
-                        {mod.tipo === 'extra' ? '✨' : '⚠️'}
-                      </Badge>
-                    </div>
-                    
-                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
-                      {mod.descricao}
-                    </p>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-wrap gap-2 text-xs">
-                        {mod.custoFixo !== 0 && (
-                          <span className={`font-semibold ${mod.custoFixo > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                            {mod.custoFixo > 0 ? '+' : ''}{mod.custoFixo} fixo
-                          </span>
-                        )}
-                        {mod.custoPorGrau !== 0 && (
-                          <span className={`font-semibold ${mod.custoPorGrau > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                            {mod.custoPorGrau > 0 ? '+' : ''}{mod.custoPorGrau}/grau
-                          </span>
-                        )}
+                      
+                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                        {mod.descricao}
+                      </p>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          {mod.custoFixo !== 0 && (
+                            <span className={`font-semibold ${mod.custoFixo > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                              {mod.custoFixo > 0 ? '+' : ''}{mod.custoFixo} fixo
+                            </span>
+                          )}
+                          {mod.custoPorGrau !== 0 && (
+                            <span className={`font-semibold ${mod.custoPorGrau > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                              {mod.custoPorGrau > 0 ? '+' : ''}{mod.custoPorGrau}/grau
+                            </span>
+                          )}
+                        </div>
+                        <Badge variant="secondary" size="sm">
+                          {mod.categoria}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" size="sm">
-                        {mod.categoria}
-                      </Badge>
-                    </div>
-                  </button>
+                    </button>
+                    
+                    {/* Botão de favoritar */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavoritoModificacao(mod.id);
+                      }}
+                      className="absolute top-2 right-2 p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      title={isFavoritoModificacao(mod.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                      aria-label={isFavoritoModificacao(mod.id) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+                    >
+                      <span className="text-xl">
+                        {isFavoritoModificacao(mod.id) ? '⭐' : '☆'}
+                      </span>
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -527,10 +572,23 @@ export function SeletorModificacao({
       </div>
 
       <ModalFooter>
+        <Button variant="secondary" onClick={() => setShowFormCustom(true)}>
+          + Criar Modificação Customizada
+        </Button>
         <Button variant="ghost" onClick={onClose}>
-          Cancelar
+          Fechar
         </Button>
       </ModalFooter>
+
+      {/* Modal de criação de modificação customizada */}
+      <FormModificacaoCustomizada
+        isOpen={showFormCustom}
+        onClose={() => setShowFormCustom(false)}
+        onSave={(modificacao) => {
+          addCustomModificacao(modificacao);
+          setShowFormCustom(false);
+        }}
+      />
     </Modal>
   );
 }

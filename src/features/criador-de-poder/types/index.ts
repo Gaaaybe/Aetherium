@@ -13,7 +13,9 @@ import type { EfeitoAplicado, Poder } from '../regras/calculadoraCusto';
 
 // Re-exporta tipos de configuração do data/index.ts
 export type {
-  ConfiguracaoEfeito as OpcaoConfiguracao
+  ConfiguracaoEfeito as OpcaoConfiguracao,
+  Efeito,
+  Modificacao
 } from '../../../data';
 
 // ============= TIPOS DE BIBLIOTECA =============

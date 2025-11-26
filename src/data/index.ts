@@ -38,6 +38,7 @@ export interface Efeito {
     label: string;
     opcoes: ConfiguracaoEfeito[];
   };
+  custom?: boolean; // Marca se é um efeito customizado pelo usuário
 }
 
 export interface Modificacao {
@@ -63,6 +64,7 @@ export interface Modificacao {
     label: string;
     opcoes: ConfiguracaoEfeito[];
   };
+  custom?: boolean; // Marca se é uma modificação customizada pelo usuário
 }
 
 export interface TabelaUniversalItem {
