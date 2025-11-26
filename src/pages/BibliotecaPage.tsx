@@ -70,7 +70,7 @@ export function BibliotecaPage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-    } catch (_error) {
+    } catch {
       toast.error('Erro ao importar arquivo. Verifique se é um JSON válido.');
     } finally {
       setImportando(false);
@@ -99,7 +99,7 @@ export function BibliotecaPage() {
       await new Promise(resolve => setTimeout(resolve, 400));
       const poderImportado = importarPoder(text);
       toast.success(`Poder "${poderImportado.nome}" importado com sucesso!`);
-    } catch (_error) {
+    } catch {
       toast.error('Erro ao importar arquivo. Verifique se é um JSON válido.');
     } finally {
       setImportando(false);

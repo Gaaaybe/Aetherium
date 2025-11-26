@@ -1,11 +1,10 @@
-import './App.css';
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
-import { useDarkMode } from './shared/hooks/useDarkMode';
-import { useFirstVisit } from './shared/hooks/useFirstVisit';
+import { useDarkMode, useFirstVisit, useScrollToTop, useMetaTags } from './shared/hooks';
 import { Button, ToastContainer } from './shared/ui';
 import { CriadorPage, BibliotecaPage, SobrePage } from './pages';
 import { ModalAtalhos } from './features/criador-de-poder/components/ModalAtalhos';
+import { PageTransition, Breadcrumbs } from './shared/components';
 
 function Navigation() {
   return (
@@ -54,6 +53,10 @@ function AppContent() {
   const { isDark, toggle } = useDarkMode();
   const [mostrarAtalhos, setMostrarAtalhos] = useState(false);
   const [isFirstVisit, markAsVisited] = useFirstVisit('atalhos-visto');
+  
+  // Routing enhancements
+  useScrollToTop();
+  useMetaTags();
 
   const abrirAtalhos = () => {
     setMostrarAtalhos(true);
@@ -110,11 +113,14 @@ function AppContent() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <Routes>
-          <Route path="/" element={<CriadorPage />} />
-          <Route path="/biblioteca" element={<BibliotecaPage />} />
-          <Route path="/sobre" element={<SobrePage />} />
-        </Routes>
+        <Breadcrumbs />
+        <PageTransition>
+          <Routes>
+            <Route path="/" element={<CriadorPage />} />
+            <Route path="/biblioteca" element={<BibliotecaPage />} />
+            <Route path="/sobre" element={<SobrePage />} />
+          </Routes>
+        </PageTransition>
       </main>
 
       {/* Footer com créditos */}

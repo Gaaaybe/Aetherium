@@ -93,6 +93,14 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
           modTexto += ` ${custoMod > 0 ? '+' : ''}${custoMod}`;
         }
         
+        if (mod.parametros?.descricao) {
+          modTexto += ` (${mod.parametros.descricao})`;
+        }
+        
+        if (mod.parametros?.opcao) {
+          modTexto += ` [${mod.parametros.opcao}]`;
+        }
+        
         return modTexto;
       }).join(', ');
       

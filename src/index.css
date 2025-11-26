@@ -18,12 +18,12 @@
   }
 
   #root {
-    @apply m-0 p-0;
+    @apply m-0 p-0 max-w-full;
   }
 }
 
 @layer components {
-  /* Estilos do Slider */
+  /* Estilos do Slider customizado */
   .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -56,51 +56,5 @@
   .slider::-moz-range-thumb:hover {
     background: #2563eb;
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-  }
-
-  /* Animação de Toast */
-  @keyframes slide-in {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  .animate-slide-in {
-    animation: slide-in 0.3s ease-out;
-  }
-
-  /* Animação de Bottom Sheet */
-  @keyframes slide-up {
-    from {
-      transform: translateY(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  .animate-slide-up {
-    animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* Animação de Fade In */
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  .animate-fade-in {
-    animation: fade-in 0.2s ease-out;
   }
 }

@@ -3,15 +3,13 @@ import { Button, Card, CardHeader, CardTitle, CardContent, Badge, Input, Textare
 import { usePoderCalculator } from '../hooks/usePoderCalculator';
 import { usePoderValidation } from '../hooks/usePoderValidation';
 import { useBibliotecaPoderes } from '../hooks/useBibliotecaPoderes';
-import { useKeyboardShortcuts } from '../../../shared/hooks/useKeyboardShortcuts';
+import { useKeyboardShortcuts } from '../../../shared/hooks';
 import { ESCALAS, MODIFICACOES } from '../../../data';
 import { SeletorEfeito } from './SeletorEfeito';
 import { CardEfeito } from './CardEfeito';
 import { SeletorModificacao } from './SeletorModificacao';
 import { ResumoPoder } from './ResumoPoder';
-import { BibliotecaPoderes } from './BibliotecaPoderes';
 import { ModalAtalhos } from './ModalAtalhos';
-import { Poder } from '../regras/calculadoraCusto';
 
 export function CriadorDePoder() {
   const {
@@ -29,7 +27,6 @@ export function CriadorDePoder() {
     removerModificacaoGlobal,
     atualizarInfoPoder,
     resetarPoder,
-    carregarPoder,
   } = usePoderCalculator();
 
   const { salvarPoder, buscarPoder } = useBibliotecaPoderes();
@@ -38,7 +35,6 @@ export function CriadorDePoder() {
   const [modalSeletorEfeito, setModalSeletorEfeito] = useState(false);
   const [modalSeletorModificacao, setModalSeletorModificacao] = useState(false);
   const [modalResumoAberto, setModalResumoAberto] = useState(false);
-  const [modalBiblioteca, setModalBiblioteca] = useState(false);
   const [modalConfirmarReset, setModalConfirmarReset] = useState(false);
   const [mostrarAtalhos, setMostrarAtalhos] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -119,12 +115,6 @@ export function CriadorDePoder() {
       ctrl: true,
       callback: handleResetar,
       description: 'Novo poder'
-    },
-    {
-      key: 'b',
-      ctrl: true,
-      callback: () => setModalBiblioteca(true),
-      description: 'Abrir biblioteca'
     },
     {
       key: 'e',
@@ -320,11 +310,6 @@ export function CriadorDePoder() {
               
               {/* Botões - Grid em mobile, flex em desktop */}
               <div className="grid grid-cols-2 sm:flex gap-2">
-                <Tooltip content="Acessar biblioteca de poderes salvos">
-                  <Button variant="outline" size="sm" onClick={() => setModalBiblioteca(true)} aria-label="Abrir biblioteca de poderes" className="w-full sm:w-auto">
-                    📚<span className="hidden sm:inline ml-1">Biblioteca</span>
-                  </Button>
-                </Tooltip>
                 {poder.efeitos.length > 0 && (
                   <>
                     <Tooltip content="Salvar poder na biblioteca local">
@@ -446,11 +431,6 @@ export function CriadorDePoder() {
               onClick: () => setModalSeletorEfeito(true),
               icon: '✨'
             }}
-            secondaryAction={{
-              label: 'Ver Biblioteca',
-              onClick: () => setModalBiblioteca(true),
-              icon: '📚'
-            }}
             tips={[
               'Use Ctrl+E para adicionar efeitos rapidamente',
               'Combine múltiplos efeitos para criar poderes únicos',
@@ -522,12 +502,6 @@ export function CriadorDePoder() {
         onClose={() => setModalResumoAberto(false)}
         poder={poder}
         detalhes={detalhes}
-      />
-
-      <BibliotecaPoderes
-        isOpen={modalBiblioteca}
-        onClose={() => setModalBiblioteca(false)}
-        onCarregar={(poderCarregado: Poder) => carregarPoder(poderCarregado)}
       />
 
       <ConfirmDialog

@@ -1,10 +1,6 @@
-import { useLocalStorage } from '../../../shared/hooks/useLocalStorage';
+import { useLocalStorage } from '../../../shared/hooks';
 import { Poder } from '../regras/calculadoraCusto';
-
-interface PoderSalvo extends Poder {
-  dataCriacao: string;
-  dataModificacao: string;
-}
+import type { PoderSalvo } from '../types';
 
 export function useBibliotecaPoderes() {
   const [poderes, setPoderes] = useLocalStorage<PoderSalvo[]>('biblioteca-poderes', []);

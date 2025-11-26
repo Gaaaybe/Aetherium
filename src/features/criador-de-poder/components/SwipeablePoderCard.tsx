@@ -1,14 +1,6 @@
 import { Card, CardContent, Badge, Button } from '../../../shared/ui';
-import { useSwipeToDismiss } from '../../../shared/hooks/useSwipeToDismiss';
-import { useIsTouchDevice } from '../../../shared/hooks/useMediaQuery';
-
-interface PoderSalvo {
-  id: string;
-  nome: string;
-  descricao?: string;
-  efeitos: any[];
-  dataCriacao: string;
-}
+import { useSwipeToDismiss, useIsTouchDevice } from '../../../shared/hooks';
+import type { PoderSalvo } from '../types';
 
 interface SwipeablePoderCardProps {
   poder: PoderSalvo;

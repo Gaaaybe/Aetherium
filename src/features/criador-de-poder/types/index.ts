@@ -9,39 +9,21 @@ export type {
   Poder
 } from '../regras/calculadoraCusto';
 
-import type { EfeitoAplicado } from '../regras/calculadoraCusto';
+import type { EfeitoAplicado, Poder } from '../regras/calculadoraCusto';
+
+// Re-exporta tipos de configuração do data/index.ts
+export type {
+  ConfiguracaoEfeito as OpcaoConfiguracao
+} from '../../../data';
+
+// ============= TIPOS DE BIBLIOTECA =============
+
+export interface PoderSalvo extends Poder {
+  dataCriacao: string;
+  dataModificacao: string;
+}
 
 // ============= TIPOS BASE =============
-
-export interface Modificacao {
-  id: string;
-  nome: string;
-  tipo: 'extra' | 'falha';
-  custoFixo: number;
-  custoPorGrau: number;
-  descricao: string;
-  requerParametros: boolean;
-  categoria: string;
-  observacoes?: string;
-  tipoParametro?: 'texto' | 'numero' | 'select';
-  placeholder?: string;
-  opcoes?: string[];
-  configuracoes?: ConfiguracaoModificacao[];
-}
-
-export interface ConfiguracaoModificacao {
-  tipo: string;
-  label: string;
-  opcoes: OpcaoConfiguracao[];
-}
-
-export interface OpcaoConfiguracao {
-  id: string;
-  nome: string;
-  modificadorCusto: number;
-  descricao: string;
-  grauMinimo?: number;
-}
 
 export interface EfeitoBase {
   id: string;
@@ -65,7 +47,7 @@ export interface EfeitoBase {
   configuracoes?: {
     tipo: string;
     label: string;
-    opcoes: OpcaoConfiguracao[];
+    opcoes: ConfiguracaoEfeito[];
   };
 }
 

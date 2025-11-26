@@ -44,9 +44,10 @@ function calcularCustoModificacao(
 
 describe('Cálculo de Custo de Modificações', () => {
   it('deve calcular custo por grau corretamente', () => {
-    // Afeta Intangível tem 0 fixo + 1 por grau
+    // Afeta Intangível tem custoFixo: 1 e custoPorGrau: 0
+    // Com grau 5: custo = 1 + (0 * 5) = 1
     const custo = calcularCustoModificacao('afeta-intangivel', 5)
-    expect(custo).toBe(5) // 0 fixo + (1 * 5)
+    expect(custo).toBe(1) // 1 fixo + (0 * 5)
   })
 
   it('deve calcular custo com configuração corretamente', () => {

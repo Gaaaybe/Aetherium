@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { EFEITOS, MODIFICACOES } from '../../../data';
 import { 
   Poder, 
@@ -82,6 +82,8 @@ export function usePoderCalculator() {
   };
 
   const [poder, setPoder] = useState<Poder>(carregarPoderSalvo);
+  // Flag para evitar auto-update de parâmetros ao carregar poder existente
+  const isCarregandoPoder = useRef(false);
 
   // Auto-save: Salva o poder no localStorage sempre que ele mudar
   useEffect(() => {
@@ -101,6 +103,12 @@ export function usePoderCalculator() {
   // REGRA: Parâmetros do poder = pior (menor) parâmetro entre TODOS os efeitos
   // Esses valores podem ser modificados manualmente pelo usuário depois
   useEffect(() => {
+    // Não atualiza parâmetros se estamos carregando um poder existente
+    if (isCarregandoPoder.current) {
+      isCarregandoPoder.current = false;
+      return;
+    }
+
     if (poder.efeitos.length === 0) {
       // Sem efeitos, reseta para valores padrão
       setPoder(prev => ({
@@ -291,6 +299,7 @@ export function usePoderCalculator() {
 
   // Carrega um poder existente
   const carregarPoder = (poderParaCarregar: Poder) => {
+    isCarregandoPoder.current = true;
     setPoder(poderParaCarregar);
   };
 
