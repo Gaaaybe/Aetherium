@@ -890,6 +890,10 @@
       "alcance": 2,
       "duracao": 2
     },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Poder alvo e manipulação",
+    "placeholderInput": "Ex: Adicionar Falha X, Remover Extra Y",
     "categorias": ["Controle"],
     "exemplos": "Hack de poderes, manipulação arcana, reescrita de efeitos, sabotagem mística"
   },

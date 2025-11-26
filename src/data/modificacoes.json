@@ -3,8 +3,8 @@
     "id": "afeta-corporeo",
     "nome": "Afeta Corpóreo",
     "tipo": "extra",
-    "custoFixo": 1,
-    "custoPorGrau": 0,
+    "custoFixo": 0,
+    "custoPorGrau": 1,
     "descricao": "Se você está intangível, este extra permite que seus efeitos afetem o mundo físico. O grau do seu efeito usado contra um alvo físico é limitado pelo grau que você tiver em Afeta Corpóreo.",
     "requerParametros": false,
     "observacoes": "Personagens com poucos graus em Intangibilidade (1 a 3) geralmente não precisam disso para seus efeitos, mas podem usar este extra para poder interagir fisicamente enquanto estão intangíveis.",
@@ -14,8 +14,8 @@
     "id": "afeta-intangivel",
     "nome": "Afeta Intangível",
     "tipo": "extra",
-    "custoFixo": 0,
-    "custoPorGrau": 1,
+    "custoFixo": 1,
+    "custoPorGrau": 0,
     "descricao": "Permite que seu efeito afete alvos Intangíveis (fantasmas, seres fora de fase etc.).",
     "requerParametros": false,
     "configuracoes":{
@@ -44,22 +44,58 @@
     "nome": "Afeta Objetos",
     "tipo": "extra",
     "custoFixo": 0,
-    "custoPorGrau": 1,
+    "custoPorGrau": 0,
     "descricao": "Permite que um efeito que normalmente só afeta criaturas (como Cura ou Enfraquecer) funcione também em objetos inanimados. Objetos não têm direito a testes de resistência e são afetados automaticamente.",
     "requerParametros": false,
     "observacoes": "Custo Alternativo: Se o seu efeito afeta apenas objetos e não criaturas, este extra tem custo +0.",
-    "categoria": "Alvos"
+    "categoria": "Alvos",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Tipo de Objeto",
+      "opcoes": [
+        {
+          "id": "inanimado",
+          "nome": "Inanimado",
+          "modificadorCusto": 0,
+          "descricao": "Afeta apenas objetos inanimados."
+        },
+        {
+          "id": "animado",
+          "nome": "Animado",
+          "modificadorCusto": 1,
+          "descricao": "Afeta objetos animados ou semi-animados."
+        }
+      ]
+    }
   },
   {
     "id": "afeta-outros",
     "nome": "Afeta Outros",
     "tipo": "extra",
     "custoFixo": 0,
-    "custoPorGrau": 1,
+    "custoPorGrau": 0,
     "descricao": "Permite que você compartilhe um poder de alcance Pessoal com outra pessoa. Você precisa tocar o alvo (uma ação padrão) para ativar o efeito. O alvo pode controlar o poder, mas você pode cancelá-lo a qualquer momento (ação livre). Esse efeito vale para o poder como um todo.",
     "requerParametros": false,
     "observacoes": "Custo Alternativo: Se o poder só pode ser usado nos outros e nunca em você mesmo, este extra tem custo +0.",
-    "categoria": "Alvos"
+    "categoria": "Alvos",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Tipo de Alvo",
+      "opcoes": [
+        {
+          "id": "apenas-outro",
+          "nome": "Outro Indivíduo",
+          "modificadorCusto": 0,
+          "descricao": "Afeta apenas outro indivíduo."
+        },
+        {
+          "id": "tambem-outro",
+          "nome": "Indivíduos",
+          "modificadorCusto": 1,
+          "descricao": "afeta voce e outros individuos."
+        }
+      ]
+    }
   },
   {
     "id": "corpo-a-corpo-estendido",
@@ -67,8 +103,11 @@
     "tipo": "extra",
     "custoFixo": 0,
     "custoPorGrau": 1,
+    "grauMinimo": 1,
+    "grauMaximo": 5,
+    "requerParametros": true,
+    "tipoParametro": "grau",
     "descricao": "Aumenta o alcance de um efeito Corpo-a-corpo. Cada ponto neste extra aumenta seu alcance em 1,5 metros. É ideal para representar o alcance de armas como chicotes, lanças ou tentáculos.",
-    "requerParametros": false,
     "categoria": "Alcance e Área"
   },
   {
@@ -77,8 +116,11 @@
     "tipo": "extra",
     "custoFixo": 0,
     "custoPorGrau": 1,
+    "grauMinimo": 1,
+    "grauMaximo": 5,
     "descricao": "Dobra as distâncias base (em negrito) de um efeito de Alcance (À Distância) para cada ponto gasto.",
-    "requerParametros": false,
+    "requerParametros": true,
+    "tipoParametro": "grau",
     "observacoes": "Normal: Curto (grau x 3m), Médio (grau x 6m), Longo (grau x 9m). Com 1 Ponto: Curto (grau x 6m), Médio (grau x 12m), Longo (grau x 18m). O Mestre pode limitar o alcance máximo pela linha do horizonte (cerca de 6 km).",
     "categoria": "Alcance e Área"
   },
@@ -140,8 +182,11 @@
     "tipo": "extra",
     "custoFixo": 0,
     "custoPorGrau": 1,
+    "grauMinimo": 1,
+    "grauMaximo": 10,
+    "requerParametros": true,
+    "tipoParametro": "grau",
     "descricao": "Aumenta a quantidade de peso que você pode levar consigo ao usar efeitos de movimento. Cada grau neste extra aumenta em +1 o grau de massa que você pode carregar.",
-    "requerParametros": false,
     "observacoes": "Exemplo: Com Aumentar Massa 3 em seu Teleporte, você poderia levar até 4g extras com você (Lembrando que sua força também impacta nisso de acordo com o mestre).",
     "categoria": "Movimento"
   },
@@ -150,7 +195,7 @@
     "nome": "Característica",
     "tipo": "extra",
     "custoFixo": 0,
-    "custoPorGrau": 1,
+    "custoPorGrau": 2,
     "descricao": "Adiciona uma pequena habilidade ou benefício (uma Característica) diretamente a um efeito. A chave é que o benefício deve ser um efeito de jogo real, e não apenas uma consequência do descritor do poder.",
     "requerParametros": true,
     "tipoParametro": "texto",
