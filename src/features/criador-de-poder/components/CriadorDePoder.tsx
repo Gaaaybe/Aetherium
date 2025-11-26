@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, Card, CardHeader, CardTitle, CardContent, Badge, Input, Textarea, Select, toast, HelpIcon, Tooltip, ConfirmDialog, InlineHelp, EmptyState } from '../../../shared/ui';
 import { usePoderCalculator } from '../hooks/usePoderCalculator';
+import { usePoderValidation } from '../hooks/usePoderValidation';
 import { useBibliotecaPoderes } from '../hooks/useBibliotecaPoderes';
 import { useKeyboardShortcuts } from '../../../shared/hooks/useKeyboardShortcuts';
 import { ESCALAS, MODIFICACOES } from '../../../data';
@@ -32,6 +33,7 @@ export function CriadorDePoder() {
   } = usePoderCalculator();
 
   const { salvarPoder, buscarPoder } = useBibliotecaPoderes();
+  const { validarParaSalvar, validarNome } = usePoderValidation();
 
   const [modalSeletorEfeito, setModalSeletorEfeito] = useState(false);
   const [modalSeletorModificacao, setModalSeletorModificacao] = useState(false);
@@ -41,6 +43,23 @@ export function CriadorDePoder() {
   const [mostrarAtalhos, setMostrarAtalhos] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [resetando, setResetando] = useState(false);
+  const [erroNome, setErroNome] = useState<string>('');
+
+  const handleNomeChange = (novoNome: string) => {
+    atualizarInfoPoder(novoNome, undefined);
+    
+    // Validação em tempo real
+    if (novoNome.length > 0) {
+      const resultado = validarNome(novoNome);
+      if (!resultado.isValid) {
+        setErroNome(resultado.errors[0].message);
+      } else {
+        setErroNome('');
+      }
+    } else {
+      setErroNome('');
+    }
+  };
 
   const handleResetar = () => {
     if (poder.efeitos.length > 0) {
@@ -60,12 +79,13 @@ export function CriadorDePoder() {
   };
 
   const handleSalvar = async () => {
-    if (!poder.nome || poder.nome === 'Novo Poder') {
-      toast.warning('Por favor, dê um nome ao poder antes de salvar.');
-      return;
-    }
-    if (poder.efeitos.length === 0) {
-      toast.warning('Adicione pelo menos um efeito antes de salvar.');
+    // Validação usando Zod
+    const resultado = validarParaSalvar(poder);
+    
+    if (!resultado.isValid) {
+      // Mostra o primeiro erro encontrado
+      const primeiroErro = resultado.errors[0];
+      toast.error(primeiroErro.message);
       return;
     }
     
@@ -173,11 +193,16 @@ export function CriadorDePoder() {
                 </div>
                 <Input
                   value={poder.nome}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => atualizarInfoPoder(e.target.value, undefined)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleNomeChange(e.target.value)}
                   placeholder="Ex: Bola de Fogo"
-                  className={poder.nome === 'Novo Poder' || !poder.nome ? 'border-yellow-300 dark:border-yellow-600' : ''}
+                  className={erroNome || poder.nome === 'Novo Poder' || !poder.nome ? 'border-yellow-300 dark:border-yellow-600' : ''}
                 />
-                {(poder.nome === 'Novo Poder' || !poder.nome) && poder.efeitos.length === 0 && (
+                {erroNome && (
+                  <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+                    {erroNome}
+                  </p>
+                )}
+                {(poder.nome === 'Novo Poder' || !poder.nome) && poder.efeitos.length === 0 && !erroNome && (
                   <InlineHelp
                     type="example"
                     text="Exemplos de nomes: 'Lâmina de Gelo', 'Escudo Mental', 'Teleporte Dimensional'"
@@ -296,7 +321,7 @@ export function CriadorDePoder() {
               {/* Botões - Grid em mobile, flex em desktop */}
               <div className="grid grid-cols-2 sm:flex gap-2">
                 <Tooltip content="Acessar biblioteca de poderes salvos">
-                  <Button variant="outline" size="sm" onClick={() => setModalBiblioteca(true)} className="w-full sm:w-auto">
+                  <Button variant="outline" size="sm" onClick={() => setModalBiblioteca(true)} aria-label="Abrir biblioteca de poderes" className="w-full sm:w-auto">
                     📚<span className="hidden sm:inline ml-1">Biblioteca</span>
                   </Button>
                 </Tooltip>
@@ -309,13 +334,14 @@ export function CriadorDePoder() {
                         onClick={handleSalvar}
                         loading={salvando}
                         loadingText="Salvando..."
+                        aria-label="Salvar poder na biblioteca"
                         className="w-full sm:w-auto"
                       >
                         💾<span className="hidden sm:inline ml-1">Salvar</span>
                       </Button>
                     </Tooltip>
                     <Tooltip content="Ver resumo completo com descrição técnica">
-                      <Button variant="outline" size="sm" onClick={() => setModalResumoAberto(true)} className="w-full sm:w-auto">
+                      <Button variant="outline" size="sm" onClick={() => setModalResumoAberto(true)} aria-label="Ver resumo do poder" className="w-full sm:w-auto">
                         📋<span className="hidden sm:inline ml-1">Resumo</span>
                       </Button>
                     </Tooltip>
@@ -327,6 +353,7 @@ export function CriadorDePoder() {
                     size="sm" 
                     onClick={handleResetar}
                     loading={resetando}
+                    aria-label="Resetar poder e começar novo"
                     className="w-full sm:w-auto"
                   >
                     🔄<span className="hidden sm:inline ml-1">Resetar</span>
@@ -463,6 +490,7 @@ export function CriadorDePoder() {
             variant="secondary" 
             fullWidth
             onClick={() => setModalSeletorModificacao(true)}
+            aria-label="Adicionar modificação global ao poder"
           >
             ⚡ Adicionar Modificação Global
           </Button>

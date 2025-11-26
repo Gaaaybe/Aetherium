@@ -33,7 +33,7 @@ export function SeletorModificacao({
 
   // Filtrar e ordenar modificações
   const modificacoesFiltradas = useMemo(() => {
-    let resultado = MODIFICACOES.filter(mod => {
+    const resultado = MODIFICACOES.filter(mod => {
       const matchBusca = busca === '' ||
                          mod.nome.toLowerCase().includes(busca.toLowerCase()) ||
                          mod.descricao.toLowerCase().includes(busca.toLowerCase()) ||

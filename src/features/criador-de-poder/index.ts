@@ -4,5 +4,7 @@ export { SeletorEfeito } from './components/SeletorEfeito';
 export { SeletorModificacao } from './components/SeletorModificacao';
 export { ResumoPoder } from './components/ResumoPoder';
 export { usePoderCalculator } from './hooks/usePoderCalculator';
+export { usePoderValidation } from './hooks/usePoderValidation';
 export * from './regras/calculadoraCusto';
 export * from './regras/escalas';
+export * from './schemas/poder.schema';

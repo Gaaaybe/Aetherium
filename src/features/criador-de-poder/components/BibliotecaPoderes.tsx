@@ -78,7 +78,7 @@ export function BibliotecaPoderes({ isOpen, onClose, onCarregar }: BibliotecaPod
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Erro ao importar arquivo. Verifique se é um JSON válido.');
     } finally {
       setImportando(false);
@@ -113,7 +113,7 @@ export function BibliotecaPoderes({ isOpen, onClose, onCarregar }: BibliotecaPod
       await new Promise(resolve => setTimeout(resolve, 400));
       const poderImportado = importarPoder(text);
       toast.success(`Poder "${poderImportado.nome}" importado com sucesso!`);
-    } catch (error) {
+    } catch (_error) {
       toast.error('Erro ao importar arquivo. Verifique se é um JSON válido.');
     } finally {
       setImportando(false);

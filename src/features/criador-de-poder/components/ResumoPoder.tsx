@@ -1,6 +1,6 @@
 import { Modal, ModalFooter, Button, Badge, Card, CardContent, toast } from '../../../shared/ui';
 import { Poder } from '../regras/calculadoraCusto';
-import { MODIFICACOES, obterNomeParametro, buscarGrauNaTabela, EFEITOS, ESCALAS } from '../../../data';
+import { MODIFICACOES, obterNomeParametro, buscarGrauNaTabela } from '../../../data';
 import type { DetalhesPoder } from '../types';
 
 interface ResumoPoderProps {
@@ -18,7 +18,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
   };
 
   const gerarNotacaoCompacta = () => {
-    let partes: string[] = [];
+    const partes: string[] = [];
     
     // Para cada efeito
     detalhes.efeitosDetalhados.forEach((ef: any) => {

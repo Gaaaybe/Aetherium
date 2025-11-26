@@ -20,7 +20,7 @@ export function SeletorEfeito({ isOpen, onClose, onAdicionar }: SeletorEfeitoPro
   const [custoMaximo, setCustoMaximo] = useState<number>(20);
 
   const efeitosFiltrados = useMemo(() => {
-    let resultado = EFEITOS.filter(efeito => {
+    const resultado = EFEITOS.filter(efeito => {
       // Busca por nome, descrição ou exemplos
       const matchBusca = busca === '' || 
                          efeito.nome.toLowerCase().includes(busca.toLowerCase()) ||
