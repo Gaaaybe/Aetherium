@@ -76,7 +76,19 @@ export function calcularCustoPorGrau(
     const modBase = todasModificacoes.find(m => m.id === modAplicada.modificacaoBaseId);
     if (modBase) {
       const grauMod = modAplicada.grauModificacao || 1;
-      custoPorGrau += modBase.custoPorGrau * grauMod;
+      let custoPorGrauMod = modBase.custoPorGrau;
+      
+      // Aplica modificador de custo da configuração selecionada (ex: Efeito Colateral Menor = -1)
+      if (modAplicada.parametros?.configuracaoSelecionada && modBase.configuracoes) {
+        const configuracao = modBase.configuracoes.opcoes.find(
+          opt => opt.id === modAplicada.parametros.configuracaoSelecionada
+        );
+        if (configuracao) {
+          custoPorGrauMod += configuracao.modificadorCusto;
+        }
+      }
+      
+      custoPorGrau += custoPorGrauMod * grauMod;
     }
   }
   
@@ -85,7 +97,19 @@ export function calcularCustoPorGrau(
     const modBase = todasModificacoes.find(m => m.id === modAplicada.modificacaoBaseId);
     if (modBase) {
       const grauMod = modAplicada.grauModificacao || 1;
-      custoPorGrau += modBase.custoPorGrau * grauMod;
+      let custoPorGrauMod = modBase.custoPorGrau;
+      
+      // Aplica modificador de custo da configuração selecionada (ex: Efeito Colateral Menor = -1)
+      if (modAplicada.parametros?.configuracaoSelecionada && modBase.configuracoes) {
+        const configuracao = modBase.configuracoes.opcoes.find(
+          opt => opt.id === modAplicada.parametros.configuracaoSelecionada
+        );
+        if (configuracao) {
+          custoPorGrauMod += configuracao.modificadorCusto;
+        }
+      }
+      
+      custoPorGrau += custoPorGrauMod * grauMod;
     }
   }
   
@@ -115,7 +139,19 @@ export function calcularCustoFixo(
   for (const modAplicada of modificacoesGlobais) {
     const modBase = todasModificacoes.find(m => m.id === modAplicada.modificacaoBaseId);
     if (modBase) {
-      custoFixo += modBase.custoFixo;
+      let custoFixoMod = modBase.custoFixo;
+      
+      // Aplica modificador de custo da configuração selecionada
+      if (modAplicada.parametros?.configuracaoSelecionada && modBase.configuracoes) {
+        const configuracao = modBase.configuracoes.opcoes.find(
+          opt => opt.id === modAplicada.parametros.configuracaoSelecionada
+        );
+        if (configuracao) {
+          custoFixoMod += configuracao.modificadorCusto;
+        }
+      }
+      
+      custoFixo += custoFixoMod;
     }
   }
   
@@ -123,7 +159,19 @@ export function calcularCustoFixo(
   for (const modAplicada of efeito.modificacoesLocais) {
     const modBase = todasModificacoes.find(m => m.id === modAplicada.modificacaoBaseId);
     if (modBase) {
-      custoFixo += modBase.custoFixo;
+      let custoFixoMod = modBase.custoFixo;
+      
+      // Aplica modificador de custo da configuração selecionada
+      if (modAplicada.parametros?.configuracaoSelecionada && modBase.configuracoes) {
+        const configuracao = modBase.configuracoes.opcoes.find(
+          opt => opt.id === modAplicada.parametros.configuracaoSelecionada
+        );
+        if (configuracao) {
+          custoFixoMod += configuracao.modificadorCusto;
+        }
+      }
+      
+      custoFixo += custoFixoMod;
     }
   }
   
