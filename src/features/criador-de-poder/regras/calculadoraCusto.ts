@@ -59,7 +59,7 @@ export function calcularCustoPorGrau(
   todasModificacoes: Modificacao[],
   modificadorParametrosGlobal: number
 ): number {
-  let custoPorGrau = efeitoBase.custoBase;
+  let custoPorGrau = efeitoBase.custoBase || 0;
   
   // Aplica modificador de custo da configuração selecionada (ex: Imunidade Patamar 2 = +2)
   if (efeito.configuracaoSelecionada && efeitoBase.configuracoes) {
@@ -94,7 +94,7 @@ export function calcularCustoPorGrau(
           opt => opt.id === modAplicada.parametros?.configuracaoSelecionada
         );
         if (configuracao) {
-          custoPorGrauMod += configuracao.modificadorCusto;
+          custoPorGrauMod += configuracao.modificadorCusto || 0;
         }
       }
       
@@ -115,7 +115,7 @@ export function calcularCustoPorGrau(
           opt => opt.id === modAplicada.parametros?.configuracaoSelecionada
         );
         if (configuracao) {
-          custoPorGrauMod += configuracao.modificadorCusto;
+          custoPorGrauMod += configuracao.modificadorCusto || 0;
         }
       }
       
@@ -151,13 +151,13 @@ export function calcularCustoFixo(
     if (modBase) {
       let custoFixoMod = modBase.custoFixo;
       
-      // Aplica modificador de custo da configuração selecionada
+      // Aplica modificadorCustoFixo da configuração selecionada (caso especial: Afeta Intangível)
       if (modAplicada.parametros?.configuracaoSelecionada && modBase.configuracoes) {
         const configuracao = modBase.configuracoes.opcoes.find(
           opt => opt.id === modAplicada.parametros?.configuracaoSelecionada
         );
-        if (configuracao) {
-          custoFixoMod += configuracao.modificadorCusto;
+        if (configuracao?.modificadorCustoFixo !== undefined) {
+          custoFixoMod += configuracao.modificadorCustoFixo;
         }
       }
       
@@ -171,13 +171,13 @@ export function calcularCustoFixo(
     if (modBase) {
       let custoFixoMod = modBase.custoFixo;
       
-      // Aplica modificador de custo da configuração selecionada
+      // Aplica modificadorCustoFixo da configuração selecionada (caso especial: Afeta Intangível)
       if (modAplicada.parametros?.configuracaoSelecionada && modBase.configuracoes) {
         const configuracao = modBase.configuracoes.opcoes.find(
           opt => opt.id === modAplicada.parametros?.configuracaoSelecionada
         );
-        if (configuracao) {
-          custoFixoMod += configuracao.modificadorCusto;
+        if (configuracao?.modificadorCustoFixo !== undefined) {
+          custoFixoMod += configuracao.modificadorCustoFixo;
         }
       }
       

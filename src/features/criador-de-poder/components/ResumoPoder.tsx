@@ -29,7 +29,9 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
     const partes: string[] = [];
     
     // Para cada efeito
-    detalhes.efeitosDetalhados.forEach((ef: any) => {
+    detalhes.efeitosDetalhados.forEach((efDet) => {
+      if (!efDet) return;
+      const ef = efDet;
       let linha = `${ef.efeitoBase.nome}`;
       
       // Grau
@@ -42,7 +44,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
       
       // Configuração (ex: Patamar 3)
       if (ef.efeito.configuracaoSelecionada && ef.efeitoBase.configuracoes) {
-        const config = ef.efeitoBase.configuracoes.opcoes.find((c: any) => c.id === ef.efeito.configuracaoSelecionada);
+        const config = ef.efeitoBase.configuracoes.opcoes.find(c => c.id === ef.efeito.configuracaoSelecionada);
         if (config && config.modificadorCusto !== 0) {
           linha += ` (${config.nome} ${config.modificadorCusto > 0 ? '+' : ''}${config.modificadorCusto})`;
         } else if (config) {
@@ -52,7 +54,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
       
       // Modificações locais
       if (ef.efeito.modificacoesLocais.length > 0) {
-        const mods = ef.efeito.modificacoesLocais.map((mod: any) => {
+        const mods = ef.efeito.modificacoesLocais.map((mod) => {
           const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
           let modTexto = modBase?.nome || mod.modificacaoBaseId;
           
@@ -60,12 +62,36 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
             modTexto += ` ${mod.grauModificacao}`;
           }
           
-          // Calcular custo da modificação
+          // Calcular custo da modificação (incluindo configuração)
           const grauMod = mod.grauModificacao || 1;
-          const custoMod = modBase ? (modBase.custoFixo + modBase.custoPorGrau * grauMod) : 0;
+          let custoPorGrauMod = modBase?.custoPorGrau || 0;
+          let custoFixoMod = modBase?.custoFixo || 0;
+          
+          // Adiciona modificador de configuração se houver
+          if (mod.parametros?.configuracaoSelecionada && modBase?.configuracoes) {
+            const config = modBase.configuracoes.opcoes.find(c => c.id === mod.parametros?.configuracaoSelecionada);
+            if (config) {
+              if (config.modificadorCusto !== undefined) {
+                custoPorGrauMod += config.modificadorCusto;
+              }
+              if (config.modificadorCustoFixo !== undefined) {
+                custoFixoMod += config.modificadorCustoFixo;
+              }
+            }
+          }
+          
+          const custoMod = custoFixoMod + (custoPorGrauMod * grauMod);
           
           if (custoMod !== 0) {
             modTexto += ` ${custoMod > 0 ? '+' : ''}${custoMod}`;
+          }
+          
+          // Adiciona nome da configuração se houver
+          if (mod.parametros?.configuracaoSelecionada && modBase?.configuracoes) {
+            const config = modBase.configuracoes.opcoes.find(c => c.id === mod.parametros?.configuracaoSelecionada);
+            if (config) {
+              modTexto += ` (${config.nome})`;
+            }
           }
           
           if (mod.parametros?.descricao) {
@@ -94,11 +120,36 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
           modTexto += ` ${mod.grauModificacao}`;
         }
         
+        // Calcular custo da modificação (incluindo configuração)
         const grauMod = mod.grauModificacao || 1;
-        const custoMod = modBase ? (modBase.custoFixo + modBase.custoPorGrau * grauMod) : 0;
+        let custoPorGrauMod = modBase?.custoPorGrau || 0;
+        let custoFixoMod = modBase?.custoFixo || 0;
+        
+        // Adiciona modificador de configuração se houver
+        if (mod.parametros?.configuracaoSelecionada && modBase?.configuracoes) {
+          const config = modBase.configuracoes.opcoes.find(c => c.id === mod.parametros?.configuracaoSelecionada);
+          if (config) {
+            if (config.modificadorCusto !== undefined) {
+              custoPorGrauMod += config.modificadorCusto;
+            }
+            if (config.modificadorCustoFixo !== undefined) {
+              custoFixoMod += config.modificadorCustoFixo;
+            }
+          }
+        }
+        
+        const custoMod = custoFixoMod + (custoPorGrauMod * grauMod);
         
         if (custoMod !== 0) {
           modTexto += ` ${custoMod > 0 ? '+' : ''}${custoMod}`;
+        }
+        
+        // Adiciona nome da configuração se houver
+        if (mod.parametros?.configuracaoSelecionada && modBase?.configuracoes) {
+          const config = modBase.configuracoes.opcoes.find(c => c.id === mod.parametros?.configuracaoSelecionada);
+          if (config) {
+            modTexto += ` (${config.nome})`;
+          }
         }
         
         if (mod.parametros?.descricao) {
@@ -151,7 +202,9 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
     
     // Efeitos
     texto += `EFEITOS:\n`;
-    detalhes.efeitosDetalhados.forEach((ef: any) => {
+    detalhes.efeitosDetalhados.forEach((efDet) => {
+      if (!efDet) return;
+      const ef = efDet;
       const dadosGrau = buscarGrauNaTabela(ef.efeito.grau);
       
       texto += `\n${ef.efeitoBase.nome} - Grau ${ef.efeito.grau} (${ef.custoTotal} PdA)\n`;
@@ -163,7 +216,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
       
       // Configuração selecionada (ex: Imunidade Patamar 2)
       if (ef.efeito.configuracaoSelecionada && ef.efeitoBase.configuracoes) {
-        const config = ef.efeitoBase.configuracoes.opcoes.find((c: any) => c.id === ef.efeito.configuracaoSelecionada);
+        const config = ef.efeitoBase.configuracoes.opcoes.find(c => c.id === ef.efeito.configuracaoSelecionada);
         if (config) {
           texto += `  ${ef.efeitoBase.configuracoes.label}: ${config.nome} (+${config.modificadorCusto} custo)\n`;
         }
@@ -186,7 +239,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
       
       if (ef.efeito.modificacoesLocais.length > 0) {
         texto += `  Modificações:\n`;
-        ef.efeito.modificacoesLocais.forEach((mod: any) => {
+        ef.efeito.modificacoesLocais.forEach((mod) => {
           const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
           let linha = `    - ${modBase?.nome || mod.modificacaoBaseId}`;
           if (mod.grauModificacao) {
@@ -285,7 +338,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                   <Badge key={mod.id} variant="info" size="lg">
                     ✨ {modBase?.nome || mod.modificacaoBaseId}
                     {mod.grauModificacao && ` - Grau ${mod.grauModificacao}`}
-                    {mod.parametros?.opcao && ` (${mod.parametros.opcao})`}
+                    {typeof mod.parametros?.opcao === 'string' && ` (${mod.parametros.opcao})`}
                   </Badge>
                 );
               })}
@@ -358,7 +411,9 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
             </h3>
           </div>
           
-          {detalhes.efeitosDetalhados.map((ef: any, index: number) => {
+          {detalhes.efeitosDetalhados.map((efDet, index: number) => {
+            if (!efDet) return null;
+            const ef = efDet;
             const dadosGrau = buscarGrauNaTabela(ef.efeito.grau);
             
             return (
@@ -375,7 +430,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                           {ef.efeitoBase.nome}
                         </h4>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Grau {ef.efeito.grau} • {ef.efeitoBase.tipo}
+                          Grau {ef.efeito.grau}
                         </p>
                       </div>
                     </div>
@@ -383,11 +438,6 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                       <Badge variant="espirito" size="lg" className="text-lg px-4 py-2">
                         {ef.custoTotal} PdA
                       </Badge>
-                      {ef.custoBase !== ef.custoTotal && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          Base: {ef.custoBase} PdA
-                        </p>
-                      )}
                     </div>
                   </div>
 
@@ -417,14 +467,14 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                         ⚙️ {ef.efeitoBase.configuracoes.label}
                       </p>
                       <p className="font-bold text-gray-900 dark:text-gray-100">
-                        {ef.efeitoBase.configuracoes.opcoes.find((c: any) => c.id === ef.efeito.configuracaoSelecionada)?.nome}
+                        {ef.efeitoBase.configuracoes.opcoes.find(c => c.id === ef.efeito.configuracaoSelecionada)?.nome}
                         {' '}
                         <span className="text-purple-600 dark:text-purple-400">
-                          (+{ef.efeitoBase.configuracoes.opcoes.find((c: any) => c.id === ef.efeito.configuracaoSelecionada)?.modificadorCusto} custo)
+                          (+{ef.efeitoBase.configuracoes.opcoes.find(c => c.id === ef.efeito.configuracaoSelecionada)?.modificadorCusto} custo)
                         </span>
                       </p>
                       <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">
-                        {ef.efeitoBase.configuracoes.opcoes.find((c: any) => c.id === ef.efeito.configuracaoSelecionada)?.descricao}
+                        {ef.efeitoBase.configuracoes.opcoes.find(c => c.id === ef.efeito.configuracaoSelecionada)?.descricao}
                       </p>
                     </div>
                   )}
@@ -499,7 +549,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                     <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                       <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">🔧 Modificações:</p>
                       <div className="flex flex-wrap gap-2">
-                        {ef.efeito.modificacoesLocais.map((mod: any) => {
+                        {ef.efeito.modificacoesLocais.map((mod) => {
                           const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
                           const isExtra = modBase?.tipo === 'extra';
                           return (
@@ -511,7 +561,7 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                             >
                               {isExtra ? '➕' : '➖'} {modBase?.nome || mod.modificacaoBaseId}
                               {mod.grauModificacao && ` - Grau ${mod.grauModificacao}`}
-                              {mod.parametros?.opcao && ` (${mod.parametros.opcao})`}
+                              {typeof mod.parametros?.opcao === 'string' && ` (${mod.parametros.opcao})`}
                             </Badge>
                           );
                         })}

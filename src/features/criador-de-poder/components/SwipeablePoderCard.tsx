@@ -102,7 +102,7 @@ export function SwipeablePoderCard({
                     loading={exportandoId === poder.id}
                     disabled={exportandoId !== null && exportandoId !== poder.id}
                   >
-                    💾
+                    ⬇️
                   </Button>
                   {!isTouchDevice && (
                     <Button

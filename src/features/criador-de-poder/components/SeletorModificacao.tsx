@@ -89,7 +89,9 @@ export function SeletorModificacao({
   const handleSelecionar = () => {
     if (!modSelecionada) return;
     
-    const parametrosFinal = modBase?.requerParametros ? {
+    // Se tem configuração selecionada, sempre incluir nos parâmetros
+    // Se requer outros parâmetros, incluir também
+    const parametrosFinal = (modBase?.requerParametros || configuracaoSelecionada) ? {
       ...parametros,
       ...(configuracaoSelecionada && { configuracaoSelecionada })
     } : undefined;
@@ -409,7 +411,9 @@ export function SeletorModificacao({
                       
                       <div className="grid grid-cols-1 gap-2">
                         {modBase.configuracoes.opcoes.map((config) => {
-                          const custoTotal = (modBase.custoFixo || 0) + (config.modificadorCusto || 0);
+                          // Calcula custo fixo (se a config tiver modificadorCustoFixo)
+                          const custoFixoTotal = (modBase.custoFixo || 0) + (config.modificadorCustoFixo || 0);
+                          // Calcula custo por grau (se a config tiver modificadorCusto)
                           const custoPorGrauTotal = (modBase.custoPorGrau || 0) + (config.modificadorCusto || 0);
                           
                           return (
@@ -427,9 +431,9 @@ export function SeletorModificacao({
                                   {config.nome}
                                 </span>
                                 <div className="flex gap-2 text-xs">
-                                  {custoTotal !== 0 && (
-                                    <span className={`font-semibold ${custoTotal > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                                      {custoTotal > 0 ? '+' : ''}{custoTotal} fixo
+                                  {custoFixoTotal !== 0 && (
+                                    <span className={`font-semibold ${custoFixoTotal > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                                      {custoFixoTotal > 0 ? '+' : ''}{custoFixoTotal} fixo
                                     </span>
                                   )}
                                   {custoPorGrauTotal !== 0 && (

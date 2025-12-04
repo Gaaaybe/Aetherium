@@ -9,6 +9,7 @@ export interface ConfiguracaoEfeito {
   id: string;
   nome: string;
   modificadorCusto: number; // +0, +2, +5, etc. (somado ao custoBase)
+  modificadorCustoFixo?: number; // Modificador de custo fixo (usado por algumas modificações)
   descricao: string;
   grauMinimo?: number; // ex: grau 2+ para patamar 1
   custoProgressivo?: 'dobrado'; // Indica se o custo dobra a cada incremento (para crítico)

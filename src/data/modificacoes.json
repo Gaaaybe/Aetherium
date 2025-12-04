@@ -25,13 +25,13 @@
         {
           "id":"metade-eficiencia",
           "nome":"Metade da Eficiência",
-          "modificadorCusto":0,
+          "modificadorCustoFixo":0,
           "descricao":"O efeito funciona com metade da sua eficiência contra alvos intangíveis (arredonde para baixo)."
         },
         {
           "id":"grau-total",
           "nome":"Grau Total",
-          "modificadorCusto":1,
+          "modificadorCustoFixo":1,
           "descricao":"O efeito funciona com seu grau total contra alvos intangíveis."
         }
       ]
@@ -504,13 +504,13 @@
           "id": "dificil-notar",
           "nome": "Difícil de Notar",
           "descricao": "O efeito é difícil de notar ou só é perceptível por sentidos exóticos",
-          "modificadorCusto": 1
+          "modificadorCustoFixo": 1
         },
         {
           "id": "indetectavel",
           "nome": "Completamente Indetectável",
           "descricao": "O efeito é completamente impossível de detectar",
-          "modificadorCusto": 2
+          "modificadorCustoFixo": 2
         }
       ]
     }
@@ -761,8 +761,8 @@
     "id": "peculiaridade",
     "nome": "Peculiaridade",
     "tipo": "falha",
-    "custoFixo": -1,
-    "custoPorGrau": 0,
+    "custoFixo": 0,
+    "custoPorGrau": -1,
     "descricao": "É uma falha pequena, inconveniente e temática, mas que não chega a ser uma grande desvantagem. Importante: Uma Peculiaridade não é uma consequência óbvia do descritor do poder. Exemplo: Um telepata que não consegue mentir ao usar seu poder mental é uma Peculiaridade.",
     "requerParametros": true,
     "tipoParametro": "texto",

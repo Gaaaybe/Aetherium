@@ -3,7 +3,6 @@ import { EFEITOS } from '../../../data';
 import { useState, useMemo } from 'react';
 import { useFavoritos, useCustomItems } from '../../../shared/hooks';
 import { FormEfeitoCustomizado } from './FormEfeitoCustomizado';
-import type { Efeito } from '../../../data';
 
 interface SeletorEfeitoProps {
   isOpen: boolean;
