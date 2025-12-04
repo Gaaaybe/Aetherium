@@ -677,8 +677,8 @@
     "custoPorGrau": -1,
     "descricao": "Seu efeito é difícil de controlar e exige um teste de perícia para ser ativado. Toda vez que for usar o efeito, você precisa primeiro passar em um teste de perícia. Se você falhar no teste (ou tirar um 1 natural), você gasta sua ação, mas o efeito não funciona. Este teste de ativação não substitui outros testes que o poder possa exigir.",
     "requerParametros": true,
-    "tipoParametro": "select",
-    "opcoes": ["Acrobacia", "Enganação", "Especialidade", "Tecnologia", "Outra (especificar)"],
+    "tipoParametro": "texto",
+    "placeholder": "Qual perícia é usada para o teste?",
     "categoria": "Limitações"
   },
   {
