@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Zap, Package, Globe, Sparkles, Copy } from 'lucide-react';
+import { Zap, Package, Globe, Sparkles, Copy, FileText } from 'lucide-react';
 import { Modal, ModalFooter, Button, Badge, Card, CardContent, toast } from '../../../shared/ui';
 import { Poder, ModificacaoAplicada } from '../regras/calculadoraCusto';
 import { MODIFICACOES, Modificacao } from '../../../data';
@@ -68,6 +68,66 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
     }
     
     return modTexto;
+  };
+
+  const gerarNotacaoCompacta = () => {
+    let partes: string[] = [];
+    
+    // Para cada efeito
+    detalhes.efeitosDetalhados.forEach((efDet) => {
+      if (!efDet) return;
+      const { efeito, efeitoBase, custoTotal } = efDet;
+      
+      let linha = `${efeitoBase.nome}`;
+      
+      // Grau
+      linha += ` ${efeito.grau}`;
+      
+      // Input customizado (ex: Imunidade a Fogo)
+      if (efeito.inputCustomizado) {
+        linha += ` [${efeito.inputCustomizado}]`;
+      }
+      
+      // Configuração (ex: Patamar 3)
+      if (efeito.configuracaoSelecionada && efeitoBase.configuracoes) {
+        const config = efeitoBase.configuracoes.opcoes.find(c => c.id === efeito.configuracaoSelecionada);
+        if (config) {
+          const modificadorCusto = config.modificadorCusto || 0;
+          if (modificadorCusto !== 0) {
+            linha += ` (${config.nome} ${modificadorCusto > 0 ? '+' : ''}${modificadorCusto})`;
+          } else {
+            linha += ` (${config.nome})`;
+          }
+        }
+      }
+      
+      // Modificações locais
+      if (efeito.modificacoesLocais.length > 0) {
+        const mods = efeito.modificacoesLocais.map((mod) => {
+          const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
+          return formatarModificacaoString(mod, modBase);
+        }).join(', ');
+        
+        linha += `. ${mods}`;
+      }
+      
+      // Custo total do efeito
+      linha += ` = ${custoTotal} PdA`;
+      
+      partes.push(linha);
+    });
+    
+    // Modificações globais
+    if (poder.modificacoesGlobais.length > 0) {
+      const modsGlobais = poder.modificacoesGlobais.map(mod => {
+        const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
+        return formatarModificacaoString(mod, modBase);
+      }).join(', ');
+      
+      partes.push(`[GLOBAL: ${modsGlobais}]`);
+    }
+    
+    return partes.join('\n');
   };
 
   const gerarTextoResumo = () => {
@@ -219,6 +279,31 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
             </div>
           </div>
         )}
+
+        {/* Notação Compacta */}
+        <div className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/30 dark:to-slate-900/30 rounded-lg p-4 border-l-4 border-slate-500">
+          <div className="flex items-center gap-2 mb-3">
+            <FileText className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">
+              Notação Compacta
+            </h3>
+            <Badge variant="secondary" size="sm">Build String</Badge>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+            <pre className="text-sm font-mono text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
+              {gerarNotacaoCompacta()}
+            </pre>
+          </div>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(gerarNotacaoCompacta());
+              toast.success('Notação compacta copiada!');
+            }}
+            className="mt-2 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex items-center gap-1"
+          >
+            <Copy className="w-3 h-3" /> Copiar notação
+          </button>
+        </div>
 
         {/* Lista de Efeitos */}
         <div className="space-y-4">
