@@ -11,6 +11,7 @@ interface CreatureBoardContextValue {
   onEdgesChange: (changes: any) => void;
   onConnect: (connection: any) => void;
   addCreature: (input: CreatureFormInput) => void;
+  addCreatureFromLibrary: (creature: Creature) => void;
   removeCreature: (id: string) => void;
   updateCreature: (id: string, updates: Partial<Creature> & Partial<CreatureFormInput>) => void;
   updateHp: (id: string, currentHp: number) => void;

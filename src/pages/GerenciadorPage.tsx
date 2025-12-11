@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Users, Trash2, Book, Save } from 'lucide-react';
+import { Plus, Users, Trash2, Book } from 'lucide-react';
 import { ReactFlowProvider } from 'reactflow';
 import { Button } from '../shared/ui/Button';
 import { EmptyState } from '../shared/ui/EmptyState';
@@ -23,7 +23,6 @@ function GerenciadorContent() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [editingCreature, setEditingCreature] = useState<string | null>(null);
-  const [selectedCreature, setSelectedCreature] = useState<string | null>(null);
   
   const {
     addCreature,
@@ -33,7 +32,7 @@ function GerenciadorContent() {
     creatures,
   } = useCreatureBoardContext();
 
-  const { saveCreature, isSaved } = useBibliotecaCriaturas();
+  const { saveCreature } = useBibliotecaCriaturas();
 
   const totalCreatures = creatures.length;
   const activeCreatures = creatures.filter(c => !c.status || c.status === 'ativo' || c.status === 'oculto').length;
@@ -82,7 +81,6 @@ function GerenciadorContent() {
     const creature = creatures.find(c => c.id === creatureId);
     if (creature) {
       saveCreature(creature);
-      setSelectedCreature(null);
     }
   };
 

@@ -1,6 +1,7 @@
 import { memo, useState } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Heart, Zap, Swords, Trash2, Edit, Eye, EyeOff, Shield, Target, Gauge, Plus, Minus, RotateCcw, Save } from 'lucide-react';
+import { ConfirmDialog } from '../../../shared/ui';
 import type { Creature } from '../types';
 import { getRoleColor } from '../data/roleTemplates';
 import { useCreatureBoardContext } from '../hooks/CreatureBoardContext';
@@ -19,6 +20,7 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
   const { onEditCreature, onSaveCreature } = useUIActions();
   const [hpInput, setHpInput] = useState('');
   const [peInput, setPeInput] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Calcular porcentagem de HP e PE
   const hpPercent = (creature.stats.hp / creature.stats.maxHp) * 100;
@@ -37,9 +39,12 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm(`Remover ${creature.name}?`)) {
-      removeCreature(creature.id);
-    }
+    setShowDeleteDialog(true);
+  };
+
+  const confirmRemove = () => {
+    removeCreature(creature.id);
+    setShowDeleteDialog(false);
   };
 
   const handleEdit = (e: React.MouseEvent) => {
@@ -492,7 +497,7 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
                     updateResources(creature.id, { sovereignty: value });
                   }}
                   className={`flex-1 py-0.5 text-xs rounded transition-colors ${
-                    creature.bossMechanics.sovereignty >= value
+                    creature.bossMechanics && creature.bossMechanics.sovereignty >= value
                       ? 'bg-yellow-500 hover:bg-yellow-600 text-white font-bold'
                       : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400'
                   }`}
@@ -549,6 +554,18 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
       </div>
 
       <Handle type="source" position={Position.Bottom} className="opacity-0" />
+
+      {/* Dialog de Confirmação */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+        onConfirm={confirmRemove}
+        title="Remover Criatura"
+        message={`Tem certeza que deseja remover "${creature.name}"? Esta ação não pode ser desfeita.`}
+        confirmText="Remover"
+        cancelText="Cancelar"
+        variant="danger"
+      />
     </div>
   );
 }

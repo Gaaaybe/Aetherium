@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Plus, AlertCircle, RotateCcw, Move } from 'lucide-react';
-import { Modal, ModalFooter, Button, Input, Slider, Badge } from '../../../shared/ui';
+import { Modal, ModalFooter, Button, Input, Slider, Badge, ConfirmDialog } from '../../../shared/ui';
 import { PreviewStats } from './PreviewStats';
 import { AttributeSelector } from './AttributeSelector';
 import { SaveSelector } from './SaveSelector';
@@ -54,6 +54,13 @@ export function FormCriatura({
     ...initialData,
   }));
 
+  // Estado para posição da imagem (object-position)
+  const [imagePosition, setImagePosition] = useState(
+    initialData?.imagePosition ?? { x: 50, y: 50 }
+  );
+
+  const [showResetDialog, setShowResetDialog] = useState(false);
+
   // Sincronizar formData quando initialData mudar (ao trocar de criatura para editar)
   useEffect(() => {
     if (initialData) {
@@ -72,18 +79,11 @@ export function FormCriatura({
         selectedSkills: [],
         ...initialData,
       });
-      // Atualizar imagePosition também
-      setImagePosition(initialData.imagePosition ?? { x: 50, y: 50 });
     }
   }, [initialData]);
 
   // Rastrear role anterior para detectar mudanças
   const previousRole = useRef(formData.role);
-
-  // Estado para posição da imagem (object-position)
-  const [imagePosition, setImagePosition] = useState(
-    initialData?.imagePosition ?? { x: 50, y: 50 }
-  );
 
   // Validação
   const errors = useCreatureValidation(formData);
@@ -219,8 +219,10 @@ export function FormCriatura({
 
   // Handler: Reset
   const handleReset = () => {
-    if (!confirm('Resetar todos os campos do formulário?')) return;
-    
+    setShowResetDialog(true);
+  };
+
+  const confirmReset = () => {
     setFormData({
       name: '',
       level: 1,
@@ -235,6 +237,7 @@ export function FormCriatura({
       saveDistribution: undefined,
       selectedSkills: [],
     });
+    setShowResetDialog(false);
   };
 
   return (
@@ -581,6 +584,18 @@ export function FormCriatura({
           </div>
         </div>
       </ModalFooter>
+
+      {/* Dialog de Confirmação para Reset */}
+      <ConfirmDialog
+        isOpen={showResetDialog}
+        onClose={() => setShowResetDialog(false)}
+        onConfirm={confirmReset}
+        title="Resetar Formulário"
+        message="Tem certeza que deseja limpar todos os campos? Todas as informações não salvas serão perdidas."
+        confirmText="Resetar"
+        cancelText="Cancelar"
+        variant="warning"
+      />
     </Modal>
   );
 }

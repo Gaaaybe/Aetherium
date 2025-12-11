@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Book, Search, Filter, Download, Upload, Copy, Trash2, Plus, X } from 'lucide-react';
-import { Card, Button, Input, Select, EmptyState, Badge } from '../../../shared/ui';
+import { Card, Button, Input, Select, EmptyState, Badge, ConfirmDialog } from '../../../shared/ui';
 import { useBibliotecaCriaturas } from '../hooks/useBibliotecaCriaturas';
 import { getAllRoles } from '../data/roleTemplates';
 import type { Creature, CreatureRole } from '../types';
@@ -31,9 +31,10 @@ export function BibliotecaCriaturas({ onLoadCreature, onClose }: BibliotecaCriat
   } = useBibliotecaCriaturas();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'name' | 'level' | 'role' | 'date'>('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [roleFilter, setRoleFilter] = useState<CreatureRole | null>(null);
+  const [sortBy, setSortBy] = useState<'name' | 'level' | 'role' | 'date'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   // Aplicar filtros e ordenação
   const filteredCreatures = useMemo(() => {
@@ -61,6 +62,13 @@ export function BibliotecaCriaturas({ onLoadCreature, onClose }: BibliotecaCriat
     if (creature) {
       onLoadCreature(creature);
       onClose();
+    }
+  };
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      removeCreature(deleteTarget.id);
+      setDeleteTarget(null);
     }
   };
 
@@ -95,7 +103,7 @@ export function BibliotecaCriaturas({ onLoadCreature, onClose }: BibliotecaCriat
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
             Biblioteca de Criaturas
           </h2>
-          <Badge variant="primary">{savedCreatures.length}</Badge>
+          <Badge variant="espirito">{savedCreatures.length}</Badge>
         </div>
         <button
           onClick={onClose}
@@ -122,7 +130,7 @@ export function BibliotecaCriaturas({ onLoadCreature, onClose }: BibliotecaCriat
         <div className="flex items-center gap-2 flex-wrap">
           <Select
             value={roleFilter || ''}
-            onChange={(e) => setRoleFilter(e.target.value || null)}
+            onChange={(e) => setRoleFilter((e.target.value || null) as CreatureRole | null)}
             className="flex-1 min-w-[150px]"
           >
             <option value="">Todas as Funções</option>
@@ -133,7 +141,7 @@ export function BibliotecaCriaturas({ onLoadCreature, onClose }: BibliotecaCriat
 
           <Select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as 'name' | 'level' | 'role' | 'date')}
             className="flex-1 min-w-[120px]"
           >
             <option value="name">Nome</option>
@@ -190,15 +198,25 @@ export function BibliotecaCriaturas({ onLoadCreature, onClose }: BibliotecaCriat
                 onLoad={() => handleLoad(creature.id)}
                 onDuplicate={() => duplicateCreature(creature.id)}
                 onDelete={() => {
-                  if (confirm(`Remover "${creature.name}" da biblioteca?`)) {
-                    removeCreature(creature.id);
-                  }
+                  setDeleteTarget({ id: creature.id, name: creature.name });
                 }}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Dialog de Confirmação */}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+        title="Remover da Biblioteca"
+        message={deleteTarget ? `Tem certeza que deseja remover "${deleteTarget.name}" da biblioteca? Esta ação não pode ser desfeita.` : ''}
+        confirmText="Remover"
+        cancelText="Cancelar"
+        variant="danger"
+      />
     </div>
   );
 }
