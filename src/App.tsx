@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
-import { Wand2, Library, BookOpen, Moon, Sun } from 'lucide-react';
+import { Wand2, Library, BookOpen, Moon, Sun, Users } from 'lucide-react';
 import { useDarkMode, useFirstVisit, useScrollToTop, useMetaTags } from './shared/hooks';
 import { Button, ToastContainer } from './shared/ui';
-import { CriadorPage, BibliotecaPage, SobrePage } from './pages';
+import { CriadorPage, BibliotecaPage, SobrePage, GerenciadorPage } from './pages';
 import { ModalAtalhos } from './features/criador-de-poder/components/ModalAtalhos';
 import { PageTransition, Breadcrumbs } from './shared/components';
 
@@ -35,6 +35,19 @@ function Navigation() {
       >
         <Library className="w-4 h-4" />
         Biblioteca
+      </NavLink>
+      <NavLink
+        to="/gerenciador"
+        className={({ isActive }) =>
+          `flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            isActive
+              ? 'bg-espirito-100 dark:bg-espirito-900/30 text-espirito-700 dark:text-espirito-300'
+              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+          }`
+        }
+      >
+        <Users className="w-4 h-4" />
+        Criaturas
       </NavLink>
       <NavLink
         to="/sobre"
@@ -122,6 +135,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<CriadorPage />} />
             <Route path="/biblioteca" element={<BibliotecaPage />} />
+            <Route path="/gerenciador" element={<GerenciadorPage />} />
             <Route path="/sobre" element={<SobrePage />} />
           </Routes>
         </PageTransition>
