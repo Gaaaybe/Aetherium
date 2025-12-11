@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { Zap, Package, Globe, Sparkles, Copy, FileText } from 'lucide-react';
+import { Zap, Package, Globe, Sparkles, Copy, FileText, Clock, Ruler, Timer } from 'lucide-react';
 import { Modal, ModalFooter, Button, Badge, Card, CardContent, toast } from '../../../shared/ui';
 import { Poder, ModificacaoAplicada } from '../regras/calculadoraCusto';
-import { MODIFICACOES, Modificacao } from '../../../data';
+import { MODIFICACOES, ESCALAS, Modificacao } from '../../../data';
 import { useCustomItems } from '../../../shared/hooks';
 import type { DetalhesPoder } from '../types';
 
@@ -11,6 +11,12 @@ interface ResumoPoderProps {
   onClose: () => void;
   poder: Poder;
   detalhes: DetalhesPoder;
+}
+
+// Helper para obter nome da escala
+function getNomeEscala(tipo: 'acao' | 'alcance' | 'duracao', valor: number): string {
+  const escala = ESCALAS[tipo]?.escala.find((e: { valor: number }) => e.valor === valor);
+  return escala?.nome || `Nível ${valor}`;
 }
 
 export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderProps) {
@@ -252,6 +258,31 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                   <Package className="w-3 h-3" /> Espaços
                 </p>
                 <p className="text-2xl font-bold">{detalhes.espacosTotal}</p>
+              </div>
+            </div>
+
+            {/* Parâmetros do Poder */}
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="w-4 h-4 text-espirito-200" />
+                  <p className="text-espirito-200 text-xs">Ação</p>
+                </div>
+                <p className="text-sm font-semibold">{getNomeEscala('acao', poder.acao)}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Ruler className="w-4 h-4 text-espirito-200" />
+                  <p className="text-espirito-200 text-xs">Alcance</p>
+                </div>
+                <p className="text-sm font-semibold">{getNomeEscala('alcance', poder.alcance)}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Timer className="w-4 h-4 text-espirito-200" />
+                  <p className="text-espirito-200 text-xs">Duração</p>
+                </div>
+                <p className="text-sm font-semibold">{getNomeEscala('duracao', poder.duracao)}</p>
               </div>
             </div>
           </div>

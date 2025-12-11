@@ -172,6 +172,7 @@ function GerenciadorContent() {
 
         {/* Modal de Criação/Edição */}
         <FormCriatura
+          key={editingCreature || 'new'}
           isOpen={showForm}
           onClose={() => {
             setShowForm(false);

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Plus, AlertCircle, RotateCcw, Move } from 'lucide-react';
 import { Modal, ModalFooter, Button, Input, Slider, Badge, ConfirmDialog } from '../../../shared/ui';
 import { PreviewStats } from './PreviewStats';
@@ -37,7 +37,7 @@ export function FormCriatura({
   initialData,
   mode = 'create',
 }: FormCriaturaProps) {
-  // Form State
+  // Form State - usar initialData como base inicial
   const [formData, setFormData] = useState<Partial<CreatureFormInput>>(() => ({
     name: '',
     level: 1,
@@ -60,27 +60,6 @@ export function FormCriatura({
   );
 
   const [showResetDialog, setShowResetDialog] = useState(false);
-
-  // Sincronizar formData quando initialData mudar (ao trocar de criatura para editar)
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: '',
-        level: 1,
-        role: 'Padrao',
-        sovereigntyMultiplier: 10,
-        sovereignty: 1,
-        rdOverride: undefined,
-        speedOverride: 9,
-        color: undefined,
-        notes: '',
-        attributeDistribution: undefined,
-        saveDistribution: undefined,
-        selectedSkills: [],
-        ...initialData,
-      });
-    }
-  }, [initialData]);
 
   // Rastrear role anterior para detectar mudanças
   const previousRole = useRef(formData.role);

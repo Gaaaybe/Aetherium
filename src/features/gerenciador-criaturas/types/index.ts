@@ -213,8 +213,12 @@ export interface Creature {
   stats: CreatureStats;
   statsV2?: CreatureStatsV2;    // Nova estrutura de stats
   
-  // Ligação com outras features
-  abilities: string[];          // IDs dos poderes (do criador-de-poder)
+  // Ataques e Habilidades
+  attacks: CreatureAttack[];
+  creatureAbilities: CreatureAbility[];
+  
+  // Ligação com outras features (legacy)
+  abilities: string[];          // IDs dos poderes (do criador-de-poder) - deprecated, usar creatureAbilities
   items: string[];              // IDs dos itens (feature futura)
   
   // Board específico
@@ -291,4 +295,70 @@ export interface CalculatedStats extends CreatureStats {
     peMultiplier: number;
     damageMultiplier: number;
   };
+}
+
+// ========================================
+// ATAQUES E HABILIDADES
+// ========================================
+
+/**
+ * Tipos de dano disponíveis
+ */
+export type DamageType = 
+  | 'cortante'
+  | 'perfurante'
+  | 'contundente'
+  | 'fogo'
+  | 'gelo'
+  | 'eletrico'
+  | 'acido'
+  | 'veneno'
+  | 'necrotico'
+  | 'radiante'
+  | 'psiquico'
+  | 'trovao'
+  | 'energia';
+
+/**
+ * Tipos de alcance de ataque
+ */
+export type AttackRangeType = 
+  | 'adjacente'
+  | 'natural'
+  | 'curto'
+  | 'medio'
+  | 'longo'
+  | 'variavel';
+
+/**
+ * Alcance de ataque
+ */
+export interface AttackRange {
+  type: AttackRangeType;
+  additionalMeters?: number; // Metros adicionais (ex: natural + 3m)
+}
+
+/**
+ * Ataque de criatura
+ */
+export interface CreatureAttack {
+  id: string;
+  name: string;
+  damage: string;              // Formato: "2d6" ou "3d8+4"
+  damageType: DamageType;
+  criticalRange: number;       // Taxa de crítico (ex: 19-20 = 19, apenas 20 = 20)
+  criticalMultiplier: number;  // Multiplicador de crítico (ex: 2x, 3x)
+  range: AttackRange;          // Alcance do ataque
+  effect?: string;             // Descrição do efeito (futuramente ligado a poderes)
+}
+
+/**
+ * Habilidade de criatura (baseada em poderes)
+ */
+export interface CreatureAbility {
+  id: string;
+  name: string;                // Nome do poder
+  poder: unknown;              // Poder completo do criador (tipo Poder from criador-de-poder/types)
+  effortCost: 0 | 1 | 2 | 3;   // Unidades de esforço (0-3)
+  // realPeCost calculado dinamicamente: effortCost × creature.stats.effortUnit
 }

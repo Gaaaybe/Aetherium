@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { BottomSheet, BottomSheetFooter } from './BottomSheet';
 import { useIsMobile } from '../hooks/useMediaQuery';
 
@@ -51,7 +52,7 @@ export function Modal({
 
   // Em mobile, usa BottomSheet
   if (isMobile) {
-    return (
+    return createPortal(
       <BottomSheet
         isOpen={isOpen}
         onClose={onClose}
@@ -59,7 +60,8 @@ export function Modal({
         showCloseButton={showCloseButton}
       >
         {children}
-      </BottomSheet>
+      </BottomSheet>,
+      document.body
     );
   }
   
@@ -71,7 +73,7 @@ export function Modal({
     full: 'max-w-full mx-4',
   };
   
-  return (
+  return createPortal(
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm"
       onClick={onClose}
@@ -108,7 +110,8 @@ export function Modal({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

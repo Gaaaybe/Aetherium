@@ -159,6 +159,8 @@ export function useCreatureBoard() {
       saveDistribution: input.saveDistribution,
       selectedSkills: input.selectedSkills,
       bossMechanics,
+      attacks: [],
+      creatureAbilities: [],
     };
 
     // Adicionar aos arrays

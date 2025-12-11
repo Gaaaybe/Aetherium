@@ -8,6 +8,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { CreatureNode } from './CreatureNode';
 import { useCreatureBoardContext } from '../hooks/CreatureBoardContext';
+import { useMemo } from 'react';
 
 // Registrar tipos de nodes customizados
 const nodeTypes: NodeTypes = {
@@ -33,6 +34,9 @@ export function BoardCriaturas({ className = '' }: BoardCriaturasProps) {
     onConnect,
   } = useCreatureBoardContext();
 
+  // Memoizar nodeTypes para evitar recriação
+  const memoizedNodeTypes = useMemo(() => nodeTypes, []);
+
   return (
     <div className={`w-full h-full bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden ${className}`}>
       <ReactFlow
@@ -41,10 +45,21 @@ export function BoardCriaturas({ className = '' }: BoardCriaturasProps) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        nodeTypes={nodeTypes}
+        nodeTypes={memoizedNodeTypes}
         fitView
         attributionPosition="bottom-left"
         className="bg-gray-50 dark:bg-gray-900"
+        // Otimizações de performance
+        nodesDraggable={true}
+        nodesConnectable={false}
+        elementsSelectable={true}
+        selectNodesOnDrag={false}
+        panOnDrag={true}
+        minZoom={0.2}
+        maxZoom={2}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        // Melhorar performance do rendering
+        proOptions={{ hideAttribution: true }}
       >
         {/* Background Pattern */}
         <Background 
@@ -65,6 +80,8 @@ export function BoardCriaturas({ className = '' }: BoardCriaturasProps) {
           nodeStrokeWidth={3}
           className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg"
           maskColor="rgb(0, 0, 0, 0.1)"
+          pannable
+          zoomable
         />
       </ReactFlow>
     </div>
