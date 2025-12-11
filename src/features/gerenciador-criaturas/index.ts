@@ -13,6 +13,7 @@ export {
   useCreatureBossMechanics,
   useCreatureValidation 
 } from './hooks/useCreatureCalculator';
+export { useBibliotecaCriaturas } from './hooks/useBibliotecaCriaturas';
 
 // Data
 export { 

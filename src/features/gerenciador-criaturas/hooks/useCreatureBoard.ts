@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { 
   Node, 
   Edge, 
@@ -13,18 +13,81 @@ import type { Creature, CreatureFormInput } from '../types';
 import { calculateCreatureStats, calculateBossMechanics } from './calculateCreatureStats';
 import { calculateCreatureStatsV2 } from './calculateCreatureStatsV2';
 
+const STORAGE_KEY_BOARD = 'spirit-caos:board-criaturas';
+
 /**
  * Hook: useCreatureBoard
  * 
  * Gerencia o estado do board de criaturas (React Flow).
  * - Adiciona/remove criaturas
  * - Sincroniza nodes do React Flow com criaturas
- * - Persiste no LocalStorage (futuro)
+ * - Persiste no LocalStorage
  */
 export function useCreatureBoard() {
-  const [creatures, setCreatures] = useState<Creature[]>([]);
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
+  const [creatures, setCreatures] = useState<Creature[]>(() => {
+    // Carregar do localStorage na inicialização
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_BOARD);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.creatures || [];
+      }
+    } catch (error) {
+      console.error('Erro ao carregar board:', error);
+    }
+    return [];
+  });
+  
+  const [nodes, setNodes] = useState<Node[]>(() => {
+    // Carregar nodes do localStorage
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_BOARD);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const loadedNodes = parsed.nodes || [];
+        const loadedCreatures = parsed.creatures || [];
+        
+        // Sincronizar data dos nodes com creatures
+        return loadedNodes.map((node: Node) => {
+          const creature = loadedCreatures.find((c: Creature) => c.id === node.id);
+          if (creature) {
+            return { ...node, data: creature };
+          }
+          return node;
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar nodes:', error);
+    }
+    return [];
+  });
+  
+  const [edges, setEdges] = useState<Edge[]>(() => {
+    // Carregar edges do localStorage
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY_BOARD);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.edges || [];
+      }
+    } catch (error) {
+      console.error('Erro ao carregar edges:', error);
+    }
+    return [];
+  });
+
+  // Persistir no localStorage sempre que mudar
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_BOARD, JSON.stringify({
+        creatures,
+        nodes,
+        edges,
+      }));
+    } catch (error) {
+      console.error('Erro ao salvar board:', error);
+    }
+  }, [creatures, nodes, edges]);
 
   // Handlers de mudança (drag, resize, etc)
   const onNodesChange = useCallback(
@@ -116,6 +179,27 @@ export function useCreatureBoard() {
   }, []);
 
   /**
+   * Adicionar criatura completa (da biblioteca)
+   */
+  const addCreatureFromLibrary = useCallback((creature: Creature) => {
+    // Adicionar criatura já completa
+    setCreatures(prev => [...prev, creature]);
+    
+    // Criar node do React Flow
+    const newNode: Node = {
+      id: creature.id,
+      type: 'creature',
+      position: creature.position,
+      data: creature,
+      draggable: true,
+    };
+    
+    setNodes(prev => [...prev, newNode]);
+    
+    return creature;
+  }, []);
+
+  /**
    * Remover criatura
    */
   const removeCreature = useCallback((id: string) => {
@@ -152,6 +236,8 @@ export function useCreatureBoard() {
             role: updates.role ?? c.role,
             notes: updates.notes ?? c.notes,
             color: updates.color ?? c.color,
+            imageUrl: updates.imageUrl ?? c.imageUrl,
+            imagePosition: updates.imagePosition ?? c.imagePosition,
             rdOverride: updates.rdOverride ?? c.stats.rd,
             speedOverride: updates.speedOverride ?? c.stats.speed,
             sovereigntyMultiplier: updates.sovereigntyMultiplier,
@@ -181,6 +267,8 @@ export function useCreatureBoard() {
             role: input.role,
             notes: input.notes,
             color: input.color,
+            imageUrl: input.imageUrl,
+            imagePosition: input.imagePosition,
             stats: newStats || c.stats,
             statsV2: newStatsV2,
             attributeDistribution: input.attributeDistribution,
@@ -458,6 +546,7 @@ export function useCreatureBoard() {
     
     // CRUD
     addCreature,
+    addCreatureFromLibrary,
     removeCreature,
     updateCreature,
     getCreature,

@@ -1,6 +1,6 @@
 import { memo, useState } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { Heart, Zap, Swords, Trash2, Edit, Eye, EyeOff, Shield, Target, Gauge, Plus, Minus, RotateCcw } from 'lucide-react';
+import { Heart, Zap, Swords, Trash2, Edit, Eye, EyeOff, Shield, Target, Gauge, Plus, Minus, RotateCcw, Save } from 'lucide-react';
 import type { Creature } from '../types';
 import { getRoleColor } from '../data/roleTemplates';
 import { useCreatureBoardContext } from '../hooks/CreatureBoardContext';
@@ -16,7 +16,7 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
   const creature = data;
   const roleColor = getRoleColor(creature.role);
   const { removeCreature, toggleStatus, updateResources } = useCreatureBoardContext();
-  const { onEditCreature } = useUIActions();
+  const { onEditCreature, onSaveCreature } = useUIActions();
   const [hpInput, setHpInput] = useState('');
   const [peInput, setPeInput] = useState('');
 
@@ -45,6 +45,13 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEditCreature(creature.id);
+  };
+
+  const handleSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onSaveCreature) {
+      onSaveCreature(creature.id);
+    }
   };
 
   // Handlers de HP
@@ -108,7 +115,6 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
             style={creature.imagePosition ? { 
               objectPosition: `${creature.imagePosition.x}% ${creature.imagePosition.y}%` 
             } : undefined}
-            crossOrigin="anonymous"
             loading="lazy"
             onError={(e) => {
               e.currentTarget.parentElement!.style.display = 'none';
@@ -513,6 +519,16 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
               <Eye className="w-4 h-4 text-gray-500" />
             )}
           </button>
+          
+          {onSaveCreature && (
+            <button
+              onClick={handleSave}
+              className="p-1.5 hover:bg-green-100 dark:hover:bg-green-900/30 rounded transition-colors"
+              title="Salvar na Biblioteca"
+            >
+              <Save className="w-4 h-4 text-green-600 dark:text-green-400" />
+            </button>
+          )}
           
           <button
             onClick={handleEdit}

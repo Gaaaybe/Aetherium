@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { Plus, Users, Trash2 } from 'lucide-react';
+import { Plus, Users, Trash2, Book, Save } from 'lucide-react';
 import { ReactFlowProvider } from 'reactflow';
 import { Button } from '../shared/ui/Button';
 import { EmptyState } from '../shared/ui/EmptyState';
 import { ConfirmDialog } from '../shared/ui/ConfirmDialog';
+import { Modal } from '../shared/ui/Modal';
 import { FormCriatura } from '../features/gerenciador-criaturas/components/FormCriatura';
 import { BoardCriaturas } from '../features/gerenciador-criaturas/components/BoardCriaturas';
+import { BibliotecaCriaturas } from '../features/gerenciador-criaturas/components/BibliotecaCriaturas';
 import { CreatureBoardProvider, useCreatureBoardContext } from '../features/gerenciador-criaturas/hooks/CreatureBoardContext';
 import { UIActionsContext } from '../features/gerenciador-criaturas/hooks/UIActionsContext';
+import { useBibliotecaCriaturas } from '../features/gerenciador-criaturas/hooks/useBibliotecaCriaturas';
 import type { CreatureFormInput, Creature } from '../features/gerenciador-criaturas/types';
 
 /**
@@ -18,14 +21,19 @@ import type { CreatureFormInput, Creature } from '../features/gerenciador-criatu
 function GerenciadorContent() {
   const [showForm, setShowForm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
   const [editingCreature, setEditingCreature] = useState<string | null>(null);
+  const [selectedCreature, setSelectedCreature] = useState<string | null>(null);
   
   const {
     addCreature,
+    addCreatureFromLibrary,
     updateCreature,
     clearBoard,
     creatures,
   } = useCreatureBoardContext();
+
+  const { saveCreature, isSaved } = useBibliotecaCriaturas();
 
   const totalCreatures = creatures.length;
   const activeCreatures = creatures.filter(c => !c.status || c.status === 'ativo' || c.status === 'oculto').length;
@@ -41,6 +49,8 @@ function GerenciadorContent() {
         role: input.role,
         notes: input.notes,
         color: input.color,
+        imageUrl: input.imageUrl,
+        imagePosition: input.imagePosition,
         rdOverride: input.rdOverride,
         speedOverride: input.speedOverride,
         sovereigntyMultiplier: input.sovereigntyMultiplier,
@@ -68,9 +78,24 @@ function GerenciadorContent() {
     setShowClearConfirm(false);
   };
 
+  const handleSaveCreature = (creatureId: string) => {
+    const creature = creatures.find(c => c.id === creatureId);
+    if (creature) {
+      saveCreature(creature);
+      setSelectedCreature(null);
+    }
+  };
+
+  const handleLoadCreature = (creature: Creature) => {
+    addCreatureFromLibrary(creature);
+  };
+
   return (
     <ReactFlowProvider>
-      <UIActionsContext.Provider value={{ onEditCreature: handleEditCreature }}>
+      <UIActionsContext.Provider value={{ 
+        onEditCreature: handleEditCreature,
+        onSaveCreature: handleSaveCreature 
+      }}>
         <div className="h-[calc(100vh-3rem)] flex flex-col">
         {/* Header */}
         <div className="mb-2">
@@ -102,6 +127,14 @@ function GerenciadorContent() {
             </div>
             
             <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => setShowLibrary(true)} 
+                variant="outline"
+                className="gap-2"
+              >
+                <Book className="w-4 h-4" />
+                Biblioteca
+              </Button>
               {totalCreatures > 0 && (
                 <Button 
                   onClick={() => setShowClearConfirm(true)} 
@@ -159,10 +192,13 @@ function GerenciadorContent() {
                     role: creature.role,
                     notes: creature.notes,
                     color: creature.color,
+                    imageUrl: creature.imageUrl,
+                    imagePosition: creature.imagePosition,
                     rdOverride: creature.stats.rd,
                     damageOverride: creature.stats.damage,
                     speedOverride: creature.stats.speed,
                     sovereigntyMultiplier: creature.role === 'ChefeSolo' ? creature.bossMechanics?.sovereigntyMax : undefined,
+                    sovereignty: creature.bossMechanics?.sovereignty,
                     attributeDistribution: creature.attributeDistribution,
                     saveDistribution: creature.saveDistribution,
                     selectedSkills: creature.selectedSkills,
@@ -183,6 +219,19 @@ function GerenciadorContent() {
           cancelText="Cancelar"
           variant="danger"
         />
+
+        {/* Modal da Biblioteca */}
+        <Modal
+          isOpen={showLibrary}
+          onClose={() => setShowLibrary(false)}
+          title="Biblioteca de Criaturas"
+          size="xl"
+        >
+          <BibliotecaCriaturas
+            onLoadCreature={handleLoadCreature}
+            onClose={() => setShowLibrary(false)}
+          />
+        </Modal>
       </div>
       </UIActionsContext.Provider>
     </ReactFlowProvider>

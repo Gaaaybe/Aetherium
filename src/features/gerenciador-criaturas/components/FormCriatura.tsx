@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Plus, AlertCircle, RotateCcw, Move } from 'lucide-react';
 import { Modal, ModalFooter, Button, Input, Slider, Badge } from '../../../shared/ui';
 import { PreviewStats } from './PreviewStats';
@@ -54,11 +54,36 @@ export function FormCriatura({
     ...initialData,
   }));
 
+  // Sincronizar formData quando initialData mudar (ao trocar de criatura para editar)
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: '',
+        level: 1,
+        role: 'Padrao',
+        sovereigntyMultiplier: 10,
+        sovereignty: 1,
+        rdOverride: undefined,
+        speedOverride: 9,
+        color: undefined,
+        notes: '',
+        attributeDistribution: undefined,
+        saveDistribution: undefined,
+        selectedSkills: [],
+        ...initialData,
+      });
+      // Atualizar imagePosition também
+      setImagePosition(initialData.imagePosition ?? { x: 50, y: 50 });
+    }
+  }, [initialData]);
+
   // Rastrear role anterior para detectar mudanças
   const previousRole = useRef(formData.role);
 
   // Estado para posição da imagem (object-position)
-  const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 }); // percentual
+  const [imagePosition, setImagePosition] = useState(
+    initialData?.imagePosition ?? { x: 50, y: 50 }
+  );
 
   // Validação
   const errors = useCreatureValidation(formData);
@@ -335,7 +360,7 @@ export function FormCriatura({
               value={formData.level || 1}
               onChange={(value) => updateField('level', value)}
             />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
+            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
               <span>Nível 1</span>
               <span>Nível 250</span>
             </div>
@@ -363,8 +388,8 @@ export function FormCriatura({
                       }
                     `}
                   >
-                    <span className="font-bold text-sm mb-1 block">{template.name}</span>
-                    <p className="text-xs text-gray-500 line-clamp-2">
+                    <span className="font-bold text-sm mb-1 block text-gray-900 dark:text-gray-100">{template.name}</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
                       {template.description}
                     </p>
                   </button>

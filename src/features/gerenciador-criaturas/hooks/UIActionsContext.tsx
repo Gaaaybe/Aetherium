@@ -1,11 +1,12 @@
 import { createContext, useContext } from 'react';
 
 /**
- * Context para ações da UI (editar, etc)
+ * Context para ações da UI (editar, salvar, etc)
  * Usado para comunicar ações do CreatureNode para a página
  */
 export const UIActionsContext = createContext<{
   onEditCreature: (id: string) => void;
+  onSaveCreature?: (id: string) => void;
 } | null>(null);
 
 export const useUIActions = () => {
