@@ -17,6 +17,7 @@ export function BibliotecaPage() {
     importarPoder,
     exportarBiblioteca,
     importarBiblioteca,
+    buscarPoderComHydration,
   } = useBibliotecaPoderes();
   const [busca, setBusca] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -39,10 +40,19 @@ export function BibliotecaPage() {
     
     // Salva o poder no localStorage para ser carregado pelo usePoderCalculator
     try {
-      localStorage.setItem('criador-de-poder-carregar', JSON.stringify(poder));
+      // Busca com hydration para garantir que está atualizado
+      const { poder: poderAtualizado, hydrationInfo } = buscarPoderComHydration(poder.id);
+      const poderParaCarregar = poderAtualizado || poder;
+      
+      localStorage.setItem('criador-de-poder-carregar', JSON.stringify(poderParaCarregar));
       setCarregandoId(null);
       navigate('/');
-      toast.success(`Poder "${poder.nome}" carregado!`);
+      
+      if (hydrationInfo?.hasIssues) {
+        toast.info(`Poder "${poderParaCarregar.nome}" carregado e atualizado`);
+      } else {
+        toast.success(`Poder "${poderParaCarregar.nome}" carregado!`);
+      }
     } catch (error) {
       console.error('Erro ao carregar poder:', error);
       setCarregandoId(null);
@@ -82,7 +92,17 @@ export function BibliotecaPage() {
     try {
       const text = await file.text();
       await new Promise(resolve => setTimeout(resolve, 400));
-      const poderImportado = importarPoder(text);
+      const { poder: poderImportado, hydrationInfo } = importarPoder(text);
+      
+      // Exibir avisos de hydration se houver
+      if (hydrationInfo?.hasIssues) {
+        if (hydrationInfo.severity === 'warning') {
+          toast.warning('Poder importado com avisos - verifique as alterações');
+        } else {
+          toast.info('Poder importado e validado');
+        }
+      }
+      
       toast.success(`Poder "${poderImportado.nome}" importado com sucesso!`);
       
       if (fileInputRef.current) {
@@ -115,7 +135,17 @@ export function BibliotecaPage() {
     try {
       const text = await file.text();
       await new Promise(resolve => setTimeout(resolve, 400));
-      const poderImportado = importarPoder(text);
+      const { poder: poderImportado, hydrationInfo } = importarPoder(text);
+      
+      // Exibir avisos de hydration se houver
+      if (hydrationInfo?.hasIssues) {
+        if (hydrationInfo.severity === 'warning') {
+          toast.warning(`Poder importado com avisos: ${hydrationInfo.message.split('\n')[1] || 'dados atualizados'}`);
+        } else {
+          toast.info('Poder importado e validado');
+        }
+      }
+      
       toast.success(`Poder "${poderImportado.nome}" importado com sucesso!`);
     } catch {
       toast.error('Erro ao importar arquivo. Verifique se é um JSON válido.');

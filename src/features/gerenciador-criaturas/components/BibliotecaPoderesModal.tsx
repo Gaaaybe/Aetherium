@@ -11,7 +11,7 @@ interface BibliotecaPoderesModalProps {
 }
 
 export function BibliotecaPoderesModal({ isOpen, onClose, onSelectPoder }: BibliotecaPoderesModalProps) {
-  const { poderes } = useBibliotecaPoderes();
+  const { poderes, buscarPoderComHydration } = useBibliotecaPoderes();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -20,7 +20,9 @@ export function BibliotecaPoderesModal({ isOpen, onClose, onSelectPoder }: Bibli
   );
 
   const handleSelect = () => {
-    const poder = poderes.find(p => p.id === selectedId);
+    if (!selectedId) return;
+    
+    const { poder } = buscarPoderComHydration(selectedId);
     if (poder) {
       onSelectPoder(poder);
       onClose();
