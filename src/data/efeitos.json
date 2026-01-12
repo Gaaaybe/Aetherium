@@ -2,7 +2,7 @@
       {
     "id": "afligir",
     "nome": "Afligir",
-    "custoBase": 1,
+    "custoBase": 2,
     "descricao": "Você impõe uma ou mais condições debilitantes em um alvo com um ataque corpoa-corpo.",
     "parametrosPadrao": {
       "acao": 1,
@@ -52,8 +52,8 @@
   {
     "id": "dano",
     "nome": "Dano",
-    "custoBase": 1,
-    "descricao": "Causa dano físico ou de energia ao alvo. O valor de dano é determinado pelo Grau do efeito.",
+    "custoBase": 2,
+    "descricao": "Causa dano ao alvo. O valor de dano é determinado pelo Grau do efeito.",
     "parametrosPadrao": {
       "acao": 1,
       "alcance": 1,
@@ -313,7 +313,7 @@
   {
     "id": "compreender",
     "nome": "Compreender",
-    "custoBase": 4,
+    "custoBase": 6,
     "descricao": "Você compreende diferentes tipos de comunicação. Cada grau neste efeito permite que você escolha uma das opções disponíveis (Animais, Espíritos, Idiomas, Máquinas, Objetos, Plantas). Algumas opções requerem 2 graus para comunicação completa (falar e compreender).",
     "parametrosPadrao": {
       "acao": 5,
@@ -428,80 +428,146 @@
     "exemplos": "Telepatia, leitura de pensamentos, sondagem mental, invasão psíquica"
   },
   {
+    "id": "controle-mental",
+    "nome": "Controle Mental",
+    "custoBase": 6,
+    "descricao": "Você pode impor sua vontade sobre a mente de outros. Faça um Teste de Efeito oposto pelo teste de Vontade do alvo. SUCESSO: Você estabelece controle. O nível de controle é determinado pelo Grau (veja Patamares). FALHA: Alvo resiste e percebe tentativa (a menos que tenha Sutil). RESISTÊNCIA CONTÍNUA: Alvo tem novo teste de Vontade no final de cada turno dele para quebrar controle. ORDENS SUICIDAS: Se ordenar algo obviamente suicida ou oposto à natureza fundamental do alvo (mãe matar filho), ele recebe +2 Vantagens no teste imediato. PATAMARES: Patamar 1 (Grau 2) - Influência/Sugestão: planta ideia, emoção ou tendência (não controla ações diretas, alvo racionaliza como ideia própria). Patamar 2 (Grau 5) - Compulsão/Ordem Única: força ação específica ou emoção intensa (Provocação, Charme, Comando de uma frase). Patamar 3 (Grau 9) - Dominação/Marionete: controle total de funções motoras e mentais, dita todas ações (só um alvo dominado por vez sem modificações).",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 3,
+      "duracao": 1
+    },
+    "categorias": ["Ataque", "Controle", "Debuff"],
+    "exemplos": "Dominação mental, hipnose poderosa, controle telepático, possessão mental, lavagem cerebral",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Patamar de Controle",
+      "opcoes": [
+        {
+          "id": "patamar-1-influencia",
+          "nome": "Patamar 1: Influência (Grau 2+)",
+          "grauMinimo": 2,
+          "modificadorCusto": 0,
+          "descricao": "Sugestão - Planta ideia, emoção ou tendência. Aplicações: Tendência ('Você sente que aquele guarda é suspeito'), Empurrão ('Você está com sede'), Dúvida ('Talvez eu deva deixar a porta destrancada'). Limite: Alvo racionaliza influência como ideia dele, não fará nada que não faria sob leve pressão social."
+        },
+        {
+          "id": "patamar-2-compulsao",
+          "nome": "Patamar 2: Compulsão (Grau 5+)",
+          "grauMinimo": 5,
+          "modificadorCusto": 0,
+          "descricao": "Ordem Única - Força ação específica ou estado emocional intenso. Aplicações: Provocação (compelido a atacar ignorando defesas), Charme (considera você amigo, não ataca, protege), Comando (uma frase: 'Largue arma', 'Corra', 'Fique parado', 'Diga verdade'). Limite: Ordem rege ação principal do turno, alvo escolhe como executa."
+        },
+        {
+          "id": "patamar-3-dominacao",
+          "nome": "Patamar 3: Dominação (Grau 9+)",
+          "grauMinimo": 9,
+          "modificadorCusto": 0,
+          "descricao": "Marionete - Controle total de funções motoras e mentais. Aplicações: Controle Total (dita todas ações, movimentos, falas - você joga com ficha dele no turno dele), Programação (gatilhos complexos: 'Quando Rei entrar, ataque-o'). Limite: Apenas um alvo dominado por vez com concentração, exceto com modificações de área/divisão."
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Especificar tipo de controle",
+    "placeholderInput": "Ex: Sugestão telepática, Comando verbal, Dominação total"
+  },
+  {
     "id": "sentidos",
     "nome": "Sentidos",
-    "custoBase": 4,
-    "descricao": "Seus sentidos são melhores, ou você tem sentidos adicionais. Cada grau permite escolher efeitos da lista: Acurado (2/4 graus), À Distância (1), Aguçado (1-2), Analítico (1-2), Contra-Ataca Camuflagem (2-5), Contra-Ataca Ilusão (4), Detecção (2), Elo de Comunicação (1), Estendido (3), Infravisão (1), Penetra Camuflagem (5), Percepção (1-2), Pós-cognição (6), Precognição (7), Rádio (1), Radial (1-2), Rápido (1+), Rastrear (2), Sentido de Direção (1), Sentido de Distância (1), Sentido de Perigo (1), Sentido de Tempo (1), Ultra-audição (1), Ultravisão (1), Visão Microscópica (2-8), Visão na Penumbra (1), Visão no Escuro (3-6). Combine efeitos conforme necessário, respeitando o custo total.",
+    "custoBase": 3,
+    "descricao": "Este efeito permite ao personagem desbloquear sentidos superiores. Ao adquiri-lo, escolha um sentido (visão, audição, olfato, etc.) e uma capacidade desbloqueada. Cada efeito permite escolher apenas uma capacidade. Para múltiplas capacidades no mesmo sentido, compre efeitos adicionais. Se estiver comprando sentidos extras dentro do mesmo poder, cada sentido adicional além do primeiro custa +2 por grau (Modificação Global). PATAMARES: As capacidades são divididas em patamares baseados no grau. PATAMAR 1 (Grau 2): +1 por Grau - Radial, Rastrear, Sentido de Direção, Sentido de Distância, Sentido de Perigo, Sentido de Tempo, Ultra-audição, Ultravisão, À Distância, Detecção, Estendido, Visão Ampliada. PATAMAR 2 (Grau 4): +3 por Grau - Contra-Ataca Camuflagem Única, Rádio, Rápido, Visão na Penumbra, Elo de Comunicação, Infravisão, Percepção, Detecção Acurado, Avaliação, Visão Microbiológica. PATAMAR 3 (Grau 5): +4 por Grau - Contra-Ataca Camuflagem Universal, Penetra Camuflagem (Obstáculos/Raio-X), Pós-cognição, Visão no Escuro, Visão Molecular. PATAMAR 4 (Grau 7): +6 por Grau - Precognição, Analítico, Visão Atômica. O grau determina qual patamar você pode acessar e quantas capacidades pode ter.",
     "parametrosPadrao": {
       "acao": 5,
       "alcance": 0,
       "duracao": 4
     },
     "categorias": ["Sensorial"],
-    "exemplos": "Visão de raio-X, super audição, sentido sísmico, visão de calor, telepatia limitada",
-    "requerInput": true,
-    "tipoInput": "texto",
-    "labelInput": "Especificar sentidos",
-    "placeholderInput": "Ex: Visão no Escuro (3), Aguçado-Audição (1), Radial-Visão (1)"
-  },
-  {
-    "id": "sentido-remoto",
-    "nome": "Sentido Remoto",
-    "custoBase": 1,
-    "descricao": "Você pode deslocar seus sentidos para longe, percebendo como se estivesse no local. Alcance base: 16 metros, aumenta por grau de distância. Sentido Remoto se sobrepõe aos sentidos normais enquanto está em uso. Alvos observados podem 'senti-lo' com teste de Intuição. Pode fazer testes de Percepção normalmente usando sentidos deslocados. Custo por grau varia com quantidade de sentidos: 1 ponto = 1 tipo de sentido, 2 pontos = 2 tipos, 3 pontos = 3 tipos, 4 pontos = 4 tipos, 5 pontos = todos os tipos. Sentidos visuais custam como 2 tipos (Sentido Remoto visual = 2 pontos/grau).",
-    "parametrosPadrao": {
-      "acao": 3,
-      "alcance": 6,
-      "duracao": 1
-    },
-    "categorias": ["Sensorial", "Comunicação"],
-    "exemplos": "Clarividência, clariaudiência, olho arcano, câmera remota, visão astral",
+    "exemplos": "Visão de raio-X (Penetra Camuflagem), super audição (Radial+Aguçado), sentido sísmico (Detecção), visão de calor (Infravisão), precognição",
     "configuracoes": {
       "tipo": "select",
-      "label": "Tipos de Sentido",
+      "label": "Patamar de Capacidade",
       "opcoes": [
         {
-          "id": "um-tipo",
-          "nome": "1 Tipo de Sentido",
-          "modificadorCusto": 0,
-          "descricao": "Desloca apenas um tipo de sentido (auditivo, olfativo, tátil, etc.)"
-        },
-        {
-          "id": "dois-tipos",
-          "nome": "2 Tipos de Sentido",
+          "id": "patamar-1",
+          "nome": "Patamar 1 (Grau 2+)",
+          "grauMinimo": 2,
           "modificadorCusto": 1,
-          "descricao": "Desloca dois tipos de sentido simultaneamente"
+          "descricao": "Capacidades básicas: Radial, Rastrear, Sentidos de Direção/Distância/Perigo/Tempo, Ultra-audição, Ultravisão, À Distância, Detecção, Estendido, Visão Ampliada."
         },
         {
-          "id": "visual",
-          "nome": "Sentido Visual (conta como 2)",
-          "modificadorCusto": 1,
-          "descricao": "Desloca sentidos visuais (custam como 2 tipos)"
-        },
-        {
-          "id": "tres-tipos",
-          "nome": "3 Tipos de Sentido",
-          "modificadorCusto": 2,
-          "descricao": "Desloca três tipos de sentido simultaneamente"
-        },
-        {
-          "id": "quatro-tipos",
-          "nome": "4 Tipos de Sentido",
+          "id": "patamar-2",
+          "nome": "Patamar 2 (Grau 4+)",
+          "grauMinimo": 4,
           "modificadorCusto": 3,
-          "descricao": "Desloca quatro tipos de sentido simultaneamente"
+          "descricao": "Capacidades avançadas: Contra-Ataca Camuflagem Única, Rádio, Rápido, Visão na Penumbra, Elo de Comunicação, Infravisão, Percepção, Detecção Acurado, Avaliação, Visão Microbiológica."
         },
         {
-          "id": "todos-tipos",
-          "nome": "Todos os Tipos de Sentido",
+          "id": "patamar-3",
+          "nome": "Patamar 3 (Grau 5+)",
+          "grauMinimo": 5,
           "modificadorCusto": 4,
-          "descricao": "Desloca todos os seus sentidos para o local remoto"
+          "descricao": "Capacidades superiores: Contra-Ataca Camuflagem Universal, Penetra Camuflagem (Raio-X), Pós-cognição, Visão no Escuro, Visão Molecular."
+        },
+        {
+          "id": "patamar-4",
+          "nome": "Patamar 4 (Grau 7+)",
+          "grauMinimo": 7,
+          "modificadorCusto": 6,
+          "descricao": "Capacidades supremas: Precognição, Analítico (análise completa de alvos), Visão Atômica."
         }
       ]
     },
     "requerInput": true,
     "tipoInput": "texto",
-    "labelInput": "Tipos de sentido deslocados",
-    "placeholderInput": "Ex: Visual e Auditivo, Todos os sentidos, etc."
+    "labelInput": "Especificar sentido e capacidade",
+    "placeholderInput": "Ex: Visão - Penetra Camuflagem, Audição - Radial+Ultra-audição, Olfato - Rastrear"
+  },
+  {
+    "id": "sentido-remoto",
+    "nome": "Sentido Remoto",
+    "custoBase": 3,
+    "descricao": "Você desloca sua percepção, tornando-se um observador fantasma ou uma âncora para ataques à distância. A distância máxima é determinada pelo seu Grau neste efeito na Tabela Universal de Distância. O SENSOR: Você cria um ponto de percepção invisível e intangível no local alvo. Não precisa ver o local, mas deve definir distância e direção ou conhecer o local (se tiver extra Acurado). ATAQUE VIA SENSOR: Se possui ataques com alcance Percepção, pode originá-los do Sensor. Para o alvo, o ataque surge do nada ou do Sensor invisível. SOBREPOSIÇÃO: Enquanto usa este poder, seus sentidos naturais no corpo físico são substituídos pelos sentidos remotos. Você fica Desprevenido contra ameaças ao corpo físico. DETECÇÃO: O Sensor não é indetectável. Criaturas no local podem sentir que estão sendo observadas com teste de Intuição (ou Percepção Mística) contra seu Teste de Efeito. Sucesso: Sentem presença, calafrio ou perturbação. INTERAÇÃO SENSORIAL: Pode usar seus efeitos de Sentidos (Visão no Escuro, Analítico, etc.) através do Sensor, desde que façam parte do pacote projetado. Custo alto porque estende alcance de todos os poderes baseados em percepção.",
+    "parametrosPadrao": {
+      "acao": 2,
+      "alcance": 6,
+      "duracao": 1
+    },
+    "categorias": ["Sensorial", "Comunicação"],
+    "exemplos": "Clarividência, clariaudiência, olho arcano, câmera remota, projeção astral, espionagem psíquica",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Pacote de Sentidos",
+      "opcoes": [
+        {
+          "id": "sentido-unico",
+          "nome": "Sentido Único Não-Visual",
+          "modificadorCusto": 0,
+          "descricao": "Um único sentido não-visual (Audição, Faro, Mental, etc.). Difícil de usar para mirar ataques precisos sem extra Acurado."
+        },
+        {
+          "id": "visao-apenas",
+          "nome": "Visão (Sozinha)",
+          "modificadorCusto": 1,
+          "descricao": "Apenas sentidos visuais deslocados. Permite observação visual clara, mas sem outros sentidos."
+        },
+        {
+          "id": "visao-audicao",
+          "nome": "Visão + Audição (Pacote Espionagem)",
+          "modificadorCusto": 2,
+          "descricao": "Visão e audição combinadas. Ideal para espionagem e reconhecimento completo."
+        },
+        {
+          "id": "todos-sentidos",
+          "nome": "Todos os Sentidos (Projeção Completa)",
+          "modificadorCusto": 3,
+          "descricao": "Desloca todos os seus sentidos. Projeção completa da consciência, como se estivesse fisicamente presente."
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Especificar sentidos",
+    "placeholderInput": "Ex: Visão, Audição + Visão, Mental, Todos"
   },
   {
     "id": "escavacao",
@@ -575,7 +641,7 @@
   {
     "id": "teleporte",
     "nome": "Teleporte",
-    "custoBase": 2,
+    "custoBase": 3,
     "descricao": "Você pode se mover instantaneamente de um lugar para outro sem atravessar a distância entre os dois pontos. Você pode teleportar a si mesmo e até 1kg de massa adicional a um grau de distância igual ao seu grau nesse efeito como uma ação de movimento. Passageiros resistentes podem fazer um teste de resistência para evitar serem levados com você.",
     "parametrosPadrao": {
       "acao": 2,
@@ -904,7 +970,7 @@
   {
     "id": "recuperacao",
     "nome": "Recuperação",
-    "custoBase": 2,
+    "custoBase": 3,
     "descricao": "Você pode recuperar danos, condições, lesões ou energia de um alvo. O tipo de recuperação determina o custo base. Dano: recupera PVs conforme tabela de dano/cura (grau determina quantidade de dados). Não funciona em criaturas sem Vigor ou objetos. Condição: remove condições (exceto morrendo, faminto, surpreendido, aflições verdadeiras). Grau deve ser ≥ grau do efeito que causou a condição. Lesão: reduz tempo de cuidados prolongados (não verdadeiro) ou cura lesões verdadeiras ao longo do tempo (tabela de tempo invertida). Grau 7+ = ação livre. Energia: recupera PE = grau do custo do efeito. Deve ter 2+ falhas verdadeiras (não contam para redução de custo). Não pode ser fortalecido/enfraquecido.",
     "parametrosPadrao": {
       "acao": 1,
