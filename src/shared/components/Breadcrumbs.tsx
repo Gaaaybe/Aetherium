@@ -6,8 +6,12 @@ interface BreadcrumbItem {
 }
 
 const routeLabels: Record<string, string> = {
-  '/': 'Criador',
-  '/biblioteca': 'Biblioteca',
+  '/': 'Início',
+  '/personagens': 'Personagens',
+  '/campanhas': 'Campanhas',
+  '/criador': 'Criador de Poderes',
+  '/criador/biblioteca': 'Biblioteca',
+  '/gerenciador': 'Criaturas',
   '/sobre': 'Sobre',
 };
 

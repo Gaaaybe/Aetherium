@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
 
 interface Toast {
@@ -8,7 +8,7 @@ interface Toast {
 }
 
 let toastId = 0;
-const listeners: ((toast: Toast) => void)[] = [];
+const listeners: Set<(toast: Toast) => void> = new Set();
 
 export const toast = {
   success: (message: string) => {
@@ -31,21 +31,38 @@ export const toast = {
 
 export function useToast() {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const timeoutsRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+
+  const removeToast = useCallback((id: number) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+    const timeout = timeoutsRef.current.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      timeoutsRef.current.delete(id);
+    }
+  }, []);
 
   useEffect(() => {
     const listener = (toast: Toast) => {
       setToasts(prev => [...prev, toast]);
-      setTimeout(() => {
-        setToasts(prev => prev.filter(t => t.id !== toast.id));
+      
+      // Agendar remoção automática
+      const timeout = setTimeout(() => {
+        removeToast(toast.id);
       }, 3000);
+      
+      timeoutsRef.current.set(toast.id, timeout);
     };
 
-    listeners.push(listener);
+    listeners.add(listener);
+    
     return () => {
-      const index = listeners.indexOf(listener);
-      if (index > -1) listeners.splice(index, 1);
+      listeners.delete(listener);
+      // Limpar todos os timeouts pendentes
+      timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+      timeoutsRef.current.clear();
     };
-  }, []);
+  }, [removeToast]);
 
   return toasts;
 }

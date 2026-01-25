@@ -9,26 +9,46 @@ interface MetaTagsConfig {
 
 const routeMetaTags: Record<string, MetaTagsConfig> = {
   '/': {
-    title: 'Criador de Poderes - Espírito & Caos',
-    description: 'Crie e gerencie poderes personalizados para o sistema Espírito & Caos. Ferramenta completa com cálculo automático de custos, parâmetros e modificações.',
-    keywords: 'espírito e caos, rpg, poder, criador, mutants and masterminds, sistema, jogo',
+    title: 'Aetherium - Plataforma Digital para Spirit and Caos',
+    description: 'A plataforma completa para mestres e jogadores de Spirit and Caos. Crie poderes, gerencie criaturas e muito mais.',
+    keywords: 'aetherium, spirit and caos, rpg, plataforma digital, criador de poderes, gerenciador',
   },
-  '/biblioteca': {
-    title: 'Biblioteca de Poderes - Espírito & Caos',
+  '/personagens': {
+    title: 'Fichas de Personagem - Aetherium',
+    description: 'Crie e gerencie fichas de personagem completas para Spirit and Caos.',
+    keywords: 'fichas, personagens, character sheet, rpg, atributos',
+  },
+  '/campanhas': {
+    title: 'Gerenciador de Campanhas - Aetherium',
+    description: 'Organize suas campanhas de Spirit and Caos com gerenciamento de sessões, notas e linha do tempo.',
+    keywords: 'campanhas, sessões, mestre, adventure, jogo',
+  },
+  '/criador': {
+    title: 'Criador de Poderes - Aetherium',
+    description: 'Crie e gerencie poderes personalizados para o sistema Spirit and Caos. Ferramenta completa com cálculo automático de custos, parâmetros e modificações.',
+    keywords: 'criador de poderes, rpg, mutants and masterminds, sistema, jogo',
+  },
+  '/criador/biblioteca': {
+    title: 'Biblioteca de Poderes - Aetherium',
     description: 'Acesse, edite e gerencie todos os seus poderes salvos. Exporte, importe e organize sua coleção de poderes.',
     keywords: 'biblioteca, poderes salvos, gerenciar poderes, exportar, importar',
   },
+  '/gerenciador': {
+    title: 'Gerenciador de Criaturas - Aetherium',
+    description: 'Crie e gerencie NPCs, monstros e criaturas para suas sessões de Spirit and Caos.',
+    keywords: 'gerenciador, criaturas, npcs, monstros, combate',
+  },
   '/sobre': {
-    title: 'Sobre o Sistema - Espírito & Caos',
-    description: 'Conheça o sistema de criação de poderes do Espírito & Caos. Documentação completa, regras de cálculo e informações técnicas.',
+    title: 'Sobre - Aetherium',
+    description: 'Conheça o Aetherium, a plataforma digital completa para Spirit and Caos. Documentação e informações sobre as ferramentas disponíveis.',
     keywords: 'documentação, regras, sistema, como usar, tutorial',
   },
 };
 
 const defaultMetaTags: MetaTagsConfig = {
-  title: 'Espírito & Caos - Sistema de Criação de Poderes',
-  description: 'Ferramenta completa para criar poderes personalizados para RPG',
-  keywords: 'rpg, espírito e caos, criador de poderes',
+  title: 'Aetherium - Plataforma Digital para Spirit and Caos',
+  description: 'Ferramentas completas para mestres e jogadores de Spirit and Caos',
+  keywords: 'aetherium, spirit and caos, rpg, plataforma digital',
 };
 
 /**
