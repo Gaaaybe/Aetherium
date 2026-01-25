@@ -46,7 +46,7 @@ export function BibliotecaPage() {
       
       localStorage.setItem('criador-de-poder-carregar', JSON.stringify(poderParaCarregar));
       setCarregandoId(null);
-      navigate('/');
+      navigate('/criador');
       
       if (hydrationInfo?.hasIssues) {
         toast.info(`Poder "${poderParaCarregar.nome}" carregado e atualizado`);

@@ -7,31 +7,31 @@ export function SobrePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BookOpen className="w-5 h-5" /> Sobre o Sistema
+            <BookOpen className="w-5 h-5" /> Sobre o Aetherium
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
-              Sistema de Criação de Poderes
+              Plataforma Digital para Spirit and Caos
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Ferramenta para criar e gerenciar poderes personalizados seguindo as regras do sistema 
-              <strong> Spirit and Caos</strong>, inspirado em Mutants & Masterminds.
+              O Aetherium é uma plataforma completa para mestres e jogadores de 
+              <strong> Spirit and Caos</strong>, oferecendo ferramentas poderosas para criar poderes, 
+              gerenciar criaturas e muito mais. Inspirado em Mutants & Masterminds.
             </p>
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
             <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <Gamepad2 className="w-5 h-5" /> Como Funciona
+              <Gamepad2 className="w-5 h-5" /> Ferramentas Disponíveis
             </h3>
-            <ol className="list-decimal list-inside space-y-2 text-gray-600 dark:text-gray-400">
-              <li>Adicione um ou mais <strong>Efeitos</strong> (ex: Dano, Voo, Afligir)</li>
-              <li>Configure o <strong>grau</strong> de cada efeito</li>
-              <li>Adicione <strong>modificações</strong> para customizar (alcance, área, duração)</li>
-              <li>Os parâmetros do poder são <strong>auto-calculados</strong></li>
-              <li>Salve na <strong>biblioteca</strong> para usar depois</li>
-            </ol>
+            <ul className="space-y-2 text-gray-600 dark:text-gray-400">
+              <li><strong>Criador de Poderes:</strong> Crie poderes personalizados com 100+ efeitos e 120+ modificações</li>
+              <li><strong>Biblioteca:</strong> Organize, edite e exporte seus poderes salvos</li>
+              <li><strong>Gerenciador de Criaturas:</strong> Crie e gerencie NPCs, monstros e criaturas</li>
+              <li className="text-gray-400 dark:text-gray-500"><strong>Em breve:</strong> Campanhas, Chat em tempo real, Rolagens de dados</li>
+            </ul>
           </div>
 
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
@@ -92,7 +92,7 @@ export function SobrePage() {
 
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
             <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100 flex items-center gap-2">
-              <Keyboard className="w-5 h-5" /> Atalhos de Teclado
+              <Keyboard className="w-5 h-5" /> Atalhos do Criador de Poderes
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="flex items-center gap-2">
@@ -123,10 +123,10 @@ export function SobrePage() {
               <User className="w-5 h-5" /> Desenvolvedor
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Criado por <strong>Gabriel Menezes</strong> para jogadores de Espírito & Caos
+              Criado por <strong>Gabriel Menezes</strong> para jogadores de Spirit and Caos
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-              Versão 1.0.0 • Novembro 2025
+              Versão 1.0.0 • Janeiro 2026
             </p>
           </div>
 

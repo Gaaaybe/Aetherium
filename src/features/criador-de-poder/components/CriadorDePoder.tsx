@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Save, Info, Sparkles, Lightbulb, FileText, Zap } from 'lucide-react';
+import { Save, Info, Sparkles, Lightbulb, FileText, Zap, Library } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button, Card, CardHeader, CardTitle, CardContent, Badge, Input, Textarea, Select, toast, HelpIcon, Tooltip, ConfirmDialog, InlineHelp, EmptyState } from '../../../shared/ui';
 import { usePoderCalculator } from '../hooks/usePoderCalculator';
 import { usePoderValidation } from '../hooks/usePoderValidation';
@@ -433,6 +434,13 @@ export function CriadorDePoder() {
               
               {/* Botões - Grid em mobile, flex em desktop */}
               <div className="grid grid-cols-2 sm:flex gap-2">
+                <Tooltip content="Ver biblioteca de poderes salvos">
+                  <Link to="/criador/biblioteca" className="w-full sm:w-auto">
+                    <Button variant="outline" size="sm" aria-label="Ir para biblioteca" className="w-full flex items-center gap-2">
+                      <Library className="w-4 h-4" /><span className="hidden sm:inline">Biblioteca</span>
+                    </Button>
+                  </Link>
+                </Tooltip>
                 {poder.efeitos.length > 0 && (
                   <>
                     <Tooltip content="Salvar poder na biblioteca local">
