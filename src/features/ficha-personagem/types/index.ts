@@ -30,6 +30,9 @@ export interface CharacterHeader {
   // Complicações e Motivações (Texto livre ou Array)
   complications: string[];
   motivations: string[];
+  
+  // Resistências e Imunidades
+  resistancesImmunities: string; // Texto livre
 }
 
 // ========================================
@@ -306,6 +309,7 @@ export interface PersonagemCalculado {
   // Recursos
   pdaUsados: number;             // Soma dos custos dos poderes
   pdaDisponiveis: number;        // pdaTotal - pdaUsados
+  espacosDisponiveis: number;    // floor(899 * sqrt(modInt / 15000)), mínimo 4
   espacosUsados: number;         // Soma dos espaços dos poderes
   
   // Redução de Dano (bloqueio)

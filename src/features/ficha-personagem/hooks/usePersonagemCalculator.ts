@@ -20,6 +20,7 @@ import {
   calcularRDBloqueio,
   calcularPdAUsados,
   calcularEspacosUsados,
+  calcularEspacosDisponiveis,
 } from '../regras/calculadoraPersonagem';
 import { ALL_SKILLS } from '../types/skillsMap';
 
@@ -81,6 +82,7 @@ function criarPersonagemInicial(): Personagem {
       runics: 0,
       complications: [],
       motivations: [],
+      resistancesImmunities: '',
     },
     attributes: atributosIniciais,
     attributeTempBonuses: {
@@ -170,6 +172,15 @@ export function usePersonagemCalculator(personagemInicial?: Personagem) {
     // PdA e Espaços
     const pdaUsados = calcularPdAUsados(personagem.poderes);
     const espacosUsados = calcularEspacosUsados(personagem.poderes);
+    const espacosDisponiveis = calcularEspacosDisponiveis(mods.Inteligência);
+    
+    // Bônus de Fortitude (para RD)
+    const bonusFortitude = calcularBonusPericia(
+      personagem.skills.Fortitude,
+      'Fortitude',
+      mods,
+      bonusEficiencia
+    );
     
     // RD (TODO: calcular poderes passivos)
     const rdPoderesPassivos = 0; // Placeholder
@@ -178,7 +189,7 @@ export function usePersonagemCalculator(personagemInicial?: Personagem) {
       personagem.inventory.equipped.mainHand,
       personagem.inventory.equipped.offHand,
       personagem.inventory.equipped.extraHands,
-      mods.Constituição, // Mod Fortitude = Mod CON
+      bonusFortitude, // Bônus total de Fortitude
       rdPoderesPassivos
     );
     
@@ -194,6 +205,7 @@ export function usePersonagemCalculator(personagemInicial?: Personagem) {
       cdPhysical,
       pdaUsados,
       pdaDisponiveis: pdaTotal - pdaUsados,
+      espacosDisponiveis,
       espacosUsados,
       rdBloqueio,
       bonusEficiencia,
@@ -208,6 +220,7 @@ export function usePersonagemCalculator(personagemInicial?: Personagem) {
     personagem.pdaExtras,
     personagem.inventory.equipped,
     personagem.deslocamento,
+    personagem.skills.Fortitude,
   ]);
   
   // ========================================

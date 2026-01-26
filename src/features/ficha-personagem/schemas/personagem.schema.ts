@@ -56,6 +56,7 @@ export const characterHeaderSchema = z.object({
   // Narrativa
   complications: z.array(z.string()).default([]),
   motivations: z.array(z.string()).default([]),
+  resistancesImmunities: z.string().default(''),
 });
 
 /**

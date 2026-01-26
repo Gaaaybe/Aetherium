@@ -114,11 +114,12 @@ export function calcularPdATotal(nivel: number, pdaExtras: number = 0): number {
 
 /**
  * Calcula Espaços Disponíveis
- * TODO: Confirmar fórmula (placeholder atual)
- * Fórmula Placeholder: 10 + (modINT × 2) + floor(nivel / 10)
+ * Fórmula: ARREDONDAR.PARA.BAIXO(899 * RAIZ(modInteligencia / 15000))
+ * Mínimo: 4
  */
-export function calcularEspacosDisponiveis(nivel: number, modInteligencia: number): number {
-  return 10 + (modInteligencia * 2) + Math.floor(nivel / 10);
+export function calcularEspacosDisponiveis(modInteligencia: number): number {
+  const espacosCalculados = Math.floor(899 * Math.sqrt(modInteligencia / 15000));
+  return Math.max(4, espacosCalculados);
 }
 
 /**
@@ -129,10 +130,12 @@ export function calcularPdAUsados(poderes: PersonagemPoder[]): number {
 }
 
 /**
- * Calcula Espaços usados (soma dos espaços de todos os poderes)
+ * Calcula Espaços usados (soma dos espaços apenas dos poderes ATIVOS)
  */
 export function calcularEspacosUsados(poderes: PersonagemPoder[]): number {
-  return poderes.reduce((total, poder) => total + poder.espacosOccupied, 0);
+  return poderes
+    .filter(poder => poder.ativo) // Apenas poderes ativos consomem espaços
+    .reduce((total, poder) => total + poder.espacosOccupied, 0);
 }
 
 // ========================================
