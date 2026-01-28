@@ -1,13 +1,11 @@
 /**
  * Hook para gerenciar Poderes do Personagem
  * Integração entre Ficha de Personagem e Sistema de Poderes
- * 
- * Aplica automaticamente maestria de domínio aos custos dos poderes
  */
 
 import { useCallback } from 'react';
 import type { Poder } from '../../criador-de-poder/types';
-import type { PersonagemPoder, Domain } from '../types';
+import type { PersonagemPoder } from '../types';
 import { calcularDetalhesPoder } from '../../criador-de-poder/regras/calculadoraCusto';
 import { EFEITOS, MODIFICACOES } from '../../../data';
 
@@ -17,13 +15,12 @@ import { EFEITOS, MODIFICACOES } from '../../../data';
 
 interface UsePersonagemPoderesProps {
   poderes: PersonagemPoder[];
-  dominios: Domain[];
   onPoderChange: (poderes: PersonagemPoder[]) => void;
 }
 
 interface UsePersonagemPoderesReturn {
   // Adicionar poder ao personagem
-  vincularPoder: (poder: Poder, dominioId: string) => PersonagemPoder | null;
+  vincularPoder: (poder: Poder) => PersonagemPoder | null;
   
   // Remover poder
   desvincularPoder: (poderId: string) => void;
@@ -31,40 +28,11 @@ interface UsePersonagemPoderesReturn {
   // Ativar/Desativar poder
   togglePoderAtivo: (poderId: string) => void;
   
-  // Atualizar poder (recalcula com nova maestria)
+  // Atualizar poder (recalcula custos)
   atualizarPoder: (poderId: string, novosPoder: Poder) => void;
   
   // Calcular custos totais
   calcularCustosTotal: () => { pdaTotal: number; espacosTotal: number };
-  
-  // Obter modificações de maestria aplicáveis
-  getModificacoesMaestria: (mastery: Domain['mastery']) => string[];
-}
-
-// ========================================
-// MODIFICAÇÕES DE MAESTRIA
-// ========================================
-
-/**
- * IDs das modificações de maestria em modificacoes.json
- * Categoria "Dominio"
- */
-const MODIFICACOES_MAESTRIA = {
-  Iniciante: 'dominio-iniciante',  // +1 PdA/grau
-  Mestre: 'dominio-mestre',        // -1 PdA/grau
-  // Praticante não tem modificação (custo normal)
-};
-
-/**
- * Obtém as modificações de maestria aplicáveis baseado no nível
- */
-function getModificacoesMaestriaPorNivel(mastery: Domain['mastery']): string[] {
-  if (mastery === 'Iniciante') {
-    return [MODIFICACOES_MAESTRIA.Iniciante];
-  } else if (mastery === 'Mestre') {
-    return [MODIFICACOES_MAESTRIA.Mestre];
-  }
-  return []; // Praticante = sem modificação
 }
 
 // ========================================
@@ -73,88 +41,34 @@ function getModificacoesMaestriaPorNivel(mastery: Domain['mastery']): string[] {
 
 export function usePersonagemPoderes({
   poderes,
-  dominios,
   onPoderChange,
 }: UsePersonagemPoderesProps): UsePersonagemPoderesReturn {
   
   /**
-   * Aplica maestria do domínio ao poder
-   * Adiciona modificação global de maestria se aplicável
+   * Calcula custos do poder
    */
-  const aplicarMaestria = useCallback((poder: Poder, dominioId: string): Poder => {
-    const dominio = dominios.find(d => d.id === dominioId);
-    
-    if (!dominio || dominio.mastery === 'Praticante') {
-      // Sem modificação para Praticante
-      return poder;
-    }
-    
-    // Clonar poder para não mutar o original
-    const poderComMaestria = JSON.parse(JSON.stringify(poder)) as Poder;
-    
-    // Obter modificação de maestria
-    const modId = MODIFICACOES_MAESTRIA[dominio.mastery];
-    
-    if (!modId) return poder;
-    
-    // Verificar se a modificação já existe no poder
-    const jaTemMaestria = poderComMaestria.modificacoesGlobais?.some(
-      m => m.modificacaoBaseId === modId
-    );
-    
-    if (jaTemMaestria) {
-      return poderComMaestria;
-    }
-    
-    // Adicionar modificação global de maestria
-    if (!poderComMaestria.modificacoesGlobais) {
-      poderComMaestria.modificacoesGlobais = [];
-    }
-    
-    poderComMaestria.modificacoesGlobais.push({
-      id: `maestria-${Date.now()}`,
-      modificacaoBaseId: modId,
-      escopo: 'global',
-    });
-    
-    return poderComMaestria;
-  }, [dominios]);
-  
-  /**
-   * Calcula custos do poder com maestria aplicada
-   */
-  const calcularCustosComMaestria = useCallback((poder: Poder, dominioId: string) => {
-    const poderComMaestria = aplicarMaestria(poder, dominioId);
-    const detalhes = calcularDetalhesPoder(poderComMaestria, EFEITOS, MODIFICACOES);
+  const calcularCustos = useCallback((poder: Poder) => {
+    const detalhes = calcularDetalhesPoder(poder, EFEITOS, MODIFICACOES);
     
     return {
       pdaCost: detalhes.custoPdATotal,
       espacosOccupied: detalhes.espacosTotal,
-      poderFinal: poderComMaestria,
     };
-  }, [aplicarMaestria]);
+  }, []);
   
   /**
    * Vincula um poder ao personagem
    */
-  const vincularPoder = useCallback((poder: Poder, dominioId: string): PersonagemPoder | null => {
-    // Validar domínio
-    const dominio = dominios.find(d => d.id === dominioId);
-    if (!dominio) {
-      console.error('Domínio não encontrado:', dominioId);
-      return null;
-    }
-    
-    // Calcular custos com maestria
-    const { pdaCost, espacosOccupied, poderFinal } = calcularCustosComMaestria(poder, dominioId);
+  const vincularPoder = useCallback((poder: Poder): PersonagemPoder | null => {
+    // Calcular custos
+    const { pdaCost, espacosOccupied } = calcularCustos(poder);
     
     const agora = new Date().toISOString();
     
     const personagemPoder: PersonagemPoder = {
       id: `pp-${Date.now()}`,
       poderId: poder.id,
-      poder: poderFinal,
-      dominioId,
+      poder: poder,
       ativo: true,
       pdaCost,
       espacosOccupied,
@@ -164,7 +78,7 @@ export function usePersonagemPoderes({
     
     onPoderChange([...poderes, personagemPoder]);
     return personagemPoder;
-  }, [poderes, dominios, calcularCustosComMaestria, onPoderChange]);
+  }, [poderes, calcularCustos, onPoderChange]);
   
   /**
    * Desvincula um poder do personagem
@@ -190,20 +104,14 @@ export function usePersonagemPoderes({
    * Atualiza um poder existente (recalcula custos)
    */
   const atualizarPoder = useCallback((poderId: string, novosPoder: Poder) => {
-    const poderExistente = poderes.find(p => p.id === poderId);
-    if (!poderExistente) return;
-    
-    const { pdaCost, espacosOccupied, poderFinal } = calcularCustosComMaestria(
-      novosPoder, 
-      poderExistente.dominioId
-    );
+    const { pdaCost, espacosOccupied } = calcularCustos(novosPoder);
     
     onPoderChange(
       poderes.map(p => 
         p.id === poderId
           ? {
               ...p,
-              poder: poderFinal,
+              poder: novosPoder,
               pdaCost,
               espacosOccupied,
               dataModificacao: new Date().toISOString(),
@@ -211,7 +119,7 @@ export function usePersonagemPoderes({
           : p
       )
     );
-  }, [poderes, calcularCustosComMaestria, onPoderChange]);
+  }, [poderes, calcularCustos, onPoderChange]);
   
   /**
    * Calcula custos totais de PdA e Espaços
@@ -226,19 +134,11 @@ export function usePersonagemPoderes({
     );
   }, [poderes]);
   
-  /**
-   * Obtém modificações de maestria aplicáveis
-   */
-  const getModificacoesMaestria = useCallback((mastery: Domain['mastery']): string[] => {
-    return getModificacoesMaestriaPorNivel(mastery);
-  }, []);
-  
   return {
     vincularPoder,
     desvincularPoder,
     togglePoderAtivo,
     atualizarPoder,
     calcularCustosTotal,
-    getModificacoesMaestria,
   };
 }

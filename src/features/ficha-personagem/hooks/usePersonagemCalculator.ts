@@ -107,7 +107,6 @@ function criarPersonagemInicial(): Personagem {
       deathCounters: 0,
     },
     skills,
-    dominios: [],
     poderes: [],
     inventory: {
       equipped: {

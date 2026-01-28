@@ -104,16 +104,6 @@ export const skillEntrySchema = z.object({
 export const skillsStateSchema = z.record(z.string(), skillEntrySchema);
 
 /**
- * Schema para domínio
- */
-export const domainSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1, 'Nome do domínio é obrigatório').max(100),
-  mastery: z.enum(['Iniciante', 'Praticante', 'Mestre']),
-  description: z.string().max(500).optional(),
-});
-
-/**
  * Schema para item
  */
 export const itemSchema = z.object({
@@ -135,7 +125,6 @@ export const personagemPoderSchema = z.object({
   id: z.string(),
   poderId: z.string(),
   poder: z.any(), // Usar schema do Poder quando importado
-  dominioId: z.string(),
   
   ativo: z.boolean().default(true),
   
@@ -184,7 +173,6 @@ export const personagemSchema = z.object({
   attributeTempBonuses: attributeTempBonusesSchema,
   vitals: vitalsSchema,
   skills: skillsStateSchema,
-  dominios: z.array(domainSchema),
   poderes: z.array(personagemPoderSchema),
   inventory: inventorySchema,
   
@@ -242,17 +230,6 @@ export const personagemSchema = z.object({
     message: 'PE atual não pode exceder PE máximo + temporário',
     path: ['vitals', 'pe'],
   }
-)
-.refine(
-  (data) => {
-    // Validação: Todos os domínios referenciados pelos poderes devem existir
-    const dominioIds = new Set(data.dominios.map(d => d.id));
-    return data.poderes.every(p => dominioIds.has(p.dominioId));
-  },
-  {
-    message: 'Poder referencia domínio inexistente',
-    path: ['poderes'],
-  }
 );
 
 /**
@@ -273,5 +250,4 @@ export type PersonagemSalvoSchemaType = z.infer<typeof personagemSalvoSchema>;
 export type CharacterHeaderSchemaType = z.infer<typeof characterHeaderSchema>;
 export type AttributesSchemaType = z.infer<typeof attributesSchema>;
 export type VitalsSchemaType = z.infer<typeof vitalsSchema>;
-export type DomainSchemaType = z.infer<typeof domainSchema>;
 export type PersonagemPoderSchemaType = z.infer<typeof personagemPoderSchema>;

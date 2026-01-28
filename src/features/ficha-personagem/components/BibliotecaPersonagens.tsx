@@ -110,7 +110,6 @@ export function BibliotecaPersonagens({ onEdit, onCreateNew }: BibliotecaPersona
                 <div className="flex gap-3 text-xs text-gray-600">
                   <span>PdA: {personagem.pdaTotal}</span>
                   <span>Poderes: {personagem.poderes.length}</span>
-                  <span>Domínios: {personagem.dominios.length}</span>
                 </div>
 
                 {/* Ações */}

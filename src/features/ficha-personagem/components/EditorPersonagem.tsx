@@ -7,18 +7,16 @@ import { useState, useEffect } from 'react';
 import { usePersonagemCalculator } from '../hooks/usePersonagemCalculator';
 import { useBibliotecaPersonagens } from '../hooks/useBibliotecaPersonagens';
 import { usePersonagemPoderes } from '../hooks/usePersonagemPoderes';
-import type { SkillName, Domain } from '../types';
+import type { SkillName } from '../types';
 import type { Poder } from '../../criador-de-poder/types';
 import { Card } from '../../../shared/ui/Card';
 import { Button } from '../../../shared/ui/Button';
 import { Input } from '../../../shared/ui/Input';
 import { Select } from '../../../shared/ui/Select';
 import { Badge } from '../../../shared/ui/Badge';
-import { Modal } from '../../../shared/ui/Modal';
 import { AtributosEditor } from './AtributosEditor';
 import { VitaisPanel } from './VitaisPanel';
 import { PericiasList } from './PericiasList';
-import { GerenciadorDominios } from './GerenciadorDominios';
 import { OrcamentoPdA } from './OrcamentoPdA';
 import { ListaPoderes } from './ListaPoderes';
 import { BibliotecaPoderesModal } from '../../gerenciador-criaturas/components/BibliotecaPoderesModal';
@@ -30,14 +28,13 @@ interface EditorPersonagemProps {
   onCancel?: () => void;
 }
 
-type TabId = 'info' | 'atributos' | 'pericias' | 'vitais' | 'dominios' | 'poderes';
+type TabId = 'info' | 'atributos' | 'pericias' | 'vitais' | 'poderes';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'info', label: 'Informações' },
   { id: 'atributos', label: 'Atributos' },
   { id: 'pericias', label: 'Perícias' },
   { id: 'vitais', label: 'Vitais' },
-  { id: 'dominios', label: 'Domínios' },
   { id: 'poderes', label: 'Poderes' },
 ];
 
@@ -48,9 +45,6 @@ export function EditorPersonagem({ personagemId: _personagemId, onSave: _onSave,
   const [salvando, setSalvando] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>('info');
   const [modalBibliotecaAberto, setModalBibliotecaAberto] = useState(false);
-  const [modalSeletorDominioAberto, setModalSeletorDominioAberto] = useState(false);
-  const [poderSelecionado, setPoderSelecionado] = useState<Poder | null>(null);
-  const [dominioSelecionado, setDominioSelecionado] = useState('');
 
   // Hook de gerenciamento de poderes
   const {
@@ -59,7 +53,6 @@ export function EditorPersonagem({ personagemId: _personagemId, onSave: _onSave,
     togglePoderAtivo,
   } = usePersonagemPoderes({
     poderes: personagem.poderes,
-    dominios: personagem.dominios,
     onPoderChange: (poderes) => setPersonagem({ ...personagem, poderes }),
   });
 
@@ -97,47 +90,9 @@ export function EditorPersonagem({ personagemId: _personagemId, onSave: _onSave,
 
   // Handlers para poderes
   const handleSelecionarPoder = (poder: Poder) => {
-    setPoderSelecionado(poder);
+    vincularPoder(poder);
     setModalBibliotecaAberto(false);
-    
-    // Se só houver 1 domínio, vincular diretamente
-    if (personagem.dominios.length === 1) {
-      vincularPoder(poder, personagem.dominios[0].id);
-      setPoderSelecionado(null);
-    } else if (personagem.dominios.length > 1) {
-      // Abrir modal para selecionar domínio
-      setDominioSelecionado(personagem.dominios[0].id);
-      setModalSeletorDominioAberto(true);
-    } else {
-      alert('Você precisa criar pelo menos um domínio antes de adicionar poderes');
-    }
   };
-
-  const handleVincularPoderComDominio = () => {
-    if (poderSelecionado && dominioSelecionado) {
-      vincularPoder(poderSelecionado, dominioSelecionado);
-      setModalSeletorDominioAberto(false);
-      setPoderSelecionado(null);
-    }
-  };
-
-  const handleTrocarDominioPoder = (poderId: string, novoDominioId: string) => {
-    // Atualizar poder com novo domínio (recalcula maestria)
-    const poderesAtualizados = personagem.poderes.map(p => {
-      if (p.id === poderId) {
-        // Recalcular com novo domínio
-        return { ...p, dominioId: novoDominioId, dataModificacao: new Date().toISOString() };
-      }
-      return p;
-    });
-    setPersonagem({ ...personagem, poderes: poderesAtualizados });
-  };
-
-  // Contar poderes por domínio
-  const poderesVinculadosPorDominio = personagem.poderes.reduce((acc, poder) => {
-    acc[poder.dominioId] = (acc[poder.dominioId] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
 
   return (
     <div className="space-y-4">
@@ -413,35 +368,6 @@ export function EditorPersonagem({ personagemId: _personagemId, onSave: _onSave,
           />
         )}
 
-        {/* Tab: Domínios */}
-        {activeTab === 'dominios' && (
-          <GerenciadorDominios
-            dominios={personagem.dominios}
-            onAdicionarDominio={(nome, mastery, descricao) => {
-              const novoDominio: Domain = {
-                id: `dominio-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                name: nome,
-                mastery,
-                description: descricao,
-              };
-              setPersonagem({ ...personagem, dominios: [...personagem.dominios, novoDominio] });
-            }}
-            onEditarDominio={(dominioId, updates) => {
-              const dominiosAtualizados = personagem.dominios.map(d =>
-                d.id === dominioId ? { ...d, ...updates } : d
-              );
-              setPersonagem({ ...personagem, dominios: dominiosAtualizados });
-            }}
-            onRemoverDominio={(dominioId) => {
-              setPersonagem({ 
-                ...personagem, 
-                dominios: personagem.dominios.filter(d => d.id !== dominioId) 
-              });
-            }}
-            poderesVinculados={poderesVinculadosPorDominio}
-          />
-        )}
-
         {/* Tab: Poderes */}
         {activeTab === 'poderes' && (
           <div className="space-y-4">
@@ -462,9 +388,7 @@ export function EditorPersonagem({ personagemId: _personagemId, onSave: _onSave,
 
               <ListaPoderes
                 poderes={personagem.poderes}
-                dominios={personagem.dominios}
                 onAlternarAtivo={togglePoderAtivo}
-                onTrocarDominio={handleTrocarDominioPoder}
                 onRemover={desvincularPoder}
               />
             </Card>
@@ -478,60 +402,6 @@ export function EditorPersonagem({ personagemId: _personagemId, onSave: _onSave,
         onClose={() => setModalBibliotecaAberto(false)}
         onSelectPoder={handleSelecionarPoder}
       />
-
-      {/* Modal Seletor de Domínio */}
-      <Modal
-        isOpen={modalSeletorDominioAberto}
-        onClose={() => {
-          setModalSeletorDominioAberto(false);
-          setPoderSelecionado(null);
-        }}
-        title="Selecionar Domínio"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Escolha o domínio para vincular o poder <strong>{poderSelecionado?.nome}</strong>
-          </p>
-
-          <div>
-            <label className="block text-sm font-semibold mb-1">
-              Domínio
-            </label>
-            <Select
-              value={dominioSelecionado}
-              onChange={(e) => setDominioSelecionado(e.target.value)}
-              options={personagem.dominios.map(d => ({
-                value: d.id,
-                label: `${d.name} (${d.mastery})`,
-              }))}
-            />
-          </div>
-
-          <div className="p-3 bg-blue-50 rounded text-sm">
-            <p><strong>Lembre-se:</strong> O nível de maestria do domínio afetará o custo do poder:</p>
-            <ul className="list-disc list-inside mt-1 text-xs">
-              <li>Iniciante: +1 PdA por grau (mais caro)</li>
-              <li>Praticante: Custo normal</li>
-              <li>Mestre: -1 PdA por grau (desconto)</li>
-            </ul>
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={handleVincularPoderComDominio} className="flex-1">
-              Vincular Poder
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setModalSeletorDominioAberto(false);
-                setPoderSelecionado(null);
-              }}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

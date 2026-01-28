@@ -154,25 +154,13 @@ export type SkillName =
 // ========================================
 
 /**
- * Domínio de Poder (fonte de poder)
- */
-export interface Domain {
-  id: string;
-  name: string;                  // "Natural", "Armas Brancas", "Magia Arcana"
-  mastery: 'Iniciante' | 'Praticante' | 'Mestre';
-  description?: string;
-}
-
-/**
  * Poder vinculado ao personagem
  * Representa o RELACIONAMENTO entre personagem e um poder da biblioteca
- * Inclui o poder com maestria já aplicada e custos calculados
  */
 export interface PersonagemPoder {
   id: string;                    // ID único da instância (vínculo)
   poderId: string;               // ID do PoderSalvo na biblioteca
-  poder: Poder;                  // Dados completos COM maestria aplicada
-  dominioId: string;             // Link com o domínio (determina maestria)
+  poder: Poder;                  // Dados completos do poder
   
   // Estado
   ativo: boolean;                // Está ativo/equipado?
@@ -247,7 +235,6 @@ export interface Personagem {
   attributeTempBonuses: AttributeTempBonuses;
   vitals: Vitals;
   skills: SkillsState;
-  dominios: Domain[];
   poderes: PersonagemPoder[];
   inventory: Inventory;
   
