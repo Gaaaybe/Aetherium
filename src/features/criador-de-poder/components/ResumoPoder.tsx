@@ -20,7 +20,7 @@ function getNomeEscala(tipo: 'acao' | 'alcance' | 'duracao', valor: number): str
 }
 
 export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderProps) {
-  const { customModificacoes } = useCustomItems();
+  const { customModificacoes, getPeculiaridade } = useCustomItems();
   const todasModificacoes = useMemo(
     () => [...MODIFICACOES, ...customModificacoes],
     [customModificacoes]
@@ -146,11 +146,30 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
     // Domínio
     const dominio = DOMINIOS.find(d => d.id === poder.dominioId);
     if (dominio) {
-      texto += `DOMÍNIO: ${dominio.nome}`;
-      if (dominio.espiritual !== null) {
-        texto += dominio.espiritual ? ' (Espiritual)' : ' (Não Espiritual)';
+      // Peculiar customizado
+      if (poder.dominioId === 'peculiar' && poder.dominioIdPeculiar) {
+        const peculiaridade = getPeculiaridade(poder.dominioIdPeculiar);
+        if (peculiaridade) {
+          texto += `DOMÍNIO: Peculiar - ${peculiaridade.nome}`;
+          texto += peculiaridade.espiritual ? ' (Espiritual)' : ' (Não Espiritual)';
+          texto += `\n\n`;
+          texto += `FUNDAMENTO DA PECULIARIDADE:\n`;
+          texto += `O que é: ${peculiaridade.fundamento.oQueE}\n\n`;
+          texto += `Como funciona: ${peculiaridade.fundamento.comoFunciona}\n\n`;
+          texto += `Regras internas: ${peculiaridade.fundamento.regrasInternas}\n\n`;
+          texto += `Requerimentos: ${peculiaridade.fundamento.requerimentos}\n`;
+        }
+      } else {
+        texto += `DOMÍNIO: ${dominio.nome}`;
+        if (dominio.espiritual !== null) {
+          texto += dominio.espiritual ? ' (Espiritual)' : ' (Não Espiritual)';
+        }
+        // Área de conhecimento (Científico)
+        if (poder.dominioId === 'cientifico' && poder.dominioAreaConhecimento) {
+          texto += ` - ${poder.dominioAreaConhecimento}`;
+        }
+        texto += `\n`;
       }
-      texto += `\n`;
     }
     
     texto += `CUSTO TOTAL: ${detalhes.custoPdATotal} PdA\n`;
@@ -330,6 +349,47 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
               const dominio = DOMINIOS.find(d => d.id === poder.dominioId);
               if (!dominio) return null;
               
+              // Peculiar customizado
+              if (poder.dominioId === 'peculiar' && poder.dominioIdPeculiar) {
+                const peculiaridade = getPeculiaridade(poder.dominioIdPeculiar);
+                if (!peculiaridade) return null;
+                
+                return (
+                  <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-sm rounded-lg p-4 mt-4 border border-purple-400/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="w-5 h-5 text-purple-200" />
+                      <p className="text-purple-100 text-sm font-semibold uppercase">Peculiaridade</p>
+                    </div>
+                    <p className="text-lg font-bold text-purple-100">
+                      {peculiaridade.nome}
+                      <span className="text-sm font-normal text-purple-200 ml-2">
+                        {peculiaridade.espiritual ? '(Espiritual)' : '(Não Espiritual)'}
+                      </span>
+                    </p>
+                    
+                    <div className="mt-3 space-y-2 text-xs">
+                      <div className="bg-white/10 rounded p-2">
+                        <p className="font-semibold text-purple-100 mb-1">O que é:</p>
+                        <p className="text-purple-200">{peculiaridade.fundamento.oQueE}</p>
+                      </div>
+                      <div className="bg-white/10 rounded p-2">
+                        <p className="font-semibold text-purple-100 mb-1">Como funciona:</p>
+                        <p className="text-purple-200">{peculiaridade.fundamento.comoFunciona}</p>
+                      </div>
+                      <div className="bg-white/10 rounded p-2">
+                        <p className="font-semibold text-purple-100 mb-1">Regras internas:</p>
+                        <p className="text-purple-200">{peculiaridade.fundamento.regrasInternas}</p>
+                      </div>
+                      <div className="bg-white/10 rounded p-2">
+                        <p className="font-semibold text-purple-100 mb-1">Requerimentos:</p>
+                        <p className="text-purple-200">{peculiaridade.fundamento.requerimentos}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // Domínios normais
               return (
                 <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 mt-4 border border-espirito-400/50">
                   <div className="flex items-center gap-2 mb-2">
@@ -344,6 +404,12 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                       </span>
                     )}
                   </p>
+                  {/* Área de Conhecimento (Científico) */}
+                  {poder.dominioId === 'cientifico' && poder.dominioAreaConhecimento && (
+                    <p className="text-sm font-semibold text-espirito-100 mt-1">
+                      Área: {poder.dominioAreaConhecimento}
+                    </p>
+                  )}
                   <p className="text-xs text-espirito-200 mt-1">
                     {dominio.descricao.substring(0, 150)}
                     {dominio.descricao.length > 150 ? '...' : ''}

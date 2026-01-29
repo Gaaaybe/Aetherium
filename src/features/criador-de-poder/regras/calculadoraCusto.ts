@@ -35,6 +35,8 @@ export interface Poder {
   nome: string;
   descricao?: string;
   dominioId: string; // ID do domínio do poder
+  dominioAreaConhecimento?: string; // Para Científico: área de conhecimento
+  dominioIdPeculiar?: string; // Para Peculiar: ID da peculiaridade criada
   efeitos: EfeitoAplicado[];
   modificacoesGlobais: ModificacaoAplicada[];
   // Parâmetros do poder (aplicados a TODOS os efeitos)

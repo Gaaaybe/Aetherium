@@ -97,6 +97,32 @@ export function hydratePoder(poderSalvo: PoderComVersion): HydrationResult {
     changes.push('Domínio "Natural" atribuído automaticamente');
   }
   
+  // 6.1 Validar área de conhecimento (Científico)
+  if (poder.dominioId === 'cientifico' && !poder.dominioAreaConhecimento) {
+    poder.dominioAreaConhecimento = 'Física'; // Área padrão
+    changes.push('Área de conhecimento "Física" atribuída automaticamente');
+  }
+  
+  // 6.2 Limpar área de conhecimento se não for Científico
+  if (poder.dominioId !== 'cientifico' && poder.dominioAreaConhecimento) {
+    delete poder.dominioAreaConhecimento;
+    changes.push('Área de conhecimento removida (domínio não é Científico)');
+  }
+  
+  // 6.3 Limpar campos antigos de Peculiar (migração para sistema de ID)
+  if ((poder as any).dominioNomePeculiar || (poder as any).dominioFundamentoPeculiar || (poder as any).dominioEspiritualPeculiar !== undefined) {
+    delete (poder as any).dominioNomePeculiar;
+    delete (poder as any).dominioFundamentoPeculiar;
+    delete (poder as any).dominioEspiritualPeculiar;
+    changes.push('Campos antigos de Peculiaridade removidos (migrado para sistema de biblioteca)');
+  }
+  
+  // 6.4 Limpar dominioIdPeculiar se não for Peculiar
+  if (poder.dominioId !== 'peculiar' && poder.dominioIdPeculiar) {
+    delete poder.dominioIdPeculiar;
+    changes.push('ID de Peculiaridade removido (domínio não é Peculiar)');
+  }
+  
   // 7. Validar custo alternativo (se existir)
   if (poder.custoAlternativo) {
     if (!['pe', 'atributo', 'item', 'material'].includes(poder.custoAlternativo.tipo)) {

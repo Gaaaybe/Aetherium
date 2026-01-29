@@ -3,23 +3,30 @@ import { Button, Card, Badge, ConfirmDialog, EmptyState } from '../../../shared/
 import { useCustomItems } from '../../../shared/hooks';
 import { FormEfeitoCustomizado } from './FormEfeitoCustomizado';
 import { FormModificacaoCustomizada } from './FormModificacaoCustomizada';
+import { FormPeculiaridadeCustomizada } from './FormPeculiaridadeCustomizada';
 import { Zap, Wrench, Edit2, Trash2, Sparkles, Plus, Minus } from 'lucide-react';
 import type { Efeito, Modificacao } from '../../../data';
+import type { Peculiaridade } from '../../../shared/hooks/useCustomItems';
 
 export function GerenciadorCustomizados() {
   const {
     customEfeitos,
     customModificacoes,
+    peculiaridades,
     updateCustomEfeito,
     deleteCustomEfeito,
     updateCustomModificacao,
     deleteCustomModificacao,
+    updatePeculiaridade,
+    deletePeculiaridade,
   } = useCustomItems();
 
   const [efeitoEditando, setEfeitoEditando] = useState<Efeito | null>(null);
   const [modificacaoEditando, setModificacaoEditando] = useState<Modificacao | null>(null);
+  const [peculiaridadeEditando, setPeculiaridadeEditando] = useState<Peculiaridade | null>(null);
   const [confirmDeleteEfeito, setConfirmDeleteEfeito] = useState<string | null>(null);
   const [confirmDeleteMod, setConfirmDeleteMod] = useState<string | null>(null);
+  const [confirmDeletePeculiar, setConfirmDeletePeculiar] = useState<string | null>(null);
 
   const handleEditEfeito = (efeito: Efeito) => {
     setEfeitoEditando(efeito);
@@ -39,7 +46,16 @@ export function GerenciadorCustomizados() {
     setConfirmDeleteMod(null);
   };
 
-  const temCustomizados = customEfeitos.length > 0 || customModificacoes.length > 0;
+  const handleEditPeculiaridade = (peculiar: Peculiaridade) => {
+    setPeculiaridadeEditando(peculiar);
+  };
+
+  const handleDeletePeculiaridade = (id: string) => {
+    deletePeculiaridade(id);
+    setConfirmDeletePeculiar(null);
+  };
+
+  const temCustomizados = customEfeitos.length > 0 || customModificacoes.length > 0 || peculiaridades.length > 0;
 
   return (
     <div className="space-y-6">
@@ -179,6 +195,79 @@ export function GerenciadorCustomizados() {
         )}
       </section>
 
+      {/* Peculiaridades Customizadas */}
+      <section>
+        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <Sparkles className="w-6 h-6 text-purple-500" /> Peculiaridades Customizadas
+        </h2>
+        {peculiaridades.length === 0 ? (
+          <EmptyState
+            icon={<Sparkles className="w-12 h-12 text-gray-400" />}
+            title="Nenhuma peculiaridade customizada"
+            description="Crie suas próprias peculiaridades no Criador de Poderes com domínio Peculiar"
+          />
+        ) : (
+          <div className="grid gap-3">
+            {peculiaridades.map((peculiar) => (
+              <Card key={peculiar.id} className="p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                        {peculiar.nome}
+                      </h3>
+                      <Badge variant="success">Customizado</Badge>
+                      {peculiar.espiritual && <Badge variant="info">Espiritual</Badge>}
+                    </div>
+                    {peculiar.descricaoCurta && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        {peculiar.descricaoCurta}
+                      </p>
+                    )}
+                    <div className="space-y-2 text-xs">
+                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded p-2">
+                        <p className="font-semibold text-purple-700 dark:text-purple-300 mb-1">O que é:</p>
+                        <p className="text-gray-700 dark:text-gray-300">{peculiar.fundamento.oQueE}</p>
+                      </div>
+                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded p-2">
+                        <p className="font-semibold text-purple-700 dark:text-purple-300 mb-1">Como funciona:</p>
+                        <p className="text-gray-700 dark:text-gray-300">{peculiar.fundamento.comoFunciona}</p>
+                      </div>
+                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded p-2">
+                        <p className="font-semibold text-purple-700 dark:text-purple-300 mb-1">Regras internas:</p>
+                        <p className="text-gray-700 dark:text-gray-300">{peculiar.fundamento.regrasInternas}</p>
+                      </div>
+                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded p-2">
+                        <p className="font-semibold text-purple-700 dark:text-purple-300 mb-1">Requerimentos:</p>
+                        <p className="text-gray-700 dark:text-gray-300">{peculiar.fundamento.requerimentos}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => handleEditPeculiaridade(peculiar)}
+                      aria-label={`Editar ${peculiar.nome}`}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => setConfirmDeletePeculiar(peculiar.id)}
+                      aria-label={`Deletar ${peculiar.nome}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Modais de Edição */}
       {efeitoEditando && (
         <FormEfeitoCustomizado
@@ -204,6 +293,18 @@ export function GerenciadorCustomizados() {
         />
       )}
 
+      {peculiaridadeEditando && (
+        <FormPeculiaridadeCustomizada
+          isOpen={true}
+          onClose={() => setPeculiaridadeEditando(null)}
+          onSubmit={(peculiar) => {
+            updatePeculiaridade(peculiaridadeEditando.id, peculiar);
+            setPeculiaridadeEditando(null);
+          }}
+          peculiaridadeInicial={peculiaridadeEditando}
+        />
+      )}
+
       {/* Diálogos de Confirmação */}
       {confirmDeleteEfeito && (
         <ConfirmDialog
@@ -224,6 +325,18 @@ export function GerenciadorCustomizados() {
           message="Tem certeza que deseja deletar esta modificação? Esta ação não pode ser desfeita."
           onConfirm={() => handleDeleteModificacao(confirmDeleteMod)}
           onClose={() => setConfirmDeleteMod(null)}
+          variant="danger"
+          confirmText="Deletar"
+        />
+      )}
+
+      {confirmDeletePeculiar && (
+        <ConfirmDialog
+          isOpen={true}
+          title="Deletar Peculiaridade Customizada"
+          message="Tem certeza que deseja deletar esta peculiaridade? Esta ação não pode ser desfeita. Poderes que usam esta peculiaridade podem ser afetados."
+          onConfirm={() => handleDeletePeculiaridade(confirmDeletePeculiar)}
+          onClose={() => setConfirmDeletePeculiar(null)}
           variant="danger"
           confirmText="Deletar"
         />

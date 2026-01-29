@@ -54,6 +54,8 @@ export const poderSchema = z.object({
     }),
   descricao: z.string().max(1000, 'Descrição deve ter no máximo 1000 caracteres').optional(),
   dominioId: z.string().min(1, 'Domínio é obrigatório'),
+  dominioAreaConhecimento: z.string().optional(),
+  dominioIdPeculiar: z.string().optional(),
   efeitos: z
     .array(efeitoAplicadoSchema)
     .min(1, 'Adicione pelo menos um efeito ao poder')
@@ -63,6 +65,24 @@ export const poderSchema = z.object({
   alcance: z.number().int().min(0).max(6),
   duracao: z.number().int().min(0).max(4),
   custoAlternativo: custoAlternativoSchema,
+}).refine((data) => {
+  // Se domínio for científico, área de conhecimento é obrigatória
+  if (data.dominioId === 'cientifico' && !data.dominioAreaConhecimento) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Área de conhecimento é obrigatória para o domínio Científico',
+  path: ['dominioAreaConhecimento'],
+}).refine((data) => {
+  // Se domínio for peculiar, ID da peculiaridade é obrigatório
+  if (data.dominioId === 'peculiar' && !data.dominioIdPeculiar) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'Selecione uma peculiaridade ou crie uma nova',
+  path: ['dominioIdPeculiar'],
 });
 
 /**

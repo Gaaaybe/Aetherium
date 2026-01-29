@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Save, Info, Sparkles, Lightbulb, FileText, Zap, Library } from 'lucide-react';
+import { Save, Info, Sparkles, FileText, Zap, Library } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button, Card, CardHeader, CardTitle, CardContent, Badge, Input, Textarea, Select, toast, HelpIcon, Tooltip, ConfirmDialog, InlineHelp, EmptyState } from '../../../shared/ui';
 import { usePoderCalculator } from '../hooks/usePoderCalculator';
@@ -13,9 +13,10 @@ import { CardEfeito } from './CardEfeito';
 import { SeletorModificacao } from './SeletorModificacao';
 import { ResumoPoder } from './ResumoPoder';
 import { ModalAtalhos } from './ModalAtalhos';
+import { FormPeculiaridadeCustomizada } from './FormPeculiaridadeCustomizada';
 
 export function CriadorDePoder() {
-  const { customModificacoes } = useCustomItems();
+  const { customModificacoes, peculiaridades, addPeculiaridade } = useCustomItems();
   const todasModificacoes = useMemo(
     () => [...MODIFICACOES, ...customModificacoes],
     [customModificacoes]
@@ -47,6 +48,7 @@ export function CriadorDePoder() {
   const [modalResumoAberto, setModalResumoAberto] = useState(false);
   const [modalConfirmarReset, setModalConfirmarReset] = useState(false);
   const [mostrarAtalhos, setMostrarAtalhos] = useState(false);
+  const [modalFormPeculiaridade, setModalFormPeculiaridade] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [resetando, setResetando] = useState(false);
   const [erroNome, setErroNome] = useState<string>('');
@@ -60,6 +62,20 @@ export function CriadorDePoder() {
       setErroNome(getFirstError(resultado) || '');
     } else {
       setErroNome('');
+    }
+  };
+
+  const handleDominioChange = (novoDominioId: string) => {
+    // Limpa campos específicos ao mudar domínio
+    if (novoDominioId !== 'cientifico' && poder.dominioAreaConhecimento) {
+      // Se não é científico, limpa área
+      atualizarInfoPoder(undefined, undefined, novoDominioId, '');
+    } else if (novoDominioId !== 'peculiar' && poder.dominioIdPeculiar) {
+      // Se não é peculiar, limpa ID peculiar
+      atualizarInfoPoder(undefined, undefined, novoDominioId, undefined, '');
+    } else {
+      // Só atualiza o domínio
+      atualizarInfoPoder(undefined, undefined, novoDominioId);
     }
   };
 
@@ -239,19 +255,19 @@ export function CriadorDePoder() {
                 </div>
                 <Select
                   value={poder.dominioId}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => atualizarInfoPoder(undefined, undefined, e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleDominioChange(e.target.value)}
                   options={[
-                    { value: '__placeholder__', label: 'Selecione um domínio...', disabled: true },
+                    { value: '__placeholder__', label: 'Selecione um domínio...' },
                     ...DOMINIOS.filter(d => d.categoria === 'espiritual').map(d => ({
                       value: d.id,
                       label: `${d.nome} ${d.espiritual ? '(Espiritual)' : ''}`,
                     })),
-                    { value: '__separator-1__', label: '─────────', disabled: true },
+                    { value: '__separator-1__', label: '─────────' },
                     ...DOMINIOS.filter(d => d.categoria === 'especial').map(d => ({
                       value: d.id,
                       label: d.nome,
                     })),
-                    { value: '__separator-2__', label: '─────────', disabled: true },
+                    { value: '__separator-2__', label: '─────────' },
                     ...DOMINIOS.filter(d => d.categoria === 'arma').map(d => ({
                       value: d.id,
                       label: d.nome,
@@ -264,6 +280,90 @@ export function CriadorDePoder() {
                   </p>
                 )}
               </div>
+
+              {/* Área de Conhecimento (Científico) */}
+              {poder.dominioId === 'cientifico' && (
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Área de Conhecimento *
+                    </label>
+                    <HelpIcon tooltip="Especifique a área científica na qual este poder se baseia" />
+                  </div>
+                  <Select
+                    value={poder.dominioAreaConhecimento || ''}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
+                      atualizarInfoPoder(undefined, undefined, undefined, e.target.value)
+                    }
+                    options={[
+                      { value: '', label: 'Selecione uma área...' },
+                      ...(DOMINIOS.find(d => d.id === 'cientifico')?.areasConhecimento || []).map(area => ({
+                        value: area,
+                        label: area,
+                      })),
+                    ]}
+                  />
+                </div>
+              )}
+
+              {/* Configuração Peculiar */}
+              {poder.dominioId === 'peculiar' && (
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Peculiaridade *
+                      </label>
+                      <HelpIcon tooltip="Selecione uma peculiaridade existente ou crie uma nova" />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <Select
+                          value={poder.dominioIdPeculiar || ''}
+                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
+                            atualizarInfoPoder(undefined, undefined, undefined, undefined, e.target.value)
+                          }
+                          options={[
+                            { value: '', label: 'Selecione uma peculiaridade...' },
+                            ...peculiaridades.map(p => ({
+                              value: p.id,
+                              label: `${p.nome}${p.espiritual ? ' (Espiritual)' : ''}`,
+                            })),
+                          ]}
+                        />
+                      </div>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => setModalFormPeculiaridade(true)}
+                        className="flex items-center gap-1"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        Nova
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Exibe info da peculiaridade selecionada */}
+                  {poder.dominioIdPeculiar && (() => {
+                    const peculiar = peculiaridades.find(p => p.id === poder.dominioIdPeculiar);
+                    if (!peculiar) return null;
+                    
+                    return (
+                      <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                        <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-1">
+                          {peculiar.nome} {peculiar.espiritual && <span className="text-xs opacity-75">(Espiritual)</span>}
+                        </p>
+                        {peculiar.descricaoCurta && (
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            {peculiar.descricaoCurta}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
 
               {/* Parâmetros do Poder (aplicados a todos os efeitos) */}
               {poder.efeitos.length > 0 && (
@@ -530,24 +630,28 @@ export function CriadorDePoder() {
             <div className="flex flex-wrap gap-2">
               {poder.modificacoesGlobais.map((mod) => {
                 const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
+                if (!modBase) return null;
                 const custoTexto = formatarCustoModificacao(mod, modBase);
+                
+                const descricaoParam = mod.parametros?.descricao as string | undefined;
+                const opcaoParam = mod.parametros?.opcao as string | undefined;
                 
                 return (
                   <Badge 
                     key={mod.id} 
-                    variant={modBase?.tipo === 'extra' ? 'success' : 'warning'}
+                    variant={modBase.tipo === 'extra' ? 'success' : 'warning'}
                     className="flex items-center gap-2"
                   >
                     <span>
-                      {modBase?.nome || mod.modificacaoBaseId}
+                      {modBase.nome}
                       {mod.grauModificacao && ` ${mod.grauModificacao}`}
                       <span className="font-bold ml-1">{custoTexto}</span>
                     </span>
-                    {mod.parametros?.descricao && (
-                      <span className="text-xs opacity-75">: {mod.parametros.descricao}</span>
+                    {descricaoParam && (
+                      <span className="text-xs opacity-75">: {descricaoParam}</span>
                     )}
-                    {mod.parametros?.opcao && (
-                      <span className="text-xs opacity-75">({mod.parametros.opcao})</span>
+                    {opcaoParam && (
+                      <span className="text-xs opacity-75">({opcaoParam})</span>
                     )}
                     <button
                       onClick={() => removerModificacaoGlobal(mod.id)}
@@ -685,6 +789,17 @@ export function CriadorDePoder() {
       <ModalAtalhos
         isOpen={mostrarAtalhos}
         onClose={() => setMostrarAtalhos(false)}
+      />
+
+      <FormPeculiaridadeCustomizada
+        isOpen={modalFormPeculiaridade}
+        onClose={() => setModalFormPeculiaridade(false)}
+        onSubmit={(peculiaridade) => {
+          addPeculiaridade(peculiaridade);
+          atualizarInfoPoder(undefined, undefined, undefined, undefined, peculiaridade.id);
+          setModalFormPeculiaridade(false);
+          toast.success(`Peculiaridade "${peculiaridade.nome}" criada com sucesso!`);
+        }}
       />
     </div>
   );
