@@ -100,19 +100,19 @@ export function calculateCreatureStatsV2(input: CreatureFormInput): CreatureStat
   // Dano - usar dmgBase e aplicar multiplicador
   const damageCalculated = Math.round(masterRow.dmgBase * template.damageMultiplier);
   
-  // Bônus de Ataque - pegar o maior atributo escolhido e somar com bônus de eficiência
-  let attackAttrMod = 0;
-  if (input.attributeDistribution) {
-    if (input.attributeDistribution.major.length > 0) {
-      // Usar o modificador do primeiro atributo maior
-      attackAttrMod = attributes[input.attributeDistribution.major[0]];
-    } else if (input.attributeDistribution.medium.length > 0) {
-      // Lacaio usa médio
-      attackAttrMod = attributes[input.attributeDistribution.medium[0]];
-    }
+  // Bônus de Ataque - usar o valor da tabela mestra
+  // A tabela já tem o valor correto calculado
+  let attackBonus = masterRow.atkBonus;
+  
+  // Aplicar multiplicador se for Chefe Solo
+  if (template.attackMultiplier) {
+    attackBonus = Math.round(attackBonus * template.attackMultiplier);
   }
-  // Ataque = maior atributo + bônus de eficiência
-  const attackBonus = attackAttrMod + masterRow.efficiency;
+  
+  // Adicionar bônus extra do template se houver
+  if (template.attackBonus) {
+    attackBonus += template.attackBonus;
+  }
   
   // Defesa - geralmente baseada em Destreza/Reflexos
   let defense = masterRow.modMedium; // Fallback
