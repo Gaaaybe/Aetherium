@@ -143,6 +143,12 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
       texto += `${poder.descricao}\n\n`;
     }
     
+    // Parâmetros do Poder
+    texto += `PARÂMETROS:\n`;
+    texto += `• Ação: ${getNomeEscala('acao', poder.acao)}\n`;
+    texto += `• Alcance: ${getNomeEscala('alcance', poder.alcance)}\n`;
+    texto += `• Duração: ${getNomeEscala('duracao', poder.duracao)}\n\n`;
+    
     // Domínio
     const dominio = DOMINIOS.find(d => d.id === poder.dominioId);
     if (dominio) {
