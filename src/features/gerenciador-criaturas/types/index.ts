@@ -130,7 +130,7 @@ export interface CreatureStats {
   
   // Combate
   attackBonus: number;          // Bônus de Ataque Final
-  damage: number;               // Dano Base (editável)
+  damage: number;               // Dano Máximo (editável)
   cdEffect: number;             // CD para Efeitos
   
   // Perícias e Resistências

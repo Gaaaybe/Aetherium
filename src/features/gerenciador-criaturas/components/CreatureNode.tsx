@@ -492,7 +492,7 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
             </span>
           </div>
           <div className="flex items-center justify-between mt-1">
-            <span className="text-sm text-gray-700 dark:text-gray-300">Dano Base</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">Dano Máximo</span>
             <span className="text-lg font-bold text-orange-600 dark:text-orange-400">
               {creature.statsV2?.combat.damage ?? creature.stats.damage}
             </span>
@@ -827,6 +827,9 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
               {creature.creatureAbilities && creature.creatureAbilities.length > 0 ? (
                 creature.creatureAbilities.map((ability, index) => {
                   const realPeCost = ability.effortCost * creature.stats.effortUnit;
+                  // Calcular PdA do poder
+                  const poderDetails = calcularDetalhesPoder(ability.poder as Poder, EFEITOS, MODIFICACOES);
+                  const pdaCost = poderDetails.custoPdATotal;
                   const isExpanded = expandedAbilityId === ability.id;
                   const hasDescription = !!(ability.poder as PoderTemp).descricao;
                   const isFirst = index === 0;
@@ -878,6 +881,9 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <span className="font-semibold text-sm text-gray-900 dark:text-gray-100 break-words">
                                   {ability.name}
+                                </span>
+                                <span className="text-xs px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full font-medium whitespace-nowrap">
+                                  {pdaCost} PdA
                                 </span>
                                 <span className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full font-medium whitespace-nowrap">
                                   {realPeCost} PE
@@ -962,7 +968,7 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
 
       {/* Modal de Ataque */}
       <FormAtaque
-        key={editingAttack?.id || 'new'}
+        key={`${creature.id}-attack-${editingAttack?.id || 'new'}`}
         isOpen={showAttackForm}
         onClose={() => {
           setShowAttackForm(false);
@@ -975,7 +981,7 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
 
       {/* Modal de Habilidade */}
       <FormHabilidade
-        key={editingAbility?.id || 'new'}
+        key={`${creature.id}-ability-${editingAbility?.id || 'new'}`}
         isOpen={showAbilityForm}
         onClose={() => {
           setShowAbilityForm(false);

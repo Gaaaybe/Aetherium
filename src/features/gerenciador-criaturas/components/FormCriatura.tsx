@@ -147,22 +147,29 @@ export function FormCriatura({
     value: CreatureFormInput[K]
   ) => {
     setFormData(prev => {
-      // Se mudou o role, resetar distribuições e ajustar sovereignty
+      // Se mudou o role, resetar distribuições e ajustar sovereignty e pvMultiplier
       if (field === 'role' && value !== previousRole.current) {
         previousRole.current = value as CreatureRole;
         
         // Definir sovereignty padrão baseado na role
         let defaultSovereignty = 1;
+        let defaultPvMultiplier = 1;
+        
         if (value === 'Elite') {
           defaultSovereignty = 1; // Elite: 1 ação extra
+          defaultPvMultiplier = 2.5; // Elite: 2.5x PV padrão
         } else if (value === 'ChefeSolo') {
           defaultSovereignty = 3; // Chefe Solo: 3 ações extras
+          defaultPvMultiplier = 10; // Chefe Solo: 10x PV padrão
+        } else if (value === 'Bruto') {
+          defaultPvMultiplier = 2; // Bruto: 2x PV padrão
         }
         
         return {
           ...prev,
           [field]: value,
           sovereignty: defaultSovereignty,
+          sovereigntyMultiplier: defaultPvMultiplier,
           attributeDistribution: undefined,
           saveDistribution: undefined,
           selectedSkills: [],
@@ -430,21 +437,27 @@ export function FormCriatura({
             </div>
           )}
 
-          {/* Chefe Solo: Multiplicador de PV */}
-          {formData.role === 'ChefeSolo' && (
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 rounded">
+          {/* Multiplicador de PV para Bruto, Elite e Chefe Solo */}
+          {(formData.role === 'Bruto' || formData.role === 'Elite' || formData.role === 'ChefeSolo') && (
+            <div className="p-4 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 border-l-4 border-red-500 rounded">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Multiplicador de PV (Chefe Solo): <span className="text-yellow-600 font-bold">{formData.sovereigntyMultiplier}x</span>
+                Multiplicador de PV ({formData.role}): <span className="text-red-600 dark:text-red-400 font-bold">{formData.sovereigntyMultiplier}x</span>
               </label>
               <Slider
-                min={10}
-                max={15}
+                min={formData.role === 'ChefeSolo' ? 10 : formData.role === 'Elite' ? 2 : 1.5}
+                max={formData.role === 'ChefeSolo' ? 15 : formData.role === 'Elite' ? 4 : 3}
                 step={0.5}
-                value={formData.sovereigntyMultiplier || 10}
+                value={formData.sovereigntyMultiplier || (formData.role === 'ChefeSolo' ? 10 : formData.role === 'Elite' ? 2.5 : 2)}
                 onChange={(value) => updateField('sovereigntyMultiplier', value)}
               />
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <span>{formData.role === 'ChefeSolo' ? '10x' : formData.role === 'Elite' ? '2x' : '1.5x'}</span>
+                <span>{formData.role === 'ChefeSolo' ? '15x' : formData.role === 'Elite' ? '4x' : '3x'}</span>
+              </div>
               <p className="text-xs text-gray-500 mt-2">
-                Ajuste baseado no tamanho do grupo de jogadores
+                {formData.role === 'ChefeSolo' 
+                  ? 'Ajuste baseado no tamanho do grupo de jogadores'
+                  : 'Ajuste baseado na dificuldade desejada'}
               </p>
             </div>
           )}

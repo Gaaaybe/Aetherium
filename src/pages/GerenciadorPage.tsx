@@ -94,66 +94,87 @@ function GerenciadorContent() {
         onEditCreature: handleEditCreature,
         onSaveCreature: handleSaveCreature 
       }}>
-        <div className="h-[calc(100vh-3rem)] flex flex-col">
-        {/* Header */}
-        <div className="mb-2">
-          <div className="flex items-start justify-between mb-2">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-                Gerenciador de Criaturas
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Sistema de gerenciamento de criaturas em tempo real
-              </p>
-            </div>
-          </div>
-
-          {/* Action Bar */}
-          <div className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-2 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-gray-500" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {totalCreatures} criatura{totalCreatures !== 1 ? 's' : ''}
+        <div className="relative min-h-screen">
+          {/* Sidebar Flutuante - Aparece ao passar o mouse */}
+          <div className="fixed left-0 top-0 h-full z-50 group">
+            {/* Área de Trigger (invisível) */}
+            <div className="absolute left-0 top-0 w-8 h-full" />
+            
+            {/* Sidebar */}
+            <div className="absolute left-0 top-0 h-full -translate-x-full group-hover:translate-x-0 transition-transform duration-300 ease-in-out">
+              <div className="h-full w-72 bg-white dark:bg-gray-800 shadow-2xl border-r border-gray-200 dark:border-gray-700 flex flex-col">
+                {/* Header da Sidebar */}
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">
+                    Gerenciador de Criaturas
+                  </h2>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    Sistema de gerenciamento em tempo real
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {activeCreatures} ativa{activeCreatures !== 1 ? 's' : ''} • {defeatedCreatures} derrotada{defeatedCreatures !== 1 ? 's' : ''}
+                </div>
+
+                {/* Stats */}
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Users className="w-5 h-5 text-gray-500" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {totalCreatures} criatura{totalCreatures !== 1 ? 's' : ''}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {activeCreatures} ativa{activeCreatures !== 1 ? 's' : ''} • {defeatedCreatures} derrotada{defeatedCreatures !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ações */}
+                <div className="flex-1 p-4 space-y-2 overflow-y-auto">
+                  <Button 
+                    onClick={() => setShowForm(true)} 
+                    className="w-full justify-start gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Adicionar Criatura
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => setShowLibrary(true)} 
+                    variant="outline"
+                    className="w-full justify-start gap-2"
+                  >
+                    <Book className="w-4 h-4" />
+                    Biblioteca
+                  </Button>
+                  
+                  {totalCreatures > 0 && (
+                    <Button 
+                      onClick={() => setShowClearConfirm(true)} 
+                      variant="outline"
+                      className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Limpar Board
+                    </Button>
+                  )}
+                </div>
+
+                {/* Footer com dica */}
+                <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    Passe o mouse na lateral esquerda para acessar este menu
                   </p>
                 </div>
               </div>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Button 
-                onClick={() => setShowLibrary(true)} 
-                variant="outline"
-                className="gap-2"
-              >
-                <Book className="w-4 h-4" />
-                Biblioteca
-              </Button>
-              {totalCreatures > 0 && (
-                <Button 
-                  onClick={() => setShowClearConfirm(true)} 
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Limpar Board
-                </Button>
-              )}
-              <Button onClick={() => setShowForm(true)} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Adicionar Criatura
-              </Button>
-            </div>
+
+            {/* Indicador Visual */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-16 bg-gradient-to-r from-espirito-500 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
-        </div>
 
         {/* Board ou Empty State */}
         {totalCreatures === 0 ? (
-          <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-800">
             <EmptyState
               icon={<Users className="w-12 h-12 text-espirito-500" />}
               title="Board vazio"
@@ -165,7 +186,7 @@ function GerenciadorContent() {
             />
           </div>
         ) : (
-          <div className="flex-1 border-2 border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+          <div className="fixed inset-0">
             <BoardCriaturas />
           </div>
         )}

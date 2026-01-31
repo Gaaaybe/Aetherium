@@ -49,7 +49,8 @@ export const ROLE_TEMPLATES: Record<CreatureRole, RoleTemplate> = {
     name: 'Bruto',
     description: 'Tanque de linha de frente. Muito PV, dano normal, recursos normais.',
     
-    pvMultiplier: 2.0,          // 200% do PV padrão
+    pvMultiplier: 2.0,          // 200% do PV padrão (base)
+    pvMultiplierRange: [1.5, 3], // Range de 1.5x a 3x
     peMultiplier: 1.0,          // 100% do PE base
     damageMultiplier: 1.0,      // Dano base
     
@@ -64,7 +65,8 @@ export const ROLE_TEMPLATES: Record<CreatureRole, RoleTemplate> = {
     name: 'Elite',
     description: 'Criatura excepcional. Superior em tudo. Mecânicas de chefe menores.',
     
-    pvMultiplier: 2.5,          // 250% do PV padrão
+    pvMultiplier: 2.5,          // 250% do PV padrão (base)
+    pvMultiplierRange: [2, 4],   // Range de 2x a 4x
     peMultiplier: 2.0,          // 200% do PE base
     damageMultiplier: 1.5,      // 150% do dano
     
