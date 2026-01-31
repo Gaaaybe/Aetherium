@@ -111,30 +111,19 @@ export function calculateBossMechanics(
  * Helper: Calcular bônus de ataque baseado no template
  */
 function calculateAttackBonus(masterRow: MasterRow, template: RoleTemplate): number {
-  // Pegar o modificador correto
-  let baseBonus = 0;
-  switch (template.attackModifier) {
-    case 'major':
-      baseBonus = masterRow.modMajor;
-      break;
-    case 'medium':
-      baseBonus = masterRow.modMedium;
-      break;
-    case 'minor':
-      baseBonus = masterRow.modMinor;
-      break;
-  }
+  // Usar direto o atkBonus da tabela mestra
+  // A tabela já tem o valor correto calculado
+  let attackBonus = masterRow.atkBonus;
   
   // Aplicar multiplicador (Chefe Solo)
   if (template.attackMultiplier) {
-    baseBonus = Math.round(baseBonus * template.attackMultiplier);
+    attackBonus = Math.round(attackBonus * template.attackMultiplier);
   }
   
-  // Adicionar bônus extra
+  // Adicionar bônus extra do template
   if (template.attackBonus) {
-    baseBonus += template.attackBonus;
+    attackBonus += template.attackBonus;
   }
   
-  // Somar com o bônus de ataque da tabela
-  return baseBonus + masterRow.atkBonus;
+  return attackBonus;
 }
