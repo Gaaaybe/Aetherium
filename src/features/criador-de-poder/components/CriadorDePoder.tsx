@@ -235,12 +235,12 @@ export function CriadorDePoder() {
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Descrição (opcional)
                   </label>
-                  <HelpIcon tooltip="Descreva como o poder funciona, suas limitações e efeitos visuais" />
+                  <HelpIcon tooltip="Descreva como o poder funciona. Suporta Markdown: **negrito**, *itálico*, - listas" />
                 </div>
                 <Textarea
                   value={poder.descricao || ''}
                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => atualizarInfoPoder(undefined, e.target.value)}
-                  placeholder="Descreva o poder..."
+                  placeholder="Descreva o poder... (suporta Markdown)"
                   rows={3}
                 />
               </div>

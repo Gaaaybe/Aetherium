@@ -129,6 +129,13 @@ export function FormPeculiaridadeCustomizada({
           <h3 className="text-sm font-semibold text-purple-900 dark:text-purple-100">
             Fundamento Obrigatório *
           </h3>
+          
+          <InlineHelp
+            type="info"
+            text="💡 Você pode usar Markdown: **negrito**, *itálico*, - listas, etc."
+            dismissible={true}
+            storageKey="markdown-help-fundamento"
+          />
 
           <div>
             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">

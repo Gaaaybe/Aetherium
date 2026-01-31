@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Zap, Package, Globe, Sparkles, Copy, FileText, Clock, Ruler, Timer } from 'lucide-react';
 import { Modal, ModalFooter, Button, Badge, Card, CardContent, toast } from '../../../shared/ui';
+import { MarkdownText } from '../../../shared/components';
 import { Poder, ModificacaoAplicada } from '../regras/calculadoraCusto';
 import { MODIFICACOES, ESCALAS, Modificacao, DOMINIOS } from '../../../data';
 import { useCustomItems } from '../../../shared/hooks';
@@ -277,9 +278,9 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                   <h2 className="text-3xl font-bold">{poder.nome}</h2>
                 </div>
                 {poder.descricao && (
-                  <p className="text-espirito-100 text-lg max-w-2xl leading-relaxed">
-                    {poder.descricao}
-                  </p>
+                  <div className="text-espirito-100 text-lg max-w-2xl leading-relaxed">
+                    <MarkdownText>{poder.descricao}</MarkdownText>
+                  </div>
                 )}
               </div>
               
@@ -376,19 +377,27 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                     <div className="mt-3 space-y-2 text-xs">
                       <div className="bg-white/10 rounded p-2">
                         <p className="font-semibold text-purple-100 mb-1">O que é:</p>
-                        <p className="text-purple-200">{peculiaridade.fundamento.oQueE}</p>
+                        <div className="text-purple-200">
+                          <MarkdownText>{peculiaridade.fundamento.oQueE}</MarkdownText>
+                        </div>
                       </div>
                       <div className="bg-white/10 rounded p-2">
                         <p className="font-semibold text-purple-100 mb-1">Como funciona:</p>
-                        <p className="text-purple-200">{peculiaridade.fundamento.comoFunciona}</p>
+                        <div className="text-purple-200">
+                          <MarkdownText>{peculiaridade.fundamento.comoFunciona}</MarkdownText>
+                        </div>
                       </div>
                       <div className="bg-white/10 rounded p-2">
                         <p className="font-semibold text-purple-100 mb-1">Regras internas:</p>
-                        <p className="text-purple-200">{peculiaridade.fundamento.regrasInternas}</p>
+                        <div className="text-purple-200">
+                          <MarkdownText>{peculiaridade.fundamento.regrasInternas}</MarkdownText>
+                        </div>
                       </div>
                       <div className="bg-white/10 rounded p-2">
                         <p className="font-semibold text-purple-100 mb-1">Requerimentos:</p>
-                        <p className="text-purple-200">{peculiaridade.fundamento.requerimentos}</p>
+                        <div className="text-purple-200">
+                          <MarkdownText>{peculiaridade.fundamento.requerimentos}</MarkdownText>
+                        </div>
                       </div>
                     </div>
                   </div>

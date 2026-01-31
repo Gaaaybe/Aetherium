@@ -4,3 +4,4 @@
 
 export { Breadcrumbs } from './Breadcrumbs';
 export { PageTransition } from './PageTransition';
+export { MarkdownText } from './MarkdownText';

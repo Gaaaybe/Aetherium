@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, Card, Badge, ConfirmDialog, EmptyState } from '../../../shared/ui';
+import { MarkdownText } from '../../../shared/components';
 import { useCustomItems } from '../../../shared/hooks';
 import { FormEfeitoCustomizado } from './FormEfeitoCustomizado';
 import { FormModificacaoCustomizada } from './FormModificacaoCustomizada';
@@ -227,19 +228,27 @@ export function GerenciadorCustomizados() {
                     <div className="space-y-2 text-xs">
                       <div className="bg-purple-50 dark:bg-purple-900/20 rounded p-2">
                         <p className="font-semibold text-purple-700 dark:text-purple-300 mb-1">O que é:</p>
-                        <p className="text-gray-700 dark:text-gray-300">{peculiar.fundamento.oQueE}</p>
+                        <div className="text-gray-700 dark:text-gray-300">
+                          <MarkdownText>{peculiar.fundamento.oQueE}</MarkdownText>
+                        </div>
                       </div>
                       <div className="bg-purple-50 dark:bg-purple-900/20 rounded p-2">
                         <p className="font-semibold text-purple-700 dark:text-purple-300 mb-1">Como funciona:</p>
-                        <p className="text-gray-700 dark:text-gray-300">{peculiar.fundamento.comoFunciona}</p>
+                        <div className="text-gray-700 dark:text-gray-300">
+                          <MarkdownText>{peculiar.fundamento.comoFunciona}</MarkdownText>
+                        </div>
                       </div>
                       <div className="bg-purple-50 dark:bg-purple-900/20 rounded p-2">
                         <p className="font-semibold text-purple-700 dark:text-purple-300 mb-1">Regras internas:</p>
-                        <p className="text-gray-700 dark:text-gray-300">{peculiar.fundamento.regrasInternas}</p>
+                        <div className="text-gray-700 dark:text-gray-300">
+                          <MarkdownText>{peculiar.fundamento.regrasInternas}</MarkdownText>
+                        </div>
                       </div>
                       <div className="bg-purple-50 dark:bg-purple-900/20 rounded p-2">
                         <p className="font-semibold text-purple-700 dark:text-purple-300 mb-1">Requerimentos:</p>
-                        <p className="text-gray-700 dark:text-gray-300">{peculiar.fundamento.requerimentos}</p>
+                        <div className="text-gray-700 dark:text-gray-300">
+                          <MarkdownText>{peculiar.fundamento.requerimentos}</MarkdownText>
+                        </div>
                       </div>
                     </div>
                   </div>
