@@ -23,3 +23,14 @@ export {
   getAllRoles,
   getRoleColor,
 } from './data/roleTemplates';
+
+// Dice Rolling System
+export { DiceRoller } from './components/DiceRoller';
+export { DiceRollerDemo } from './components/DiceRollerDemo';
+export { 
+  rollD20, 
+  rollDice, 
+  rollDamage, 
+  formatRollResult,
+  type RollResult 
+} from './utils/diceRoller';

@@ -1,6 +1,6 @@
 import { memo, useState, useMemo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { Heart, Zap, Swords, Trash2, Edit, Eye, EyeOff, Shield, Target, Gauge, Plus, Minus, RotateCcw, Save, ChevronRight, ChevronLeft, Sparkles, ChevronDown, ChevronUp, ArrowUp, ArrowDown } from 'lucide-react';
+import { Heart, Zap, Swords, Trash2, Edit, Eye, EyeOff, Shield, Target, Gauge, Plus, Minus, RotateCcw, Save, ChevronRight, ChevronLeft, Sparkles, ChevronDown, ChevronUp, ArrowUp, ArrowDown, Dices } from 'lucide-react';
 import { ConfirmDialog } from '../../../shared/ui';
 import { FormAtaque } from './FormAtaque';
 import { FormHabilidade } from './FormHabilidade';
@@ -12,6 +12,7 @@ import type { Poder } from '../../criador-de-poder/types';
 import { getRoleColor } from '../data/roleTemplates';
 import { useCreatureBoardContext } from '../hooks/CreatureBoardContext';
 import { useUIActions } from '../hooks/UIActionsContext';
+import { DiceRoller } from './DiceRoller';
 
 // Tipo temporário para Poder até integração completa
 interface PoderTemp {
@@ -42,6 +43,10 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
   const [deleteAbilityId, setDeleteAbilityId] = useState<string | null>(null);
   const [viewingAbility, setViewingAbility] = useState<CreatureAbility | null>(null);
   const [expandedAbilityId, setExpandedAbilityId] = useState<string | null>(null);
+  const [rollingAttack, setRollingAttack] = useState<CreatureAttack | null>(null);
+  const [rollingAttribute, setRollingAttribute] = useState<{ name: string; modifier: number } | null>(null);
+  const [rollingSave, setRollingSave] = useState<{ name: string; modifier: number } | null>(null);
+  const [rollingSkill, setRollingSkill] = useState<{ name: string; modifier: number } | null>(null);
 
   // Calcular detalhes do poder visualizado (memoizado)
   const viewingAbilityDetails = useMemo(() => {
@@ -505,39 +510,93 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
           
           {creature.statsV2 ? (
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRollingSave({ name: 'Fortitude', modifier: creature.statsV2!.saves.Fortitude });
+                }}
+                className="w-full flex items-center justify-between hover:bg-green-50 dark:hover:bg-green-900/20 rounded px-1 transition-colors group"
+              >
                 <span className="text-xs text-gray-600 dark:text-gray-400">Fortitude</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                  {creature.statsV2.saves.Fortitude >= 0 ? '+' : ''}{creature.statsV2.saves.Fortitude}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                    {creature.statsV2.saves.Fortitude >= 0 ? '+' : ''}{creature.statsV2.saves.Fortitude}
+                  </span>
+                  <Dices className="w-3 h-3 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRollingSave({ name: 'Reflexos', modifier: creature.statsV2!.saves.Reflexos });
+                }}
+                className="w-full flex items-center justify-between hover:bg-green-50 dark:hover:bg-green-900/20 rounded px-1 transition-colors group"
+              >
                 <span className="text-xs text-gray-600 dark:text-gray-400">Reflexos</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                  {creature.statsV2.saves.Reflexos >= 0 ? '+' : ''}{creature.statsV2.saves.Reflexos}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                    {creature.statsV2.saves.Reflexos >= 0 ? '+' : ''}{creature.statsV2.saves.Reflexos}
+                  </span>
+                  <Dices className="w-3 h-3 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRollingSave({ name: 'Vontade', modifier: creature.statsV2!.saves.Vontade });
+                }}
+                className="w-full flex items-center justify-between hover:bg-green-50 dark:hover:bg-green-900/20 rounded px-1 transition-colors group"
+              >
                 <span className="text-xs text-gray-600 dark:text-gray-400">Vontade</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                  {creature.statsV2.saves.Vontade >= 0 ? '+' : ''}{creature.statsV2.saves.Vontade}
-                </span>
-              </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                    {creature.statsV2.saves.Vontade >= 0 ? '+' : ''}{creature.statsV2.saves.Vontade}
+                  </span>
+                  <Dices className="w-3 h-3 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </button>
             </div>
           ) : (
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRollingSave({ name: 'Res. Menor', modifier: creature.stats.resistances.minor });
+                }}
+                className="w-full flex items-center justify-between hover:bg-green-50 dark:hover:bg-green-900/20 rounded px-1 transition-colors group"
+              >
                 <span className="text-xs text-gray-600 dark:text-gray-400">Res. Menor</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{creature.stats.resistances.minor >= 0 ? '+' : ''}{creature.stats.resistances.minor}</span>
-              </div>
-              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{creature.stats.resistances.minor >= 0 ? '+' : ''}{creature.stats.resistances.minor}</span>
+                  <Dices className="w-3 h-3 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRollingSave({ name: 'Res. Média', modifier: creature.stats.resistances.medium });
+                }}
+                className="w-full flex items-center justify-between hover:bg-green-50 dark:hover:bg-green-900/20 rounded px-1 transition-colors group"
+              >
                 <span className="text-xs text-gray-600 dark:text-gray-400">Res. Média</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{creature.stats.resistances.medium >= 0 ? '+' : ''}{creature.stats.resistances.medium}</span>
-              </div>
-              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{creature.stats.resistances.medium >= 0 ? '+' : ''}{creature.stats.resistances.medium}</span>
+                  <Dices className="w-3 h-3 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRollingSave({ name: 'Res. Maior', modifier: creature.stats.resistances.major });
+                }}
+                className="w-full flex items-center justify-between hover:bg-green-50 dark:hover:bg-green-900/20 rounded px-1 transition-colors group"
+              >
                 <span className="text-xs text-gray-600 dark:text-gray-400">Res. Maior</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{creature.stats.resistances.major >= 0 ? '+' : ''}{creature.stats.resistances.major}</span>
-              </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{creature.stats.resistances.major >= 0 ? '+' : ''}{creature.stats.resistances.major}</span>
+                  <Dices className="w-3 h-3 text-green-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+              </button>
             </div>
           )}
         </div>
@@ -548,12 +607,23 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
             <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">ATRIBUTOS</p>
             <div className="grid grid-cols-3 gap-x-2 gap-y-1 text-xs">
               {Object.entries(creature.statsV2.attributes).map(([attr, value]) => (
-                <div key={attr} className="flex items-center justify-between">
+                <button
+                  key={attr}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setRollingAttribute({ name: attr, modifier: value });
+                  }}
+                  className="flex items-center justify-between hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded px-1 transition-colors group"
+                  title={`Rolar ${attr}`}
+                >
                   <span className="text-gray-600 dark:text-gray-400">{attr.substring(0, 3)}</span>
-                  <span className="font-bold text-gray-900 dark:text-gray-100">
-                    {value > 0 ? '+' : ''}{value}
-                  </span>
-                </div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-bold text-gray-900 dark:text-gray-100">
+                      {value > 0 ? '+' : ''}{value}
+                    </span>
+                    <Dices className="w-3 h-3 text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -565,19 +635,38 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
             <p className="text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">PERÍCIAS-CHAVE</p>
             <div className="space-y-0.5 text-xs max-h-24 overflow-y-auto">
               {Object.entries(creature.statsV2.skills).map(([skill, value]) => (
-                <div key={skill} className="flex items-center justify-between">
+                <button
+                  key={skill}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setRollingSkill({ name: skill, modifier: value });
+                  }}
+                  className="w-full flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded px-1 transition-colors group"
+                >
                   <span className="text-gray-600 dark:text-gray-400">{skill}</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400">+{value}</span>
-                </div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-bold text-blue-600 dark:text-blue-400">+{value}</span>
+                    <Dices className="w-3 h-3 text-purple-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </button>
               ))}
             </div>
           </div>
         ) : (
           <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setRollingSkill({ name: 'Perícia Chave', modifier: creature.stats.keySkill });
+              }}
+              className="w-full flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded px-1 transition-colors group"
+            >
               <span className="text-xs text-gray-600 dark:text-gray-400">Perícia Chave</span>
-              <span className="text-sm font-bold text-gray-900 dark:text-gray-100">+{creature.stats.keySkill}</span>
-            </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">+{creature.stats.keySkill}</span>
+                <Dices className="w-3 h-3 text-purple-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </button>
           </div>
         )}
 
@@ -746,6 +835,16 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
                       <div className="flex items-start justify-between mb-1">
                         <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">{attack.name}</span>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRollingAttack(attack);
+                            }}
+                            className="p-1 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded transition-colors"
+                            title="Rolar dados"
+                          >
+                            <Dices className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                          </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1040,6 +1139,52 @@ function CreatureNodeComponent({ data }: NodeProps<Creature>) {
           onClose={() => setViewingAbility(null)}
           poder={viewingAbility.poder as Poder}
           detalhes={viewingAbilityDetails}
+        />
+      )}
+
+      {/* DiceRoller para ataques */}
+      {rollingAttack && (
+        <DiceRoller
+          label={`${creature.name} - ${rollingAttack.name}`}
+          modifier={creature.stats.attackBonus}
+          damageFormula={rollingAttack.damage}
+          damageModifier={creature.stats.attackBonus}
+          modifierLabel="Bônus de Ataque"
+          rollButtonLabel="Rolar Ataque"
+          onClose={() => setRollingAttack(null)}
+        />
+      )}
+
+      {/* DiceRoller para atributos */}
+      {rollingAttribute && (
+        <DiceRoller
+          label={`${creature.name} - ${rollingAttribute.name}`}
+          modifier={rollingAttribute.modifier}
+          modifierLabel="Modificador"
+          rollButtonLabel="Rolar"
+          onClose={() => setRollingAttribute(null)}
+        />
+      )}
+
+      {/* DiceRoller para resistências */}
+      {rollingSave && (
+        <DiceRoller
+          label={`${creature.name} - ${rollingSave.name}`}
+          modifier={rollingSave.modifier}
+          modifierLabel="Bônus de Resistência"
+          rollButtonLabel="Rolar Resistência"
+          onClose={() => setRollingSave(null)}
+        />
+      )}
+
+      {/* DiceRoller para perícias */}
+      {rollingSkill && (
+        <DiceRoller
+          label={`${creature.name} - ${rollingSkill.name}`}
+          modifier={rollingSkill.modifier}
+          modifierLabel="Bônus de Perícia"
+          rollButtonLabel="Rolar Perícia"
+          onClose={() => setRollingSkill(null)}
         />
       )}
     </div>
