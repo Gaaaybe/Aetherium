@@ -1,11 +1,12 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, toast, EmptyState } from '../shared/ui';
 import { useBibliotecaPoderes } from '../features/criador-de-poder/hooks/useBibliotecaPoderes';
 import { SwipeablePoderCard } from '../features/criador-de-poder/components/SwipeablePoderCard';
 import { GerenciadorCustomizados } from '../features/criador-de-poder/components/GerenciadorCustomizados';
+import { ListaAcervos } from '../features/criador-de-poder/components/ListaAcervos';
 import { Poder } from '../features/criador-de-poder/regras/calculadoraCusto';
 import { useNavigate } from 'react-router-dom';
-import { Library, Sparkles, Upload, Plus, Download } from 'lucide-react';
+import { Library, Sparkles, Upload, Plus, Download, Package } from 'lucide-react';
 
 export function BibliotecaPage() {
   const navigate = useNavigate();
@@ -26,8 +27,16 @@ export function BibliotecaPage() {
   const [deletandoId, setDeletandoId] = useState<string | null>(null);
   const [duplicandoId, setDuplicandoId] = useState<string | null>(null);
   const [exportandoId, setExportandoId] = useState<string | null>(null);
-  const [abaAtiva, setAbaAtiva] = useState<'poderes' | 'customizados'>('poderes');
+  const [abaAtiva, setAbaAtiva] = useState<'poderes' | 'acervos' | 'customizados'>(() => {
+    const saved = localStorage.getItem('biblioteca-aba-ativa');
+    return (saved as 'poderes' | 'acervos' | 'customizados') || 'poderes';
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Persistir aba ativa
+  useEffect(() => {
+    localStorage.setItem('biblioteca-aba-ativa', abaAtiva);
+  }, [abaAtiva]);
 
   const poderesFiltrados = poderes.filter(p => 
     p.nome.toLowerCase().includes(busca.toLowerCase()) ||
@@ -206,6 +215,16 @@ export function BibliotecaPage() {
           <Library className="w-4 h-4" /> Poderes Salvos
         </button>
         <button
+          onClick={() => setAbaAtiva('acervos')}
+          className={`px-4 py-2 font-medium transition-colors border-b-2 flex items-center gap-2 ${
+            abaAtiva === 'acervos'
+              ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+              : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+          }`}
+        >
+          <Package className="w-4 h-4" /> Acervos
+        </button>
+        <button
           onClick={() => setAbaAtiva('customizados')}
           className={`px-4 py-2 font-medium transition-colors border-b-2 flex items-center gap-2 ${
             abaAtiva === 'customizados'
@@ -343,6 +362,8 @@ export function BibliotecaPage() {
             </div>
           )}
         </>
+      ) : abaAtiva === 'acervos' ? (
+        <ListaAcervos />
       ) : (
         <GerenciadorCustomizados />
       )}
