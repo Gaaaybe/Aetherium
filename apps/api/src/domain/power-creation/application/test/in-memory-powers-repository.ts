@@ -1,0 +1,64 @@
+import type { PowersRepository } from '../repositories/powers-repository';
+import type { Power } from '../../enterprise/entities/power';
+import type { PaginationParams } from '@/core/repositories/paginationParams';
+
+export class InMemoryPowersRepository implements PowersRepository {
+  public items: Power[] = [];
+
+  async findById(id: string): Promise<Power | null> {
+    const power = this.items.find((item) => item.id.toString() === id);
+    return power ?? null;
+  }
+
+  async findMany(params: PaginationParams): Promise<Power[]> {
+    const startIndex = (params.page - 1) * 20;
+    const endIndex = startIndex + 20;
+
+    return this.items.slice(startIndex, endIndex);
+  }
+
+  async findByUserId(userId: string, params: PaginationParams): Promise<Power[]> {
+    const startIndex = (params.page - 1) * 20;
+    const endIndex = startIndex + 20;
+
+    return this.items.slice(startIndex, endIndex);
+  }
+
+  async findByDomain(domainName: string, params: PaginationParams): Promise<Power[]> {
+    const filtered = this.items.filter((item) => item.dominio.name === domainName);
+
+    const startIndex = (params.page - 1) * 20;
+    const endIndex = startIndex + 20;
+
+    return filtered.slice(startIndex, endIndex);
+  }
+
+  async findCustomPowers(params: PaginationParams): Promise<Power[]> {
+    const filtered = this.items.filter((item) => item.custom);
+
+    const startIndex = (params.page - 1) * 20;
+    const endIndex = startIndex + 20;
+
+    return filtered.slice(startIndex, endIndex);
+  }
+
+  async create(power: Power): Promise<void> {
+    this.items.push(power);
+  }
+
+  async update(power: Power): Promise<void> {
+    const itemIndex = this.items.findIndex((item) => item.id.equals(power.id));
+
+    if (itemIndex >= 0) {
+      this.items[itemIndex] = power;
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    const itemIndex = this.items.findIndex((item) => item.id.toString() === id);
+
+    if (itemIndex >= 0) {
+      this.items.splice(itemIndex, 1);
+    }
+  }
+}
