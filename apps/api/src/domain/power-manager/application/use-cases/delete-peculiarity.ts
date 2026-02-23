@@ -1,15 +1,12 @@
-import { Either, left, right } from '@/core/either';
+import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { PeculiaritiesRepository } from '../repositories/peculiarities-repository';
+import type { PeculiaritiesRepository } from '../repositories/peculiarities-repository';
 
 interface DeletePeculiarityUseCaseRequest {
   peculiarityId: string;
 }
 
-type DeletePeculiarityUseCaseResponse = Either<
-  ResourceNotFoundError,
-  Record<string, never>
->;
+type DeletePeculiarityUseCaseResponse = Either<ResourceNotFoundError, Record<string, never>>;
 
 export class DeletePeculiarityUseCase {
   constructor(private peculiaritiesRepository: PeculiaritiesRepository) {}

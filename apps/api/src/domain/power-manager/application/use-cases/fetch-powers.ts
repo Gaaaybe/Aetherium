@@ -1,6 +1,6 @@
-import { right, type Either } from '@/core/either';
-import type { PowersRepository } from '../repositories/powers-repository';
+import { type Either, right } from '@/core/either';
 import type { Power } from '../../enterprise/entities/power';
+import type { PowersRepository } from '../repositories/powers-repository';
 
 interface FetchPowersUseCaseRequest {
   page: number;

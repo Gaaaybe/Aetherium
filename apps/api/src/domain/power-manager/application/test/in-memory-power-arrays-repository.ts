@@ -1,6 +1,6 @@
-import type { PowerArraysRepository } from '../repositories/power-arrays-repository';
-import type { PowerArray } from '../../enterprise/entities/power-array';
 import type { PaginationParams } from '@/core/repositories/paginationParams';
+import type { PowerArray } from '../../enterprise/entities/power-array';
+import type { PowerArraysRepository } from '../repositories/power-arrays-repository';
 
 export class InMemoryPowerArraysRepository implements PowerArraysRepository {
   public items: PowerArray[] = [];
@@ -17,7 +17,7 @@ export class InMemoryPowerArraysRepository implements PowerArraysRepository {
     return this.items.slice(startIndex, endIndex);
   }
 
-  async findByUserId(userId: string, params: PaginationParams): Promise<PowerArray[]> {
+  async findByUserId(_userId: string, params: PaginationParams): Promise<PowerArray[]> {
     const startIndex = (params.page - 1) * 20;
     const endIndex = startIndex + 20;
 

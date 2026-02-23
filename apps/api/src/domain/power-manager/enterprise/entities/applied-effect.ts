@@ -1,8 +1,8 @@
 import { Entity } from '@/core/entities/entity';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
 import type { Optional } from '@/core/types/optional';
-import { PowerCost } from './value-objects/power-cost';
-import { AppliedModification, ModificationScope } from './value-objects/applied-modification';
+import type { AppliedModification, ModificationScope } from './value-objects/applied-modification';
+import type { PowerCost } from './value-objects/power-cost';
 
 interface AppliedEffectProps {
   effectBaseId: string;
@@ -144,7 +144,7 @@ export class AppliedEffect extends Entity<AppliedEffectProps> {
       id,
     );
 
-    this.validate(appliedEffect.props);
+    AppliedEffect.validate(appliedEffect.props);
 
     return appliedEffect;
   }

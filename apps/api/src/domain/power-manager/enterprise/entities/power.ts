@@ -1,12 +1,12 @@
 import { AggregateRoot } from '@/core/entities/aggregate-root';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
 import type { Optional } from '@/core/types/optional';
-import { Domain } from './value-objects/domain';
-import { PowerParameters } from './value-objects/power-parameters';
-import { PowerCost } from './value-objects/power-cost';
-import { AlternativeCost } from './value-objects/alternative-cost';
-import { AppliedEffect } from './applied-effect';
-import { AppliedModification } from './value-objects/applied-modification';
+import type { AppliedEffect } from './applied-effect';
+import type { AlternativeCost } from './value-objects/alternative-cost';
+import type { AppliedModification } from './value-objects/applied-modification';
+import type { Domain } from './value-objects/domain';
+import type { PowerCost } from './value-objects/power-cost';
+import type { PowerParameters } from './value-objects/power-parameters';
 import { PowerEffectList } from './watched-lists/power-effect-list';
 import { PowerGlobalModificationList } from './watched-lists/power-global-modification-list';
 
@@ -130,7 +130,7 @@ export class Power extends AggregateRoot<PowerProps> {
 
   removeEffect(effectId: UniqueEntityId): Power {
     const effect = this.props.effects.getItems().find((e) => e.id.equals(effectId));
-    
+
     if (!effect) {
       throw new Error('Efeito não encontrado');
     }
@@ -154,7 +154,7 @@ export class Power extends AggregateRoot<PowerProps> {
 
   removeGlobalModification(index: number): Power {
     const modification = this.props.globalModifications.getItems()[index];
-    
+
     if (!modification) {
       throw new Error('Modificação global não encontrada');
     }
@@ -305,7 +305,7 @@ export class Power extends AggregateRoot<PowerProps> {
     }
 
     const effectItems = props.effects.getItems();
-    
+
     if (effectItems.length === 0) {
       throw new Error('Um poder deve ter pelo menos um efeito');
     }
@@ -335,15 +335,12 @@ export class Power extends AggregateRoot<PowerProps> {
       id,
     );
 
-    this.validate(power.props);
+    Power.validate(power.props);
 
     return power;
   }
 
-  static createCustom(
-    props: Omit<PowerProps, 'custom' | 'createdAt'>,
-    id?: UniqueEntityId,
-  ): Power {
+  static createCustom(props: Omit<PowerProps, 'custom' | 'createdAt'>, id?: UniqueEntityId): Power {
     const power = new Power(
       {
         ...props,
@@ -353,7 +350,7 @@ export class Power extends AggregateRoot<PowerProps> {
       id,
     );
 
-    this.validate(power.props);
+    Power.validate(power.props);
 
     return power;
   }

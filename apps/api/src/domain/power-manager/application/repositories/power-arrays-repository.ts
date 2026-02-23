@@ -1,5 +1,5 @@
-import type { PowerArray } from '../../enterprise/entities/power-array';
 import type { PaginationParams } from '@/core/repositories/paginationParams';
+import type { PowerArray } from '../../enterprise/entities/power-array';
 
 export interface PowerArraysRepository {
   findById(id: string): Promise<PowerArray | null>;

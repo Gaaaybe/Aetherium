@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AuthenticateUserUseCase } from './authenticate-user';
-import { InMemoryUsersRepository } from './test/inMemoryUsersRepository';
-import { FakeHashComparer } from './test/fakeHashComparer';
-import { FakeEncrypter } from './test/fakeEncrypter';
-import { FakeHashGenerator } from './test/fakeHashGenerator';
-import { WrongCredentialsError } from './errors/wrong-credentials-error';
 import { User } from '../../enterprise/entities/user';
 import { UserRole } from '../../enterprise/entities/value-objects/userRole';
+import { AuthenticateUserUseCase } from './authenticate-user';
+import { WrongCredentialsError } from './errors/wrong-credentials-error';
+import { FakeEncrypter } from './test/fakeEncrypter';
+import { FakeHashComparer } from './test/fakeHashComparer';
+import { FakeHashGenerator } from './test/fakeHashGenerator';
+import { InMemoryUsersRepository } from './test/inMemoryUsersRepository';
 
 let usersRepository: InMemoryUsersRepository;
 let hashComparer: FakeHashComparer;

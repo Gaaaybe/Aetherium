@@ -1,10 +1,10 @@
-import { Either, left, right } from '@/core/either';
+import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import type { EffectsRepository } from '../repositories/effects-repository';
-import type { ModificationsRepository } from '../repositories/modifications-repository';
-import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import type { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import type { AppliedModification } from '../../enterprise/entities/value-objects/applied-modification';
+import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
+import type { EffectsRepository } from '../repositories/effects-repository';
+import type { ModificationsRepository } from '../repositories/modifications-repository';
 
 interface CalculatePowerCostUseCaseRequest {
   effects: AppliedEffect[];
@@ -45,7 +45,7 @@ export class CalculatePowerCostUseCase {
       }
 
       let pdaEfeito = effectBase.custoBase * appliedEffect.grau;
-      let peEfeito = 0;
+      const peEfeito = 0;
       let espacosEfeito = effectBase.custoBase * appliedEffect.grau;
 
       if (appliedEffect.configuracaoId && effectBase.hasConfiguracoes()) {
@@ -85,9 +85,7 @@ export class CalculatePowerCostUseCase {
       totalEspacos += espacosEfeito;
     }
     for (const globalMod of globalModifications) {
-      const modBase = await this.modificationsRepository.findById(
-        globalMod.modificationBaseId,
-      );
+      const modBase = await this.modificationsRepository.findById(globalMod.modificationBaseId);
 
       if (!modBase) {
         return left(new ResourceNotFoundError());
@@ -95,7 +93,7 @@ export class CalculatePowerCostUseCase {
 
       const grauMod = globalMod.grau ?? 1;
       const custoMod = modBase.custoFixo + modBase.custoPorGrau * grauMod;
-      
+
       totalPdA += custoMod * totalPdA;
     }
 

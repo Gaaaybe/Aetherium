@@ -1,15 +1,15 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { CalculatePowerCostUseCase } from './calculate-power-cost';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryModificationsRepository } from '../test/in-memory-modifications-repository';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
 import { ModificationBase, ModificationType } from '../../enterprise/entities/modification-base';
-import { AppliedEffect } from '../../enterprise/entities/applied-effect';
-import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import {
   AppliedModification,
   ModificationScope,
 } from '../../enterprise/entities/value-objects/applied-modification';
+import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
+import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
+import { InMemoryModificationsRepository } from '../test/in-memory-modifications-repository';
+import { CalculatePowerCostUseCase } from './calculate-power-cost';
 
 describe('CalculatePowerCostUseCase', () => {
   let sut: CalculatePowerCostUseCase;
@@ -27,7 +27,7 @@ describe('CalculatePowerCostUseCase', () => {
       id: 'dano',
       nome: 'Dano',
       custoBase: 1,
-      
+
       descricao: 'Causa dano',
       categorias: ['Ofensivo'],
     });
@@ -56,7 +56,7 @@ describe('CalculatePowerCostUseCase', () => {
       id: 'dano',
       nome: 'Dano',
       custoBase: 1,
-      
+
       descricao: 'Causa dano',
       categorias: ['Ofensivo'],
     });
@@ -102,7 +102,7 @@ describe('CalculatePowerCostUseCase', () => {
       id: 'dano',
       nome: 'Dano',
       custoBase: 1,
-      
+
       descricao: 'Causa dano',
       categorias: ['Ofensivo'],
     });
@@ -148,7 +148,7 @@ describe('CalculatePowerCostUseCase', () => {
       id: 'dano',
       nome: 'Dano',
       custoBase: 1,
-      
+
       descricao: 'Causa dano',
       categorias: ['Ofensivo'],
     });
@@ -157,7 +157,7 @@ describe('CalculatePowerCostUseCase', () => {
       id: 'protecao',
       nome: 'Proteção',
       custoBase: 1,
-      
+
       descricao: 'Concede proteção',
       categorias: ['Defensivo'],
     });
@@ -208,7 +208,7 @@ describe('CalculatePowerCostUseCase', () => {
       id: 'dano',
       nome: 'Dano',
       custoBase: 1,
-      
+
       descricao: 'Causa dano',
       categorias: ['Ofensivo'],
     });
@@ -262,10 +262,7 @@ describe('CalculatePowerCostUseCase', () => {
       custo: PowerCost.createZero(),
     });
 
-    const globalModification = AppliedModification.createGlobal(
-      'sutil',
-      1,
-    );
+    const globalModification = AppliedModification.createGlobal('sutil', 1);
 
     const result = await sut.execute({
       effects: [appliedEffect],

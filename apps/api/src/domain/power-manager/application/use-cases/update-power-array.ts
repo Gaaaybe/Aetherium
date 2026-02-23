@@ -1,13 +1,13 @@
-import { Either, left, right } from '@/core/either';
+import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
+import type { Power } from '../../enterprise/entities/power';
+import { PowerArray, type PowerArrayType } from '../../enterprise/entities/power-array';
+import type { Domain } from '../../enterprise/entities/value-objects/domain';
+import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
+import type { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
+import { PowerArrayPowerList } from '../../enterprise/entities/watched-lists/power-array-power-list';
 import type { PowerArraysRepository } from '../repositories/power-arrays-repository';
 import type { PowersRepository } from '../repositories/powers-repository';
-import { PowerArray, PowerArrayType } from '../../enterprise/entities/power-array';
-import { Domain } from '../../enterprise/entities/value-objects/domain';
-import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
-import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
-import type { Power } from '../../enterprise/entities/power';
-import { PowerArrayPowerList } from '../../enterprise/entities/watched-lists/power-array-power-list';
 
 interface UpdatePowerArrayUseCaseRequest {
   powerArrayId: string;
@@ -35,9 +35,7 @@ export class UpdatePowerArrayUseCase {
     private powersRepository: PowersRepository,
   ) {}
 
-  async execute(
-    request: UpdatePowerArrayUseCaseRequest,
-  ): Promise<UpdatePowerArrayUseCaseResponse> {
+  async execute(request: UpdatePowerArrayUseCaseRequest): Promise<UpdatePowerArrayUseCaseResponse> {
     const { powerArrayId, nome, descricao, dominio, parametrosBase, powerIds, tipo, notas } =
       request;
 

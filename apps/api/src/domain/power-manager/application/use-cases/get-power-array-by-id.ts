@@ -1,7 +1,7 @@
-import { Either, left, right } from '@/core/either';
+import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { PowerArray } from '../../enterprise/entities/power-array';
-import { PowerArraysRepository } from '../repositories/power-arrays-repository';
+import type { PowerArray } from '../../enterprise/entities/power-array';
+import type { PowerArraysRepository } from '../repositories/power-arrays-repository';
 
 interface GetPowerArrayByIdUseCaseRequest {
   powerArrayId: string;

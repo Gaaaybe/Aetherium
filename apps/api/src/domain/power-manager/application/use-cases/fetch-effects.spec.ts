@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { FetchEffectsUseCase } from './fetch-effects';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { EffectBase } from '../../enterprise/entities/effect-base';
+import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
+import { FetchEffectsUseCase } from './fetch-effects';
 
 describe('FetchEffectsUseCase', () => {
   let sut: FetchEffectsUseCase;

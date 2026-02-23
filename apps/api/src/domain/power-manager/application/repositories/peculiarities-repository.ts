@@ -1,5 +1,5 @@
-import type { Peculiarity } from '../../enterprise/entities/peculiarity';
 import type { PaginationParams } from '@/core/repositories/paginationParams';
+import type { Peculiarity } from '../../enterprise/entities/peculiarity';
 
 export interface PeculiaritiesRepository {
   findById(id: string): Promise<Peculiarity | null>;

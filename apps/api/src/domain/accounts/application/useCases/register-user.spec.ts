@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AlreadyExistsError } from '@/core/errors/alreadyExistsError';
-import { UserRole } from '../../enterprise/entities/value-objects/userRole';
 import { RegisterUserUseCase } from './register-user';
-import { InMemoryUsersRepository } from './test/inMemoryUsersRepository';
 import { FakeHashGenerator } from './test/fakeHashGenerator';
+import { InMemoryUsersRepository } from './test/inMemoryUsersRepository';
 
 let usersRepository: InMemoryUsersRepository;
 let hashGenerator: FakeHashGenerator;

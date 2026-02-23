@@ -1,4 +1,3 @@
-
 export type ActionType = 0 | 1 | 2 | 3 | 4 | 5;
 
 export type RangeType = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -57,18 +56,17 @@ export class PowerParameters {
   }
 
   static create(props: PowerParametersProps): PowerParameters {
-    this.validate(props);
+    PowerParameters.validate(props);
     return new PowerParameters(props);
   }
 
   static createDefault(): PowerParameters {
     return new PowerParameters({
       acao: 2,
-      alcance: 1, 
+      alcance: 1,
       duracao: 0,
     });
   }
-
 
   equals(other: PowerParameters): boolean {
     if (!other) return false;

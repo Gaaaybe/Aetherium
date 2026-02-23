@@ -1,6 +1,6 @@
-import { Either, right } from '@/core/either';
-import { ModificationBase } from '../../enterprise/entities/modification-base';
-import { ModificationsRepository } from '../repositories/modifications-repository';
+import { type Either, right } from '@/core/either';
+import type { ModificationBase } from '../../enterprise/entities/modification-base';
+import type { ModificationsRepository } from '../repositories/modifications-repository';
 
 interface FetchModificationsUseCaseRequest {
   type?: 'extra' | 'falha';
@@ -11,10 +11,7 @@ interface FetchModificationsUseCaseResponseData {
   modifications: ModificationBase[];
 }
 
-type FetchModificationsUseCaseResponse = Either<
-  null,
-  FetchModificationsUseCaseResponseData
->;
+type FetchModificationsUseCaseResponse = Either<null, FetchModificationsUseCaseResponseData>;
 
 export class FetchModificationsUseCase {
   constructor(private modificationsRepository: ModificationsRepository) {}

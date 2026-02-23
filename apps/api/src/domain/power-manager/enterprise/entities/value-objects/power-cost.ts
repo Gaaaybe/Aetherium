@@ -1,4 +1,3 @@
-
 interface PowerCostProps {
   pda: number;
   pe: number;
@@ -48,7 +47,7 @@ export class PowerCost {
     if (props.espacos < 0) {
       throw new Error('Espaços não podem ser negativos');
     }
-    
+
     if (props.pda > 99999) {
       throw new Error('Custo de PdA excede limite máximo (99999)');
     }
@@ -63,7 +62,7 @@ export class PowerCost {
   }
 
   static create(props: PowerCostProps): PowerCost {
-    this.validate(props);
+    PowerCost.validate(props);
     return new PowerCost(props);
   }
 

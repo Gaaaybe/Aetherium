@@ -1,17 +1,17 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { UpdatePowerArrayUseCase } from './update-power-array';
-import { InMemoryPowerArraysRepository } from '../test/in-memory-power-arrays-repository';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { AppliedEffect } from '../../enterprise/entities/applied-effect';
+import { EffectBase } from '../../enterprise/entities/effect-base';
 import { Power } from '../../enterprise/entities/power';
 import { PowerArray, PowerArrayType } from '../../enterprise/entities/power-array';
-import { EffectBase } from '../../enterprise/entities/effect-base';
-import { AppliedEffect } from '../../enterprise/entities/applied-effect';
-import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { Domain, DomainName } from '../../enterprise/entities/value-objects/domain';
+import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
-import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
 import { PowerArrayPowerList } from '../../enterprise/entities/watched-lists/power-array-power-list';
+import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
+import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
+import { InMemoryPowerArraysRepository } from '../test/in-memory-power-arrays-repository';
+import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
+import { UpdatePowerArrayUseCase } from './update-power-array';
 
 describe('UpdatePowerArrayUseCase', () => {
   let sut: UpdatePowerArrayUseCase;

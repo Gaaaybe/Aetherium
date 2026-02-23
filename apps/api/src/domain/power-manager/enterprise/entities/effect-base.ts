@@ -1,7 +1,7 @@
 import { Entity } from '@/core/entities/entity';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
 import type { Optional } from '@/core/types/optional';
-import { PowerParameters, ActionType, RangeType, DurationType } from './value-objects/power-parameters';
+import { PowerParameters } from './value-objects/power-parameters';
 
 export enum EffectInputType {
   TEXT = 'texto',
@@ -194,7 +194,7 @@ export class EffectBase extends Entity<EffectBaseProps> {
     >,
     id?: UniqueEntityId,
   ): EffectBase {
-    this.validate(props as EffectBaseProps);
+    EffectBase.validate(props as EffectBaseProps);
 
     const effectBase = new EffectBase(
       {
@@ -208,10 +208,7 @@ export class EffectBase extends Entity<EffectBaseProps> {
     return effectBase;
   }
 
-  static createCustom(
-    props: Omit<EffectBaseProps, 'custom'>,
-    id?: UniqueEntityId,
-  ): EffectBase {
+  static createCustom(props: Omit<EffectBaseProps, 'custom'>, id?: UniqueEntityId): EffectBase {
     return EffectBase.create(
       {
         ...props,

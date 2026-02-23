@@ -1,15 +1,12 @@
-import { Either, left, right } from '@/core/either';
+import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { PowerArraysRepository } from '../repositories/power-arrays-repository';
+import type { PowerArraysRepository } from '../repositories/power-arrays-repository';
 
 interface DeletePowerArrayUseCaseRequest {
   powerArrayId: string;
 }
 
-type DeletePowerArrayUseCaseResponse = Either<
-  ResourceNotFoundError,
-  Record<string, never>
->;
+type DeletePowerArrayUseCaseResponse = Either<ResourceNotFoundError, Record<string, never>>;
 
 export class DeletePowerArrayUseCase {
   constructor(private powerArraysRepository: PowerArraysRepository) {}

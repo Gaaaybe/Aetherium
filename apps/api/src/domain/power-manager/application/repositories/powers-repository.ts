@@ -1,5 +1,5 @@
-import type { Power } from '../../enterprise/entities/power';
 import type { PaginationParams } from '@/core/repositories/paginationParams';
+import type { Power } from '../../enterprise/entities/power';
 
 export interface PowersRepository {
   findById(id: string): Promise<Power | null>;

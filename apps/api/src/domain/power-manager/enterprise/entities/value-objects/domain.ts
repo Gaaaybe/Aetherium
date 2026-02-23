@@ -1,6 +1,4 @@
-
 export enum DomainName {
-
   NATURAL = 'natural',
   SAGRADO = 'sagrado',
   SACRILEGIO = 'sacrilegio',
@@ -87,7 +85,7 @@ export class Domain {
   }
 
   static create(props: DomainProps): Domain {
-    this.validate(props);
+    Domain.validate(props);
     return new Domain(props);
   }
 

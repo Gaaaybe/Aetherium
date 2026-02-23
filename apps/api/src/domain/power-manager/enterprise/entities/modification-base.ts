@@ -2,7 +2,6 @@ import { Entity } from '@/core/entities/entity';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
 import type { Optional } from '@/core/types/optional';
 
-
 export enum ModificationType {
   EXTRA = 'extra',
   FALHA = 'falha',
@@ -13,13 +12,11 @@ export enum ModificationConfigurationType {
   RADIO = 'radio',
 }
 
-
 export enum ModificationParameterType {
   TEXT = 'texto',
   GRAU = 'grau',
   SELECT = 'select',
 }
-
 
 export interface ModificationConfigurationOption {
   id: string;
@@ -258,7 +255,7 @@ export class ModificationBase extends Entity<ModificationBaseProps> {
     props: Optional<ModificationBaseProps, 'custom'>,
     id?: UniqueEntityId,
   ): ModificationBase {
-    this.validate(props as ModificationBaseProps);
+    ModificationBase.validate(props as ModificationBaseProps);
 
     const modificationBase = new ModificationBase(
       {

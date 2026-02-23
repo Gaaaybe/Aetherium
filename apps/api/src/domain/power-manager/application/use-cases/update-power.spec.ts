@@ -1,20 +1,19 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { UpdatePowerUseCase } from './update-power';
-import { CalculatePowerCostUseCase } from './calculate-power-cost';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryModificationsRepository } from '../test/in-memory-modifications-repository';
-import { Power } from '../../enterprise/entities/power';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
 import { ModificationBase, ModificationType } from '../../enterprise/entities/modification-base';
-import { AppliedEffect } from '../../enterprise/entities/applied-effect';
-import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
-import { Domain, DomainName } from '../../enterprise/entities/value-objects/domain';
-import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
-import { AppliedModification } from '../../enterprise/entities/value-objects/applied-modification';
-import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
-import { PowerGlobalModificationList } from '../../enterprise/entities/watched-lists/power-global-modification-list';
+import { Power } from '../../enterprise/entities/power';
 import { AlternativeCost } from '../../enterprise/entities/value-objects/alternative-cost';
+import { AppliedModification } from '../../enterprise/entities/value-objects/applied-modification';
+import { Domain, DomainName } from '../../enterprise/entities/value-objects/domain';
+import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
+import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
+import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
+import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
+import { InMemoryModificationsRepository } from '../test/in-memory-modifications-repository';
+import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
+import { CalculatePowerCostUseCase } from './calculate-power-cost';
+import { UpdatePowerUseCase } from './update-power';
 
 describe('UpdatePowerUseCase', () => {
   let sut: UpdatePowerUseCase;

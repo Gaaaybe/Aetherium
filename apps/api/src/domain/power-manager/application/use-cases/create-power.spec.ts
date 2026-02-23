@@ -1,17 +1,20 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { CreatePowerUseCase } from './create-power';
-import { CalculatePowerCostUseCase } from './calculate-power-cost';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryModificationsRepository } from '../test/in-memory-modifications-repository';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
 import { ModificationBase, ModificationType } from '../../enterprise/entities/modification-base';
-import { AppliedEffect } from '../../enterprise/entities/applied-effect';
-import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
-import { Domain, DomainName } from '../../enterprise/entities/value-objects/domain';
-import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
-import { AlternativeCost, AlternativeCostType } from '../../enterprise/entities/value-objects/alternative-cost';
+import {
+  AlternativeCost,
+  AlternativeCostType,
+} from '../../enterprise/entities/value-objects/alternative-cost';
 import { AppliedModification } from '../../enterprise/entities/value-objects/applied-modification';
+import { Domain, DomainName } from '../../enterprise/entities/value-objects/domain';
+import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
+import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
+import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
+import { InMemoryModificationsRepository } from '../test/in-memory-modifications-repository';
+import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
+import { CalculatePowerCostUseCase } from './calculate-power-cost';
+import { CreatePowerUseCase } from './create-power';
 
 describe('CreatePowerUseCase', () => {
   let sut: CreatePowerUseCase;

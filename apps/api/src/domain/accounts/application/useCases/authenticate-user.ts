@@ -1,11 +1,8 @@
 import { type Either, left, right } from '@/core/either';
-import { WrongCredentialsError } from './errors/wrong-credentials-error';
-import { User } from '../../enterprise/entities/user';
-import { UserRole } from '../../enterprise/entities/value-objects/userRole';
+import type { Encrypter } from '../cryptography/encrypter';
+import type { HashComparer } from '../cryptography/hash-comparer';
 import type { UsersRepository } from '../repositories/usersRepository';
-import { HashComparer } from '../cryptography/hash-comparer';
-import { Encrypter } from '../cryptography/encrypter';
-
+import { WrongCredentialsError } from './errors/wrong-credentials-error';
 
 interface AuthenticateUserUseCaseRequest {
   email: string;
@@ -16,7 +13,10 @@ interface AuthenticateUserUseCaseResponseData {
   accessToken: string;
 }
 
-type AuthenticateUserUseCaseResponse = Either<WrongCredentialsError, AuthenticateUserUseCaseResponseData>;
+type AuthenticateUserUseCaseResponse = Either<
+  WrongCredentialsError,
+  AuthenticateUserUseCaseResponseData
+>;
 
 export class AuthenticateUserUseCase {
   constructor(

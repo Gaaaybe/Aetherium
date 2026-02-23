@@ -1,5 +1,5 @@
-import type { ModificationsRepository } from '../repositories/modifications-repository';
 import type { ModificationBase } from '../../enterprise/entities/modification-base';
+import type { ModificationsRepository } from '../repositories/modifications-repository';
 
 export class InMemoryModificationsRepository implements ModificationsRepository {
   public items: ModificationBase[] = [];

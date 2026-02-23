@@ -1,4 +1,3 @@
-
 export enum ModificationScope {
   GLOBAL = 'global',
   LOCAL = 'local',
@@ -71,7 +70,7 @@ export class AppliedModification {
   }
 
   static create(props: AppliedModificationProps): AppliedModification {
-    this.validate(props);
+    AppliedModification.validate(props);
     return new AppliedModification({
       ...props,
       grau: props.grau ?? 1,

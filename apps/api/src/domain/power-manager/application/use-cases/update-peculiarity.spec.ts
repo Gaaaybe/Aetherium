@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { UpdatePeculiarityUseCase } from './update-peculiarity';
-import { InMemoryPeculiaritiesRepository } from '../test/in-memory-peculiarities-repository';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { Peculiarity } from '../../enterprise/entities/peculiarity';
+import { InMemoryPeculiaritiesRepository } from '../test/in-memory-peculiarities-repository';
+import { UpdatePeculiarityUseCase } from './update-peculiarity';
 
 describe('UpdatePeculiarityUseCase', () => {
   let sut: UpdatePeculiarityUseCase;

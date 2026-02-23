@@ -1,4 +1,3 @@
-
 export enum AlternativeCostType {
   PE = 'pe',
   PV = 'pv',
@@ -11,7 +10,7 @@ interface AlternativeCostProps {
   tipo: AlternativeCostType;
   quantidade: number;
   descricao?: string;
-  atributo?: string; 
+  atributo?: string;
   itemId?: string;
 }
 
@@ -73,10 +72,9 @@ export class AlternativeCost {
   }
 
   static create(props: AlternativeCostProps): AlternativeCost {
-    this.validate(props);
+    AlternativeCost.validate(props);
     return new AlternativeCost(props);
   }
-
 
   static createPE(quantidade: number, descricao?: string): AlternativeCost {
     return AlternativeCost.create({
@@ -94,11 +92,7 @@ export class AlternativeCost {
     });
   }
 
-  static createAtributo(
-    atributo: string,
-    quantidade: number,
-    descricao?: string,
-  ): AlternativeCost {
+  static createAtributo(atributo: string, quantidade: number, descricao?: string): AlternativeCost {
     return AlternativeCost.create({
       tipo: AlternativeCostType.ATRIBUTO,
       quantidade,
@@ -115,7 +109,6 @@ export class AlternativeCost {
       itemId,
     });
   }
-
 
   static createMaterial(descricao: string, quantidade: number): AlternativeCost {
     return AlternativeCost.create({

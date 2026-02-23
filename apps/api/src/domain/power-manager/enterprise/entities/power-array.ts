@@ -1,10 +1,10 @@
 import { AggregateRoot } from '@/core/entities/aggregate-root';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
 import type { Optional } from '@/core/types/optional';
-import { Domain } from './value-objects/domain';
-import { PowerParameters } from './value-objects/power-parameters';
-import { PowerCost } from './value-objects/power-cost';
-import { Power } from './power';
+import type { Power } from './power';
+import type { Domain } from './value-objects/domain';
+import type { PowerCost } from './value-objects/power-cost';
+import type { PowerParameters } from './value-objects/power-parameters';
 import { PowerArrayPowerList } from './watched-lists/power-array-power-list';
 
 export enum PowerArrayType {
@@ -103,7 +103,7 @@ export class PowerArray extends AggregateRoot<PowerArrayProps> {
 
   removePower(powerId: UniqueEntityId): PowerArray {
     const power = this.props.powers.getItems().find((p) => p.id.equals(powerId));
-    
+
     if (!power) {
       throw new Error('Poder não encontrado no acervo');
     }
@@ -131,9 +131,7 @@ export class PowerArray extends AggregateRoot<PowerArrayProps> {
     }
 
     const currentItems = this.props.powers.getItems();
-    const newItems = currentItems.map((power) =>
-      power.id.equals(powerId) ? updatedPower : power,
-    );
+    const newItems = currentItems.map((power) => (power.id.equals(powerId) ? updatedPower : power));
 
     const powers = new PowerArrayPowerList();
     powers.update(newItems);
@@ -288,7 +286,7 @@ export class PowerArray extends AggregateRoot<PowerArrayProps> {
       id,
     );
 
-    this.validate(arrayPower.props);
+    PowerArray.validate(arrayPower.props);
 
     return arrayPower;
   }

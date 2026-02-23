@@ -1,6 +1,6 @@
-import { Either, right } from '@/core/either';
+import { type Either, right } from '@/core/either';
 import { Peculiarity } from '../../enterprise/entities/peculiarity';
-import { PeculiaritiesRepository } from '../repositories/peculiarities-repository';
+import type { PeculiaritiesRepository } from '../repositories/peculiarities-repository';
 
 interface CreatePeculiarityUseCaseRequest {
   userId: string;
@@ -13,10 +13,7 @@ interface CreatePeculiarityUseCaseResponseData {
   peculiarity: Peculiarity;
 }
 
-type CreatePeculiarityUseCaseResponse = Either<
-  null,
-  CreatePeculiarityUseCaseResponseData
->;
+type CreatePeculiarityUseCaseResponse = Either<null, CreatePeculiarityUseCaseResponseData>;
 
 export class CreatePeculiarityUseCase {
   constructor(private peculiaritiesRepository: PeculiaritiesRepository) {}

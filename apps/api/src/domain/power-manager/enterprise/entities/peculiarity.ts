@@ -101,7 +101,7 @@ export class Peculiarity extends AggregateRoot<PeculiarityProps> {
       id,
     );
 
-    this.validate(peculiarity.props);
+    Peculiarity.validate(peculiarity.props);
 
     return peculiarity;
   }

@@ -1,5 +1,5 @@
-import type { EffectsRepository } from '../repositories/effects-repository';
 import type { EffectBase } from '../../enterprise/entities/effect-base';
+import type { EffectsRepository } from '../repositories/effects-repository';
 
 export class InMemoryEffectsRepository implements EffectsRepository {
   public items: EffectBase[] = [];

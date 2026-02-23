@@ -1,6 +1,6 @@
-import { Either, right } from '@/core/either';
-import { Peculiarity } from '../../enterprise/entities/peculiarity';
-import { PeculiaritiesRepository } from '../repositories/peculiarities-repository';
+import { type Either, right } from '@/core/either';
+import type { Peculiarity } from '../../enterprise/entities/peculiarity';
+import type { PeculiaritiesRepository } from '../repositories/peculiarities-repository';
 
 interface FetchUserPeculiaritiesUseCaseRequest {
   userId: string;

@@ -1,7 +1,7 @@
-import { Either, left, right } from '@/core/either';
+import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { Peculiarity } from '../../enterprise/entities/peculiarity';
-import { PeculiaritiesRepository } from '../repositories/peculiarities-repository';
+import type { Peculiarity } from '../../enterprise/entities/peculiarity';
+import type { PeculiaritiesRepository } from '../repositories/peculiarities-repository';
 
 interface GetPeculiarityByIdUseCaseRequest {
   peculiarityId: string;

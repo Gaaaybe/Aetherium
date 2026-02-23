@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { FetchUserPeculiaritiesUseCase } from './fetch-user-peculiarities';
-import { InMemoryPeculiaritiesRepository } from '../test/in-memory-peculiarities-repository';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { Peculiarity } from '../../enterprise/entities/peculiarity';
+import { InMemoryPeculiaritiesRepository } from '../test/in-memory-peculiarities-repository';
+import { FetchUserPeculiaritiesUseCase } from './fetch-user-peculiarities';
 
 describe('FetchUserPeculiaritiesUseCase', () => {
   let sut: FetchUserPeculiaritiesUseCase;

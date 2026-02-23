@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { FetchPowersUseCase } from './fetch-powers';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
-import { Power } from '../../enterprise/entities/power';
-import { EffectBase } from '../../enterprise/entities/effect-base';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { AppliedEffect } from '../../enterprise/entities/applied-effect';
-import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
+import { EffectBase } from '../../enterprise/entities/effect-base';
+import { Power } from '../../enterprise/entities/power';
 import { Domain, DomainName } from '../../enterprise/entities/value-objects/domain';
+import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
+import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
+import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
+import { FetchPowersUseCase } from './fetch-powers';
 
 describe('FetchPowersUseCase', () => {
   let sut: FetchPowersUseCase;

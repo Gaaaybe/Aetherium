@@ -1,15 +1,15 @@
-import { Either, left, right } from '@/core/either';
+import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import type { PowersRepository } from '../repositories/powers-repository';
-import type { CalculatePowerCostUseCase } from './calculate-power-cost';
+import type { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { Power } from '../../enterprise/entities/power';
-import { Domain } from '../../enterprise/entities/value-objects/domain';
-import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
-import { AlternativeCost } from '../../enterprise/entities/value-objects/alternative-cost';
-import { AppliedEffect } from '../../enterprise/entities/applied-effect';
-import { AppliedModification } from '../../enterprise/entities/value-objects/applied-modification';
+import type { AlternativeCost } from '../../enterprise/entities/value-objects/alternative-cost';
+import type { AppliedModification } from '../../enterprise/entities/value-objects/applied-modification';
+import type { Domain } from '../../enterprise/entities/value-objects/domain';
+import type { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
 import { PowerGlobalModificationList } from '../../enterprise/entities/watched-lists/power-global-modification-list';
+import type { PowersRepository } from '../repositories/powers-repository';
+import type { CalculatePowerCostUseCase } from './calculate-power-cost';
 
 interface UpdatePowerUseCaseRequest {
   powerId: string;
@@ -27,10 +27,7 @@ interface UpdatePowerUseCaseResponseData {
   power: Power;
 }
 
-type UpdatePowerUseCaseResponse = Either<
-  ResourceNotFoundError,
-  UpdatePowerUseCaseResponseData
->;
+type UpdatePowerUseCaseResponse = Either<ResourceNotFoundError, UpdatePowerUseCaseResponseData>;
 
 export class UpdatePowerUseCase {
   constructor(

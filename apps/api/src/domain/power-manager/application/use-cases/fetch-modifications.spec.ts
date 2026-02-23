@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { FetchModificationsUseCase } from './fetch-modifications';
-import { InMemoryModificationsRepository } from '../test/in-memory-modifications-repository';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ModificationBase, ModificationType } from '../../enterprise/entities/modification-base';
+import { InMemoryModificationsRepository } from '../test/in-memory-modifications-repository';
+import { FetchModificationsUseCase } from './fetch-modifications';
 
 describe('FetchModificationsUseCase', () => {
   let sut: FetchModificationsUseCase;

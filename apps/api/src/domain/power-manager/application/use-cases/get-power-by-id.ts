@@ -1,7 +1,7 @@
-import { Either, left, right } from '@/core/either';
+import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import type { PowersRepository } from '../repositories/powers-repository';
 import type { Power } from '../../enterprise/entities/power';
+import type { PowersRepository } from '../repositories/powers-repository';
 
 interface GetPowerByIdUseCaseRequest {
   powerId: string;
@@ -11,10 +11,7 @@ interface GetPowerByIdUseCaseResponseData {
   power: Power;
 }
 
-type GetPowerByIdUseCaseResponse = Either<
-  ResourceNotFoundError,
-  GetPowerByIdUseCaseResponseData
->;
+type GetPowerByIdUseCaseResponse = Either<ResourceNotFoundError, GetPowerByIdUseCaseResponseData>;
 
 export class GetPowerByIdUseCase {
   constructor(private powersRepository: PowersRepository) {}
