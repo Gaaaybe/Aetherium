@@ -1,17 +1,19 @@
-import { compare } from 'bcryptjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AlreadyExistsError } from '@/core/errors/alreadyExistsError';
 import { UserRole } from '../../enterprise/entities/value-objects/userRole';
-import { RegisterUserUseCase } from './registerUser';
+import { RegisterUserUseCase } from './register-user';
 import { InMemoryUsersRepository } from './test/inMemoryUsersRepository';
+import { FakeHashGenerator } from './test/fakeHashGenerator';
 
 let usersRepository: InMemoryUsersRepository;
+let hashGenerator: FakeHashGenerator;
 let sut: RegisterUserUseCase;
 
 describe('Register User Use Case', () => {
   beforeEach(() => {
     usersRepository = new InMemoryUsersRepository();
-    sut = new RegisterUserUseCase(usersRepository);
+    hashGenerator = new FakeHashGenerator();
+    sut = new RegisterUserUseCase(usersRepository, hashGenerator);
   });
 
   it('should be able to register a new user as player by default', async () => {
@@ -58,8 +60,7 @@ describe('Register User Use Case', () => {
     expect(result.isRight()).toBe(true);
 
     if (result.isRight()) {
-      const isPasswordCorrectlyHashed = await compare('123456', result.value.user.password);
-      expect(isPasswordCorrectlyHashed).toBe(true);
+      expect(result.value.user.password).toBe('hashed_123456');
     }
   });
 
