@@ -57,6 +57,9 @@ export class User extends Entity<UserProps> {
   }
 
   removeRole(role: UserRole): void {
+    if (role === UserRole.PLAYER) {
+      return;
+    }
     this.props.roles = this.props.roles.filter((r) => r !== role);
     this.touch();
   }
