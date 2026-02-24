@@ -6,14 +6,15 @@ import { Domain, DomainName } from '../../enterprise/entities/value-objects/doma
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
 import { DeletePowerUseCase } from './delete-power';
 
 describe('DeletePowerUseCase', () => {
   let sut: DeletePowerUseCase;
   let powersRepository: InMemoryPowersRepository;
   let effectsRepository: InMemoryEffectsRepository;
+  const userId = 'user-1';
 
   beforeEach(() => {
     powersRepository = new InMemoryPowersRepository();
@@ -42,6 +43,7 @@ describe('DeletePowerUseCase', () => {
     effectsList.update([appliedEffect]);
 
     const power = Power.create({
+      userId,
       nome: 'Rajada de Energia',
       descricao: 'Dispara uma rajada de energia',
       dominio: Domain.create({ name: DomainName.NATURAL }),
@@ -56,6 +58,7 @@ describe('DeletePowerUseCase', () => {
 
     const result = await sut.execute({
       powerId: power.id.toString(),
+      userId,
     });
 
     expect(result.isRight()).toBe(true);
@@ -65,6 +68,7 @@ describe('DeletePowerUseCase', () => {
   it('should return error if power does not exist', async () => {
     const result = await sut.execute({
       powerId: 'poder-inexistente',
+      userId,
     });
 
     expect(result.isLeft()).toBe(true);
@@ -91,6 +95,7 @@ describe('DeletePowerUseCase', () => {
     effectsList1.update([appliedEffect]);
 
     const power1 = Power.create({
+      userId,
       nome: 'Rajada 1',
       descricao: 'Primeiro poder',
       dominio: Domain.create({ name: DomainName.NATURAL }),
@@ -103,6 +108,7 @@ describe('DeletePowerUseCase', () => {
     effectsList2.update([appliedEffect]);
 
     const power2 = Power.create({
+      userId,
       nome: 'Rajada 2',
       descricao: 'Segundo poder',
       dominio: Domain.create({ name: DomainName.NATURAL }),
@@ -118,6 +124,7 @@ describe('DeletePowerUseCase', () => {
 
     await sut.execute({
       powerId: power1.id.toString(),
+      userId,
     });
 
     expect(powersRepository.items).toHaveLength(1);

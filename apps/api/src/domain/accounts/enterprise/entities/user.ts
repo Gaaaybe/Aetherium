@@ -1,3 +1,4 @@
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import { Entity } from '@/core/entities/entity';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
 import type { Optional } from '@/core/types/optional';
@@ -68,6 +69,41 @@ export class User extends Entity<UserProps> {
     this.props.updatedAt = new Date();
   }
 
+  private static validate(props: UserProps): void {
+    if (!props.name || props.name.trim() === '') {
+      throw new DomainValidationError('Nome do usuário é obrigatório', 'name');
+    }
+
+    if (props.name.length < 2) {
+      throw new DomainValidationError('Nome do usuário deve ter no mínimo 2 caracteres', 'name');
+    }
+
+    if (props.name.length > 100) {
+      throw new DomainValidationError('Nome do usuário deve ter no máximo 100 caracteres', 'name');
+    }
+
+    if (!props.email || props.email.trim() === '') {
+      throw new DomainValidationError('Email do usuário é obrigatório', 'email');
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(props.email)) {
+      throw new DomainValidationError('Email do usuário deve ser um endereço válido', 'email');
+    }
+
+    if (!props.password || props.password.trim() === '') {
+      throw new DomainValidationError('Senha do usuário é obrigatória', 'password');
+    }
+
+    if (props.password.length < 6) {
+      throw new DomainValidationError('Senha do usuário deve ter no mínimo 6 caracteres', 'password');
+    }
+
+    if (!props.roles || !props.roles.includes(UserRole.PLAYER)) {
+      throw new DomainValidationError('Usuário deve ter pelo menos o papel de Player', 'roles');
+    }
+  }
+
   static create(
     props: Optional<UserProps, 'roles' | 'createdAt'> & {
       roles?: UserRole[];
@@ -83,6 +119,8 @@ export class User extends Entity<UserProps> {
       },
       id,
     );
+
+    User.validate(user.props);
 
     return user;
   }

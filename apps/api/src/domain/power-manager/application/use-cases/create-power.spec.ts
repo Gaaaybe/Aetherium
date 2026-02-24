@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
 import { ModificationBase, ModificationType } from '../../enterprise/entities/modification-base';
@@ -10,10 +10,13 @@ import { AppliedModification } from '../../enterprise/entities/value-objects/app
 import { Domain, DomainName } from '../../enterprise/entities/value-objects/domain';
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryModificationsRepository } from '../test/in-memory-modifications-repository';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
-import { CalculatePowerCostUseCase } from './calculate-power-cost';
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryModificationsRepository } from '@test/repositories/in-memory-modifications-repository';
+import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
+import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
+import { PowerCostCalculator } from '../../enterprise/services/power-cost-calculator';
+import { DomainEvents } from '@/core/events/domain-events';
+import { OnPowerMadePublic } from '../subscribers/on-power-made-public';
 import { CreatePowerUseCase } from './create-power';
 
 describe('CreatePowerUseCase', () => {
@@ -21,17 +24,33 @@ describe('CreatePowerUseCase', () => {
   let powersRepository: InMemoryPowersRepository;
   let effectsRepository: InMemoryEffectsRepository;
   let modificationsRepository: InMemoryModificationsRepository;
-  let calculatePowerCostUseCase: CalculatePowerCostUseCase;
+  let peculiaritiesRepository: InMemoryPeculiaritiesRepository;
+  let powerCostCalculator: PowerCostCalculator;
 
   beforeEach(() => {
     powersRepository = new InMemoryPowersRepository();
     effectsRepository = new InMemoryEffectsRepository();
     modificationsRepository = new InMemoryModificationsRepository();
-    calculatePowerCostUseCase = new CalculatePowerCostUseCase(
+    peculiaritiesRepository = new InMemoryPeculiaritiesRepository();
+    powerCostCalculator = new PowerCostCalculator(
       effectsRepository,
       modificationsRepository,
     );
-    sut = new CreatePowerUseCase(powersRepository, calculatePowerCostUseCase);
+
+    DomainEvents.clearHandlers();
+    DomainEvents.clearMarkedAggregates();
+    new OnPowerMadePublic(peculiaritiesRepository);
+
+    sut = new CreatePowerUseCase(
+      powersRepository,
+      powerCostCalculator,
+      peculiaritiesRepository,
+    );
+  });
+
+  afterEach(() => {
+    DomainEvents.clearHandlers();
+    DomainEvents.clearMarkedAggregates();
   });
 
   it('should create a simple power without modifications', async () => {
@@ -63,7 +82,8 @@ describe('CreatePowerUseCase', () => {
     if (result.isRight()) {
       expect(result.value.power.nome).toBe('Rajada de Energia');
       expect(result.value.power.custoTotal.pda).toBe(10);
-      expect(result.value.power.custom).toBe(false);
+      expect(result.value.power.isOfficial()).toBe(true);
+      expect(result.value.power.userId).toBeUndefined();
       expect(powersRepository.items).toHaveLength(1);
     }
   });

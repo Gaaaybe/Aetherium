@@ -1,3 +1,5 @@
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
+
 export enum ModificationScope {
   GLOBAL = 'global',
   LOCAL = 'local',
@@ -57,15 +59,15 @@ export class AppliedModification {
 
   private static validate(props: AppliedModificationProps): void {
     if (!props.modificationBaseId || props.modificationBaseId.trim() === '') {
-      throw new Error('ID da modificação base é obrigatório');
+      throw new DomainValidationError('ID da modificação base é obrigatório', 'modificationBaseId');
     }
 
     if (props.grau !== undefined && props.grau < 1) {
-      throw new Error('Grau da modificação deve ser pelo menos 1');
+      throw new DomainValidationError('Grau da modificação deve ser pelo menos 1', 'grau');
     }
 
     if (props.nota && props.nota.length > 500) {
-      throw new Error('Nota não pode exceder 500 caracteres');
+      throw new DomainValidationError('Nota não pode exceder 500 caracteres', 'nota');
     }
   }
 

@@ -1,6 +1,6 @@
 import type { PaginationParams } from '@/core/repositories/paginationParams';
-import type { Power } from '../../enterprise/entities/power';
-import type { PowersRepository } from '../repositories/powers-repository';
+import type { Power } from '@/domain/power-manager/enterprise/entities/power';
+import type { PowersRepository } from '@/domain/power-manager/application/repositories/powers-repository';
 
 export class InMemoryPowersRepository implements PowersRepository {
   public items: Power[] = [];
@@ -17,11 +17,13 @@ export class InMemoryPowersRepository implements PowersRepository {
     return this.items.slice(startIndex, endIndex);
   }
 
-  async findByUserId(_userId: string, params: PaginationParams): Promise<Power[]> {
+  async findByUserId(userId: string, params: PaginationParams): Promise<Power[]> {
+    const filtered = this.items.filter((item) => item.userId === userId);
+
     const startIndex = (params.page - 1) * 20;
     const endIndex = startIndex + 20;
 
-    return this.items.slice(startIndex, endIndex);
+    return filtered.slice(startIndex, endIndex);
   }
 
   async findByDomain(domainName: string, params: PaginationParams): Promise<Power[]> {
@@ -33,8 +35,17 @@ export class InMemoryPowersRepository implements PowersRepository {
     return filtered.slice(startIndex, endIndex);
   }
 
-  async findCustomPowers(params: PaginationParams): Promise<Power[]> {
-    const filtered = this.items.filter((item) => item.custom);
+  async findUserCreatedPowers(params: PaginationParams): Promise<Power[]> {
+    const filtered = this.items.filter((item) => !item.isOfficial());
+
+    const startIndex = (params.page - 1) * 20;
+    const endIndex = startIndex + 20;
+
+    return filtered.slice(startIndex, endIndex);
+  }
+
+  async findPublic(params: PaginationParams): Promise<Power[]> {
+    const filtered = this.items.filter((item) => item.isOfficial() || item.isPublic);
 
     const startIndex = (params.page - 1) * 20;
     const endIndex = startIndex + 20;

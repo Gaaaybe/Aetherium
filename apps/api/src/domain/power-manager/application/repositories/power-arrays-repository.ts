@@ -6,6 +6,7 @@ export interface PowerArraysRepository {
   findMany(params: PaginationParams): Promise<PowerArray[]>;
   findByUserId(userId: string, params: PaginationParams): Promise<PowerArray[]>;
   findByDomain(domainName: string, params: PaginationParams): Promise<PowerArray[]>;
+  findPublic(params: PaginationParams): Promise<PowerArray[]>;
   create(powerArray: PowerArray): Promise<void>;
   update(powerArray: PowerArray): Promise<void>;
   delete(id: string): Promise<void>;

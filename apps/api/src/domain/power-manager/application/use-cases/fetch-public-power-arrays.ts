@@ -18,7 +18,9 @@ export class FetchPowerArraysUseCase {
   async execute({
     page,
   }: FetchPowerArraysUseCaseRequest): Promise<FetchPowerArraysUseCaseResponse> {
-    const powerArrays = await this.powerArraysRepository.findMany({ page });
+    const powerArrays = await this.powerArraysRepository.findPublic({
+      page,
+    });
 
     return right({
       powerArrays,

@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
 import { ModificationBase, ModificationType } from '../../enterprise/entities/modification-base';
+import { Peculiarity } from '../../enterprise/entities/peculiarity';
 import { Power } from '../../enterprise/entities/power';
 import { AlternativeCost } from '../../enterprise/entities/value-objects/alternative-cost';
 import { AppliedModification } from '../../enterprise/entities/value-objects/applied-modification';
@@ -9,10 +10,13 @@ import { Domain, DomainName } from '../../enterprise/entities/value-objects/doma
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryModificationsRepository } from '../test/in-memory-modifications-repository';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
-import { CalculatePowerCostUseCase } from './calculate-power-cost';
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryModificationsRepository } from '@test/repositories/in-memory-modifications-repository';
+import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
+import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
+import { PowerCostCalculator } from '../../enterprise/services/power-cost-calculator';
+import { DomainEvents } from '@/core/events/domain-events';
+import { OnPowerMadePublic } from '../subscribers/on-power-made-public';
 import { UpdatePowerUseCase } from './update-power';
 
 describe('UpdatePowerUseCase', () => {
@@ -20,17 +24,34 @@ describe('UpdatePowerUseCase', () => {
   let powersRepository: InMemoryPowersRepository;
   let effectsRepository: InMemoryEffectsRepository;
   let modificationsRepository: InMemoryModificationsRepository;
-  let calculatePowerCostUseCase: CalculatePowerCostUseCase;
+  let peculiaritiesRepository: InMemoryPeculiaritiesRepository;
+  let powerCostCalculator: PowerCostCalculator;
+  const userId = 'user-1';
 
   beforeEach(() => {
     powersRepository = new InMemoryPowersRepository();
     effectsRepository = new InMemoryEffectsRepository();
     modificationsRepository = new InMemoryModificationsRepository();
-    calculatePowerCostUseCase = new CalculatePowerCostUseCase(
+    peculiaritiesRepository = new InMemoryPeculiaritiesRepository();
+    powerCostCalculator = new PowerCostCalculator(
       effectsRepository,
       modificationsRepository,
     );
-    sut = new UpdatePowerUseCase(powersRepository, calculatePowerCostUseCase);
+
+    DomainEvents.clearHandlers();
+    DomainEvents.clearMarkedAggregates();
+    new OnPowerMadePublic(peculiaritiesRepository);
+
+    sut = new UpdatePowerUseCase(
+      powersRepository,
+      powerCostCalculator,
+      peculiaritiesRepository,
+    );
+  });
+
+  afterEach(() => {
+    DomainEvents.clearHandlers();
+    DomainEvents.clearMarkedAggregates();
   });
 
   it('should update power name', async () => {
@@ -60,12 +81,14 @@ describe('UpdatePowerUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powersRepository.create(power);
 
     const result = await sut.execute({
       powerId: power.id.toString(),
+      userId,
       nome: 'Rajada Atualizada',
     });
 
@@ -103,6 +126,7 @@ describe('UpdatePowerUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powersRepository.create(power);
@@ -111,6 +135,7 @@ describe('UpdatePowerUseCase', () => {
 
     const result = await sut.execute({
       powerId: power.id.toString(),
+      userId,
       descricao: 'Descrição atualizada',
       parametros: newParams,
     });
@@ -151,6 +176,7 @@ describe('UpdatePowerUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powersRepository.create(power);
@@ -163,6 +189,7 @@ describe('UpdatePowerUseCase', () => {
 
     const result = await sut.execute({
       powerId: power.id.toString(),
+      userId,
       effects: [newEffect],
     });
 
@@ -212,6 +239,7 @@ describe('UpdatePowerUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powersRepository.create(power);
@@ -220,6 +248,7 @@ describe('UpdatePowerUseCase', () => {
 
     const result = await sut.execute({
       powerId: power.id.toString(),
+      userId,
       globalModifications: [globalModification],
     });
 
@@ -257,6 +286,7 @@ describe('UpdatePowerUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powersRepository.create(power);
@@ -265,6 +295,7 @@ describe('UpdatePowerUseCase', () => {
 
     const result = await sut.execute({
       powerId: power.id.toString(),
+      userId,
       custoAlternativo: alternativeCost,
     });
 
@@ -278,6 +309,7 @@ describe('UpdatePowerUseCase', () => {
   it('should return error if power not found', async () => {
     const result = await sut.execute({
       powerId: 'poder-inexistente',
+      userId,
       nome: 'Novo Nome',
     });
 
@@ -311,6 +343,7 @@ describe('UpdatePowerUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powersRepository.create(power);
@@ -323,9 +356,222 @@ describe('UpdatePowerUseCase', () => {
 
     const result = await sut.execute({
       powerId: power.id.toString(),
+      userId,
       effects: [invalidEffect],
     });
 
     expect(result.isLeft()).toBe(true);
+  });
+
+  it('should make a private power public', async () => {
+    const effectBase = EffectBase.create({
+      id: 'dano',
+      nome: 'Dano',
+      custoBase: 1,
+      descricao: 'Causa dano',
+      categorias: ['Ofensivo'],
+    });
+
+    await effectsRepository.create(effectBase);
+
+    const appliedEffect = AppliedEffect.create({
+      effectBaseId: 'dano',
+      grau: 10,
+      custo: PowerCost.createZero(),
+    });
+
+    const effectsList = new PowerEffectList();
+    effectsList.update([appliedEffect]);
+
+    const power = Power.create({
+      nome: 'Poder Privado',
+      descricao: 'Um poder privado',
+      dominio: Domain.create({ name: DomainName.NATURAL }),
+      parametros: PowerParameters.createDefault(),
+      effects: effectsList,
+      custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
+      isPublic: false,
+    });
+
+    await powersRepository.create(power);
+
+    const result = await sut.execute({
+      powerId: power.id.toString(),
+      userId,
+      isPublic: true,
+    });
+
+    expect(result.isRight()).toBe(true);
+    if (result.isRight()) {
+      expect(result.value.power.isPublic).toBe(true);
+      expect(result.value.power.userId).toBe('user-1');
+    }
+  });
+
+  it('should make a public power private', async () => {
+    const effectBase = EffectBase.create({
+      id: 'dano',
+      nome: 'Dano',
+      custoBase: 1,
+      descricao: 'Causa dano',
+      categorias: ['Ofensivo'],
+    });
+
+    await effectsRepository.create(effectBase);
+
+    const appliedEffect = AppliedEffect.create({
+      effectBaseId: 'dano',
+      grau: 10,
+      custo: PowerCost.createZero(),
+    });
+
+    const effectsList = new PowerEffectList();
+    effectsList.update([appliedEffect]);
+
+    const power = Power.create({
+      nome: 'Poder Público',
+      descricao: 'Um poder público',
+      dominio: Domain.create({ name: DomainName.NATURAL }),
+      parametros: PowerParameters.createDefault(),
+      effects: effectsList,
+      custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
+      isPublic: true,
+    });
+
+    await powersRepository.create(power);
+
+    const result = await sut.execute({
+      powerId: power.id.toString(),
+      userId,
+      isPublic: false,
+    });
+
+    expect(result.isRight()).toBe(true);
+    if (result.isRight()) {
+      expect(result.value.power.isPublic).toBe(false);
+      expect(result.value.power.userId).toBe('user-1');
+    }
+  });
+
+  it('should make power public and automatically publish referenced private peculiarity', async () => {
+    const peculiarity = Peculiarity.create({
+      nome: 'Peculiaridade Privada',
+      descricao: 'Uma peculiaridade privada',
+      userId,
+      espiritual: false,
+      isPublic: false,
+    });
+
+    await peculiaritiesRepository.create(peculiarity);
+
+    const effectBase = EffectBase.create({
+      id: 'dano',
+      nome: 'Dano',
+      custoBase: 1,
+      descricao: 'Causa dano',
+      categorias: ['Ofensivo'],
+    });
+
+    await effectsRepository.create(effectBase);
+
+    const appliedEffect = AppliedEffect.create({
+      effectBaseId: 'dano',
+      grau: 10,
+      custo: PowerCost.createZero(),
+    });
+
+    const effectsList = new PowerEffectList();
+    effectsList.update([appliedEffect]);
+
+    const power = Power.create({
+      nome: 'Poder Peculiar',
+      descricao: 'Poder com peculiaridade privada',
+      dominio: Domain.create({
+        name: DomainName.PECULIAR,
+        peculiarId: peculiarity.id.toString(),
+      }),
+      parametros: PowerParameters.createDefault(),
+      effects: effectsList,
+      custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
+      isPublic: false,
+    });
+
+    await powersRepository.create(power);
+
+    const result = await sut.execute({
+      powerId: power.id.toString(),
+      userId,
+      isPublic: true,
+    });
+
+    expect(result.isRight()).toBe(true);
+    if (result.isRight()) {
+      expect(result.value.power.isPublic).toBe(true);
+
+      // Verificar que a peculiaridade foi publicada automaticamente
+      const updatedPeculiarity = await peculiaritiesRepository.findById(peculiarity.id.toString());
+      expect(updatedPeculiarity?.isPublic).toBe(true);
+    }
+  });
+
+  it('should make power public if it references a public peculiarity', async () => {
+    const peculiarity = Peculiarity.create({
+      nome: 'Peculiaridade Pública',
+      descricao: 'Uma peculiaridade pública',
+      userId,
+      espiritual: false,
+      isPublic: true,
+    });
+
+    await peculiaritiesRepository.create(peculiarity);
+
+    const effectBase = EffectBase.create({
+      id: 'dano',
+      nome: 'Dano',
+      custoBase: 1,
+      descricao: 'Causa dano',
+      categorias: ['Ofensivo'],
+    });
+
+    await effectsRepository.create(effectBase);
+
+    const appliedEffect = AppliedEffect.create({
+      effectBaseId: 'dano',
+      grau: 10,
+      custo: PowerCost.createZero(),
+    });
+
+    const effectsList = new PowerEffectList();
+    effectsList.update([appliedEffect]);
+
+    const power = Power.create({
+      nome: 'Poder Peculiar',
+      descricao: 'Poder com peculiaridade pública',
+      dominio: Domain.create({
+        name: DomainName.PECULIAR,
+        peculiarId: peculiarity.id.toString(),
+      }),
+      parametros: PowerParameters.createDefault(),
+      effects: effectsList,
+      custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
+      isPublic: false,
+    });
+
+    await powersRepository.create(power);
+
+    const result = await sut.execute({
+      powerId: power.id.toString(),
+      userId,
+      isPublic: true,
+    });
+
+    expect(result.isRight()).toBe(true);
+    if (result.isRight()) {
+      expect(result.value.power.isPublic).toBe(true);
+    }
   });
 });

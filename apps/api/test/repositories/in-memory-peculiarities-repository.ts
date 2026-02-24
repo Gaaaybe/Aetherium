@@ -1,6 +1,6 @@
 import type { PaginationParams } from '@/core/repositories/paginationParams';
-import type { Peculiarity } from '../../enterprise/entities/peculiarity';
-import type { PeculiaritiesRepository } from '../repositories/peculiarities-repository';
+import type { Peculiarity } from '@/domain/power-manager/enterprise/entities/peculiarity';
+import type { PeculiaritiesRepository } from '@/domain/power-manager/application/repositories/peculiarities-repository';
 
 export class InMemoryPeculiaritiesRepository implements PeculiaritiesRepository {
   public items: Peculiarity[] = [];

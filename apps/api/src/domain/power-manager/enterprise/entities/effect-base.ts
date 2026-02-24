@@ -1,3 +1,4 @@
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import { Entity } from '@/core/entities/entity';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
 import type { Optional } from '@/core/types/optional';
@@ -133,55 +134,51 @@ export class EffectBase extends Entity<EffectBaseProps> {
 
   private static validate(props: EffectBaseProps): void {
     if (!props.id || props.id.trim() === '') {
-      throw new Error('ID do efeito é obrigatório');
+      throw new DomainValidationError('ID do efeito é obrigatório', 'id');
     }
 
     if (!props.nome || props.nome.trim() === '') {
-      throw new Error('Nome do efeito é obrigatório');
+      throw new DomainValidationError('Nome do efeito é obrigatório', 'nome');
     }
 
     if (props.custoBase < 0) {
-      throw new Error('Custo base não pode ser negativo');
+      throw new DomainValidationError('Custo base não pode ser negativo', 'custoBase');
     }
 
     if (props.custoBase > 100) {
-      throw new Error('Custo base não pode exceder 100');
+      throw new DomainValidationError('Custo base não pode exceder 100', 'custoBase');
     }
 
     if (!props.descricao || props.descricao.trim() === '') {
-      throw new Error('Descrição do efeito é obrigatória');
+      throw new DomainValidationError('Descrição do efeito é obrigatória', 'descricao');
     }
 
     if (props.requerInput) {
       if (!props.tipoInput) {
-        throw new Error('Efeito que requer input deve especificar o tipo');
+        throw new DomainValidationError('Efeito que requer input deve especificar o tipo', 'tipoInput');
       }
       if (!props.labelInput) {
-        throw new Error('Efeito que requer input deve ter uma label');
+        throw new DomainValidationError('Efeito que requer input deve ter uma label', 'labelInput');
       }
 
       if (props.tipoInput === EffectInputType.SELECT) {
         if (!props.opcoesInput || props.opcoesInput.length === 0) {
-          throw new Error('Efeito com input tipo "select" deve ter opções');
+          throw new DomainValidationError('Efeito com input tipo "select" deve ter opções', 'opcoesInput');
         }
-        throw new Error('Efeito que requer input deve especificar o tipo');
-      }
-      if (!props.labelInput) {
-        throw new Error('Efeito que requer input deve ter uma label');
       }
     }
 
     if (props.configuracoes) {
       if (props.configuracoes.opcoes.length === 0) {
-        throw new Error('Configurações devem ter pelo menos uma opção');
+        throw new DomainValidationError('Configurações devem ter pelo menos uma opção', 'configuracoes');
       }
 
       for (const opcao of props.configuracoes.opcoes) {
         if (!opcao.id || opcao.id.trim() === '') {
-          throw new Error('ID da configuração é obrigatório');
+          throw new DomainValidationError('ID da configuração é obrigatório', 'configuracoes');
         }
         if (!opcao.nome || opcao.nome.trim() === '') {
-          throw new Error('Nome da configuração é obrigatório');
+          throw new DomainValidationError('Nome da configuração é obrigatório', 'configuracoes');
         }
       }
     }

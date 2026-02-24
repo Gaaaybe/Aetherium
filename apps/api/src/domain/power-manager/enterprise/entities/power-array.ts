@@ -1,25 +1,32 @@
-import { AggregateRoot } from '@/core/entities/aggregate-root';
+import { OwnableEntity } from '@/core/entities/ownable-entity';
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
 import type { Optional } from '@/core/types/optional';
-import type { Power } from './power';
+import { PowerArrayMadePublicEvent } from '../events/power-array-made-public-event';
 import type { Domain } from './value-objects/domain';
 import type { PowerCost } from './value-objects/power-cost';
 import type { PowerParameters } from './value-objects/power-parameters';
 import { PowerArrayPowerList } from './watched-lists/power-array-power-list';
 
 interface PowerArrayProps {
+  userId?: string;
   nome: string;
   descricao: string;
   dominio: Domain;
   parametrosBase?: PowerParameters;
   powers: PowerArrayPowerList;
   custoTotal: PowerCost;
+  isPublic: boolean;
   notas?: string;
   createdAt: Date;
   updatedAt?: Date;
 }
 
-export class PowerArray extends AggregateRoot<PowerArrayProps> {
+export class PowerArray extends OwnableEntity<PowerArrayProps> {
+  get userId(): string | undefined {
+    return this.props.userId;
+  }
+
   get nome(): string {
     return this.props.nome;
   }
@@ -44,6 +51,10 @@ export class PowerArray extends AggregateRoot<PowerArrayProps> {
     return this.props.custoTotal;
   }
 
+  get isPublic(): boolean {
+    return this.props.isPublic;
+  }
+
   get notas(): string | undefined {
     return this.props.notas;
   }
@@ -56,151 +67,66 @@ export class PowerArray extends AggregateRoot<PowerArrayProps> {
     return this.props.updatedAt;
   }
 
-  getPowerCount(): number {
-    return this.props.powers.getItems().length;
-  }
-
-  getPower(powerId: UniqueEntityId): Power | undefined {
-    return this.props.powers.getItems().find((power) => power.id.equals(powerId));
-  }
-
-  addPower(power: Power): PowerArray {
-    if (!power.dominio.equals(this.props.dominio)) {
-      throw new Error('Poder deve ter o mesmo domínio do acervo');
-    }
-
-    const powers = new PowerArrayPowerList(this.props.powers.getItems());
-    powers.add(power);
-
-    return new PowerArray(
+  update(partial: {
+    nome?: string;
+    descricao?: string;
+    dominio?: Domain;
+    parametrosBase?: PowerParameters;
+    powers?: PowerArrayPowerList;
+    custoTotal?: PowerCost;
+    notas?: string;
+  }): PowerArray {
+    return PowerArray.create(
       {
-        ...this.props,
-        powers,
+        userId: this.props.userId,
+        nome: partial.nome ?? this.props.nome,
+        descricao: partial.descricao ?? this.props.descricao,
+        dominio: partial.dominio ?? this.props.dominio,
+        parametrosBase: partial.parametrosBase ?? this.props.parametrosBase,
+        powers: partial.powers ?? this.props.powers,
+        custoTotal: partial.custoTotal ?? this.props.custoTotal,
+        notas: partial.notas ?? this.props.notas,
+        isPublic: this.props.isPublic,
+        createdAt: this.props.createdAt,
         updatedAt: new Date(),
       },
       this.id,
     );
   }
 
-  removePower(powerId: UniqueEntityId): PowerArray {
-    const power = this.props.powers.getItems().find((p) => p.id.equals(powerId));
-
-    if (!power) {
-      throw new Error('Poder não encontrado no acervo');
+  makePublic(): PowerArray {
+    if (this.isOfficial()) {
+      throw new DomainValidationError('Acervos oficiais não podem ser tornados públicos', 'isPublic');
     }
 
-    const powers = new PowerArrayPowerList(this.props.powers.getItems());
-    powers.remove(power);
-
-    if (powers.getItems().length === 0) {
-      throw new Error('Um acervo deve ter pelo menos um poder');
-    }
-
-    return new PowerArray(
-      {
-        ...this.props,
-        powers,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updatePower(powerId: UniqueEntityId, updatedPower: Power): PowerArray {
-    if (!updatedPower.dominio.equals(this.props.dominio)) {
-      throw new Error('Poder deve ter o mesmo domínio do acervo');
-    }
-
-    const currentItems = this.props.powers.getItems();
-    const newItems = currentItems.map((power) => (power.id.equals(powerId) ? updatedPower : power));
-
-    const powers = new PowerArrayPowerList();
-    powers.update(newItems);
-
-    return new PowerArray(
-      {
-        ...this.props,
-        powers,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateNome(nome: string): PowerArray {
-    if (!nome || nome.trim() === '') {
-      throw new Error('Nome do acervo não pode ser vazio');
-    }
-
-    return new PowerArray(
-      {
-        ...this.props,
-        nome: nome.trim(),
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateDescricao(descricao: string): PowerArray {
-    return new PowerArray(
-      {
-        ...this.props,
-        descricao: descricao.trim(),
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateDominio(dominio: Domain): PowerArray {
-    const invalidPowers = this.props.powers
+    const privatePowerIds = this.props.powers
       .getItems()
-      .filter((power) => !power.dominio.equals(dominio));
+      .filter((power) => !power.isOfficial() && !power.isPublic)
+      .map((power) => power.id.toString());
 
-    if (invalidPowers.length > 0) {
-      throw new Error(
-        'Não é possível mudar o domínio do acervo pois existem poderes com domínio diferente',
-      );
+    const powerArray = new PowerArray(
+      {
+        ...this.props,
+        isPublic: true,
+        updatedAt: new Date(),
+      },
+      this.id,
+    );
+
+    powerArray.addDomainEvent(new PowerArrayMadePublicEvent(powerArray, privatePowerIds));
+
+    return powerArray;
+  }
+
+  makePrivate(): PowerArray {
+    if (this.isOfficial()) {
+      throw new DomainValidationError('Acervos oficiais não podem ser tornados privados', 'isPublic');
     }
 
     return new PowerArray(
       {
         ...this.props,
-        dominio,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateParametrosBase(parametrosBase?: PowerParameters): PowerArray {
-    return new PowerArray(
-      {
-        ...this.props,
-        parametrosBase,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateCustoTotal(custoTotal: PowerCost): PowerArray {
-    return new PowerArray(
-      {
-        ...this.props,
-        custoTotal,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateNotas(notas?: string): PowerArray {
-    return new PowerArray(
-      {
-        ...this.props,
-        notas,
+        isPublic: false,
         updatedAt: new Date(),
       },
       this.id,
@@ -209,46 +135,47 @@ export class PowerArray extends AggregateRoot<PowerArrayProps> {
 
   private static validate(props: PowerArrayProps): void {
     if (!props.nome || props.nome.trim() === '') {
-      throw new Error('Nome do acervo é obrigatório');
+      throw new DomainValidationError('Nome do acervo é obrigatório', 'nome');
     }
 
     if (props.nome.length > 100) {
-      throw new Error('Nome do acervo não pode exceder 100 caracteres');
+      throw new DomainValidationError('Nome do acervo não pode exceder 100 caracteres', 'nome');
     }
 
     if (!props.descricao || props.descricao.trim() === '') {
-      throw new Error('Descrição do acervo é obrigatória');
+      throw new DomainValidationError('Descrição do acervo é obrigatória', 'descricao');
     }
 
     const powerItems = props.powers.getItems();
 
     if (powerItems.length === 0) {
-      throw new Error('Um acervo deve ter pelo menos um poder');
+      throw new DomainValidationError('Um acervo deve ter pelo menos um poder', 'powers');
     }
 
     if (powerItems.length > 50) {
-      throw new Error('Um acervo não pode ter mais de 50 poderes');
+      throw new DomainValidationError('Um acervo não pode ter mais de 50 poderes', 'powers');
     }
 
     const firstDomain = powerItems[0].dominio;
     const allSameDomain = powerItems.every((power) => power.dominio.equals(firstDomain));
 
     if (!allSameDomain) {
-      throw new Error('Todos os poderes de um acervo devem ter o mesmo domínio');
+      throw new DomainValidationError('Todos os poderes de um acervo devem ter o mesmo domínio', 'dominio');
     }
 
     if (!props.dominio.equals(firstDomain)) {
-      throw new Error('O domínio do acervo deve ser igual ao domínio dos poderes');
+      throw new DomainValidationError('O domínio do acervo deve ser igual ao domínio dos poderes', 'dominio');
     }
   }
 
   static create(
-    props: Optional<PowerArrayProps, 'createdAt' | 'notas'>,
+    props: Optional<PowerArrayProps, 'isPublic' | 'createdAt' | 'notas'>,
     id?: UniqueEntityId,
   ): PowerArray {
     const arrayPower = new PowerArray(
       {
         ...props,
+        isPublic: props.isPublic ?? false,
         createdAt: props.createdAt ?? new Date(),
         notas: props.notas,
       },
@@ -258,5 +185,19 @@ export class PowerArray extends AggregateRoot<PowerArrayProps> {
     PowerArray.validate(arrayPower.props);
 
     return arrayPower;
+  }
+
+  static createOfficial(
+    props: Omit<PowerArrayProps, 'userId' | 'isPublic' | 'createdAt'>,
+    id?: UniqueEntityId,
+  ): PowerArray {
+    return PowerArray.create(
+      {
+        ...props,
+        userId: undefined,
+        isPublic: false,
+      },
+      id,
+    );
   }
 }

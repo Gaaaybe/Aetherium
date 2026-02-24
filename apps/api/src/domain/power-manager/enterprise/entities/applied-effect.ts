@@ -1,3 +1,4 @@
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import { Entity } from '@/core/entities/entity';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
 import type { Optional } from '@/core/types/optional';
@@ -65,7 +66,7 @@ export class AppliedEffect extends Entity<AppliedEffectProps> {
 
   removeModification(index: number): AppliedEffect {
     if (index < 0 || index >= this.props.modifications.length) {
-      throw new Error('Índice de modificação inválido');
+      throw new DomainValidationError('Índice de modificação inválido', 'modifications');
     }
 
     const modifications = this.props.modifications.filter((_, i) => i !== index);
@@ -91,11 +92,11 @@ export class AppliedEffect extends Entity<AppliedEffectProps> {
 
   updateGrau(grau: number): AppliedEffect {
     if (grau < 1) {
-      throw new Error('Grau do efeito deve ser no mínimo 1');
+      throw new DomainValidationError('Grau do efeito deve ser no mínimo 1', 'grau');
     }
 
     if (grau > 30) {
-      throw new Error('Grau do efeito não pode exceder 30');
+      throw new DomainValidationError('Grau do efeito não pode exceder 30', 'grau');
     }
 
     return new AppliedEffect(
@@ -119,15 +120,15 @@ export class AppliedEffect extends Entity<AppliedEffectProps> {
 
   private static validate(props: AppliedEffectProps): void {
     if (!props.effectBaseId || props.effectBaseId.trim() === '') {
-      throw new Error('effectBaseId é obrigatório');
+      throw new DomainValidationError('effectBaseId é obrigatório', 'effectBaseId');
     }
 
     if (props.grau < 1) {
-      throw new Error('Grau do efeito deve ser no mínimo 1');
+      throw new DomainValidationError('Grau do efeito deve ser no mínimo 1', 'grau');
     }
 
     if (props.grau > 30) {
-      throw new Error('Grau do efeito não pode exceder 30');
+      throw new DomainValidationError('Grau do efeito não pode exceder 30', 'grau');
     }
   }
 

@@ -8,9 +8,9 @@ import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerArrayPowerList } from '../../enterprise/entities/watched-lists/power-array-power-list';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryPowerArraysRepository } from '../test/in-memory-power-arrays-repository';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryPowerArraysRepository } from '@test/repositories/in-memory-power-arrays-repository';
+import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
 import { DeletePowerArrayUseCase } from './delete-power-array';
 
 describe('DeletePowerArrayUseCase', () => {
@@ -18,6 +18,7 @@ describe('DeletePowerArrayUseCase', () => {
   let powerArraysRepository: InMemoryPowerArraysRepository;
   let powersRepository: InMemoryPowersRepository;
   let effectsRepository: InMemoryEffectsRepository;
+  const userId = 'user-1';
 
   beforeEach(() => {
     powerArraysRepository = new InMemoryPowerArraysRepository();
@@ -47,6 +48,7 @@ describe('DeletePowerArrayUseCase', () => {
     effectsList.update([appliedEffect]);
 
     const power = Power.create({
+      userId,
       nome: 'Rajada',
       descricao: 'Poder de rajada',
       dominio: Domain.create({ name: DomainName.NATURAL }),
@@ -61,6 +63,7 @@ describe('DeletePowerArrayUseCase', () => {
     powersList.update([power]);
 
     const powerArray = PowerArray.create({
+      userId,
       nome: 'Acervo',
       descricao: 'Descrição',
       dominio: Domain.create({ name: DomainName.NATURAL }),
@@ -72,6 +75,7 @@ describe('DeletePowerArrayUseCase', () => {
 
     const result = await sut.execute({
       powerArrayId: powerArray.id.toString(),
+      userId,
     });
 
     expect(result.isRight()).toBe(true);
@@ -81,6 +85,7 @@ describe('DeletePowerArrayUseCase', () => {
   it('should return error if power array not found', async () => {
     const result = await sut.execute({
       powerArrayId: 'acervo-inexistente',
+      userId,
     });
 
     expect(result.isLeft()).toBe(true);

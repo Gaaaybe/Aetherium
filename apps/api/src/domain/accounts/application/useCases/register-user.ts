@@ -32,7 +32,9 @@ export class RegisterUserUseCase {
   }: RegisterUserUseCaseRequest): Promise<RegisterUserUseCaseResponse> {
     const passwordHash = await this.hashGenerator.hash(password);
 
-    const userRole: UserRole = masterConfirm === true ? UserRole.MASTER : UserRole.PLAYER;
+    const roles: UserRole[] = masterConfirm === true
+      ? [UserRole.PLAYER, UserRole.MASTER]
+      : [UserRole.PLAYER];
 
     const userWithSameEmail = await this.usersRepository.findByEmail(email);
     if (userWithSameEmail) {
@@ -43,7 +45,7 @@ export class RegisterUserUseCase {
       name,
       email,
       password: passwordHash,
-      roles: [userRole],
+      roles,
     });
 
     await this.usersRepository.create(user);

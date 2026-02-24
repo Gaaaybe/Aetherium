@@ -7,6 +7,7 @@ interface CreatePeculiarityUseCaseRequest {
   nome: string;
   descricao: string;
   espiritual: boolean;
+  isPublic?: boolean;
 }
 
 interface CreatePeculiarityUseCaseResponseData {
@@ -23,12 +24,14 @@ export class CreatePeculiarityUseCase {
     nome,
     descricao,
     espiritual,
+    isPublic,
   }: CreatePeculiarityUseCaseRequest): Promise<CreatePeculiarityUseCaseResponse> {
     const peculiarity = Peculiarity.create({
       userId,
       nome,
       descricao,
       espiritual,
+      isPublic,
     });
 
     await this.peculiaritiesRepository.create(peculiarity);

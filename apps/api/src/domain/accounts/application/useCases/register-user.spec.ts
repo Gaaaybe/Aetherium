@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AlreadyExistsError } from '@/core/errors/alreadyExistsError';
 import { RegisterUserUseCase } from './register-user';
-import { FakeHashGenerator } from './test/fakeHashGenerator';
-import { InMemoryUsersRepository } from './test/inMemoryUsersRepository';
+import { FakeHashGenerator } from '@test/fakes/fakeHashGenerator';
+import { InMemoryUsersRepository } from '@test/repositories/inMemoryUsersRepository';
 
 let usersRepository: InMemoryUsersRepository;
 let hashGenerator: FakeHashGenerator;
@@ -45,7 +45,7 @@ describe('Register User Use Case', () => {
     if (result.isRight()) {
       expect(result.value.user.name).toBe('Master User');
       expect(result.value.user.isMaster()).toBe(true);
-      expect(result.value.user.isPlayer()).toBe(false);
+      expect(result.value.user.isPlayer()).toBe(true);
     }
   });
 

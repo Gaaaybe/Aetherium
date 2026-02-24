@@ -1,3 +1,5 @@
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
+
 interface PowerCostProps {
   pda: number;
   pe: number;
@@ -37,27 +39,27 @@ export class PowerCost {
 
   private static validate(props: PowerCostProps): void {
     if (props.pda < 0) {
-      throw new Error('Custo de PdA não pode ser negativo');
+      throw new DomainValidationError('Custo de PdA não pode ser negativo', 'pda');
     }
 
     if (props.pe < 0) {
-      throw new Error('Custo de PE não pode ser negativo');
+      throw new DomainValidationError('Custo de PE não pode ser negativo', 'pe');
     }
 
     if (props.espacos < 0) {
-      throw new Error('Espaços não podem ser negativos');
+      throw new DomainValidationError('Espaços não podem ser negativos', 'espacos');
     }
 
     if (props.pda > 99999) {
-      throw new Error('Custo de PdA excede limite máximo (99999)');
+      throw new DomainValidationError('Custo de PdA excede limite máximo (99999)', 'pda');
     }
 
     if (props.pe > 999) {
-      throw new Error('Custo de PE excede limite máximo (999)');
+      throw new DomainValidationError('Custo de PE excede limite máximo (999)', 'pe');
     }
 
     if (props.espacos > 999) {
-      throw new Error('Espaços excedem limite máximo (999)');
+      throw new DomainValidationError('Espaços excedem limite máximo (999)', 'espacos');
     }
   }
 
@@ -71,6 +73,24 @@ export class PowerCost {
       pda: 0,
       pe: 0,
       espacos: 0,
+    });
+  }
+
+  static sum(costs: PowerCost[]): PowerCost {
+    let totalPdA = 0;
+    let totalPE = 0;
+    let totalEspacos = 0;
+
+    for (const cost of costs) {
+      totalPdA += cost.pda;
+      totalPE += cost.pe;
+      totalEspacos += cost.espacos;
+    }
+
+    return PowerCost.create({
+      pda: totalPdA,
+      pe: totalPE,
+      espacos: totalEspacos,
     });
   }
 
@@ -92,7 +112,7 @@ export class PowerCost {
 
   multiply(factor: number): PowerCost {
     if (factor < 0) {
-      throw new Error('Fator de multiplicação não pode ser negativo');
+      throw new DomainValidationError('Fator de multiplicação não pode ser negativo', 'factor');
     }
 
     return PowerCost.create({

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
 import { Power } from '../../enterprise/entities/power';
@@ -6,9 +6,13 @@ import { Domain, DomainName } from '../../enterprise/entities/value-objects/doma
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryPowerArraysRepository } from '../test/in-memory-power-arrays-repository';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
+import { InMemoryPowerArraysRepository } from '@test/repositories/in-memory-power-arrays-repository';
+import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
+import { DomainEvents } from '@/core/events/domain-events';
+import { OnPowerArrayMadePublic } from '../subscribers/on-power-array-made-public';
+import { OnPowerMadePublic } from '../subscribers/on-power-made-public';
 import { CreatePowerArrayUseCase } from './create-power-array';
 
 describe('CreatePowerArrayUseCase', () => {
@@ -16,12 +20,28 @@ describe('CreatePowerArrayUseCase', () => {
   let powerArraysRepository: InMemoryPowerArraysRepository;
   let powersRepository: InMemoryPowersRepository;
   let effectsRepository: InMemoryEffectsRepository;
+  let peculiaritiesRepository: InMemoryPeculiaritiesRepository;
 
   beforeEach(() => {
     powerArraysRepository = new InMemoryPowerArraysRepository();
     powersRepository = new InMemoryPowersRepository();
     effectsRepository = new InMemoryEffectsRepository();
-    sut = new CreatePowerArrayUseCase(powerArraysRepository, powersRepository);
+    peculiaritiesRepository = new InMemoryPeculiaritiesRepository();
+
+    DomainEvents.clearHandlers();
+    DomainEvents.clearMarkedAggregates();
+    new OnPowerArrayMadePublic(powersRepository);
+    new OnPowerMadePublic(peculiaritiesRepository);
+
+    sut = new CreatePowerArrayUseCase(
+      powerArraysRepository,
+      powersRepository,
+    );
+  });
+
+  afterEach(() => {
+    DomainEvents.clearHandlers();
+    DomainEvents.clearMarkedAggregates();
   });
 
   it('should create a power array with multiple powers', async () => {
@@ -232,5 +252,124 @@ describe('CreatePowerArrayUseCase', () => {
 
     expect(result.isLeft()).toBe(true);
     expect(powerArraysRepository.items).toHaveLength(0);
+  });
+
+  it('should create a public power array and automatically publish private powers', async () => {
+    const effectBase = EffectBase.create({
+      id: 'dano',
+      nome: 'Dano',
+      custoBase: 1,
+      descricao: 'Causa dano',
+      categorias: ['Ofensivo'],
+    });
+
+    await effectsRepository.create(effectBase);
+
+    const appliedEffect = AppliedEffect.create({
+      effectBaseId: 'dano',
+      grau: 10,
+      custo: PowerCost.createZero(),
+    });
+
+    const effectsList1 = new PowerEffectList();
+    effectsList1.update([appliedEffect]);
+
+    // Poder privado
+    const privatePower = Power.create({
+      nome: 'Poder Privado',
+      descricao: 'Um poder privado',
+      dominio: Domain.create({ name: DomainName.NATURAL }),
+      parametros: PowerParameters.createDefault(),
+      effects: effectsList1,
+      custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId: 'user-1',
+      isPublic: false,
+    });
+
+    await powersRepository.create(privatePower);
+
+    const result = await sut.execute({
+      nome: 'Acervo Público',
+      descricao: 'Acervo público - poder privado será publicado automaticamente',
+      dominio: Domain.create({ name: DomainName.NATURAL }),
+      powerIds: [privatePower.id.toString()],
+      userId: 'user-1',
+      isPublic: true,
+    });
+
+    expect(result.isRight()).toBe(true);
+    if (result.isRight()) {
+      expect(result.value.powerArray.isPublic).toBe(true);
+      expect(powerArraysRepository.items).toHaveLength(1);
+
+      // Verificar que o poder privado foi publicado automaticamente
+      const updatedPower = await powersRepository.findById(privatePower.id.toString());
+      expect(updatedPower?.isPublic).toBe(true);
+    }
+  });
+
+  it('should create a public power array with public and official powers', async () => {
+    const effectBase = EffectBase.create({
+      id: 'dano',
+      nome: 'Dano',
+      custoBase: 1,
+      descricao: 'Causa dano',
+      categorias: ['Ofensivo'],
+    });
+
+    await effectsRepository.create(effectBase);
+
+    const appliedEffect = AppliedEffect.create({
+      effectBaseId: 'dano',
+      grau: 10,
+      custo: PowerCost.createZero(),
+    });
+
+    const effectsList1 = new PowerEffectList();
+    effectsList1.update([appliedEffect]);
+
+    const effectsList2 = new PowerEffectList();
+    effectsList2.update([appliedEffect]);
+
+    // Poder oficial
+    const officialPower = Power.create({
+      nome: 'Poder Oficial',
+      descricao: 'Um poder oficial',
+      dominio: Domain.create({ name: DomainName.NATURAL }),
+      parametros: PowerParameters.createDefault(),
+      effects: effectsList1,
+      custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+    });
+
+    // Poder público
+    const publicPower = Power.create({
+      nome: 'Poder Público',
+      descricao: 'Um poder público',
+      dominio: Domain.create({ name: DomainName.NATURAL }),
+      parametros: PowerParameters.createDefault(),
+      effects: effectsList2,
+      custoTotal: PowerCost.create({ pda: 15, pe: 0, espacos: 15 }),
+      userId: 'user-2',
+      isPublic: true,
+    });
+
+    await powersRepository.create(officialPower);
+    await powersRepository.create(publicPower);
+
+    const result = await sut.execute({
+      nome: 'Acervo Público Válido',
+      descricao: 'Acervo público com poderes acessíveis',
+      dominio: Domain.create({ name: DomainName.NATURAL }),
+      powerIds: [officialPower.id.toString(), publicPower.id.toString()],
+      userId: 'user-1',
+      isPublic: true,
+    });
+
+    expect(result.isRight()).toBe(true);
+    if (result.isRight()) {
+      expect(result.value.powerArray.isPublic).toBe(true);
+      expect(result.value.powerArray.powers.getItems()).toHaveLength(2);
+      expect(powerArraysRepository.items).toHaveLength(1);
+    }
   });
 });

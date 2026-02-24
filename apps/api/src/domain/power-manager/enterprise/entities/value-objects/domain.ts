@@ -1,3 +1,5 @@
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
+
 export enum DomainName {
   NATURAL = 'natural',
   SAGRADO = 'sagrado',
@@ -68,11 +70,11 @@ export class Domain {
 
   private static validate(props: DomainProps): void {
     if (props.name === DomainName.CIENTIFICO && !props.areaConhecimento) {
-      throw new Error('Domínio Científico requer área de conhecimento');
+      throw new DomainValidationError('Domínio Científico requer área de conhecimento', 'areaConhecimento');
     }
 
     if (props.name === DomainName.PECULIAR && !props.peculiarId) {
-      throw new Error('Domínio Peculiar requer ID da peculiaridade');
+      throw new DomainValidationError('Domínio Peculiar requer ID da peculiaridade', 'peculiarId');
     }
 
     if (
@@ -80,7 +82,7 @@ export class Domain {
       props.name !== DomainName.PECULIAR &&
       (props.areaConhecimento || props.peculiarId)
     ) {
-      throw new Error('Apenas domínios Científico e Peculiar podem ter campos específicos');
+      throw new DomainValidationError('Apenas domínios Científico e Peculiar podem ter campos específicos', 'name');
     }
   }
 

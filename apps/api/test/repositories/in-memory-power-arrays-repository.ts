@@ -1,6 +1,6 @@
 import type { PaginationParams } from '@/core/repositories/paginationParams';
-import type { PowerArray } from '../../enterprise/entities/power-array';
-import type { PowerArraysRepository } from '../repositories/power-arrays-repository';
+import type { PowerArray } from '@/domain/power-manager/enterprise/entities/power-array';
+import type { PowerArraysRepository } from '@/domain/power-manager/application/repositories/power-arrays-repository';
 
 export class InMemoryPowerArraysRepository implements PowerArraysRepository {
   public items: PowerArray[] = [];
@@ -17,15 +17,26 @@ export class InMemoryPowerArraysRepository implements PowerArraysRepository {
     return this.items.slice(startIndex, endIndex);
   }
 
-  async findByUserId(_userId: string, params: PaginationParams): Promise<PowerArray[]> {
+  async findByUserId(userId: string, params: PaginationParams): Promise<PowerArray[]> {
+    const filtered = this.items.filter((item) => item.userId === userId);
+
     const startIndex = (params.page - 1) * 20;
     const endIndex = startIndex + 20;
 
-    return this.items.slice(startIndex, endIndex);
+    return filtered.slice(startIndex, endIndex);
   }
 
   async findByDomain(domainName: string, params: PaginationParams): Promise<PowerArray[]> {
     const filtered = this.items.filter((item) => item.dominio.name === domainName);
+
+    const startIndex = (params.page - 1) * 20;
+    const endIndex = startIndex + 20;
+
+    return filtered.slice(startIndex, endIndex);
+  }
+
+  async findPublic(params: PaginationParams): Promise<PowerArray[]> {
+    const filtered = this.items.filter((item) => item.isOfficial() || item.isPublic);
 
     const startIndex = (params.page - 1) * 20;
     const endIndex = startIndex + 20;

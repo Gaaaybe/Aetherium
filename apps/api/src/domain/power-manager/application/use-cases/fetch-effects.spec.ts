@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EffectBase } from '../../enterprise/entities/effect-base';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
 import { FetchEffectsUseCase } from './fetch-effects';
 
 describe('FetchEffectsUseCase', () => {

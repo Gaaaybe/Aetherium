@@ -1,3 +1,4 @@
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import { Entity } from '@/core/entities/entity';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
 import type { Optional } from '@/core/types/optional';
@@ -170,82 +171,84 @@ export class ModificationBase extends Entity<ModificationBaseProps> {
 
   private static validate(props: ModificationBaseProps): void {
     if (!props.id || props.id.trim() === '') {
-      throw new Error('ID da modificação é obrigatório');
+      throw new DomainValidationError('ID da modificação é obrigatório', 'id');
     }
 
     if (!props.nome || props.nome.trim() === '') {
-      throw new Error('Nome da modificação é obrigatório');
+      throw new DomainValidationError('Nome da modificação é obrigatório', 'nome');
     }
 
     if (!props.descricao || props.descricao.trim() === '') {
-      throw new Error('Descrição da modificação é obrigatória');
+      throw new DomainValidationError('Descrição da modificação é obrigatória', 'descricao');
     }
 
     if (!props.categoria || props.categoria.trim() === '') {
-      throw new Error('Categoria da modificação é obrigatória');
+      throw new DomainValidationError('Categoria da modificação é obrigatória', 'categoria');
     }
 
     if (props.tipo === ModificationType.EXTRA) {
       if (props.custoFixo < 0 || props.custoPorGrau < 0) {
-        throw new Error('Extra não pode ter custo negativo');
+        throw new DomainValidationError('Extra não pode ter custo negativo', 'custoFixo');
       }
     } else if (props.tipo === ModificationType.FALHA) {
       if (props.custoFixo > 0 || props.custoPorGrau > 0) {
-        throw new Error('Falha não pode ter custo positivo');
+        throw new DomainValidationError('Falha não pode ter custo positivo', 'custoFixo');
       }
     }
     if (Math.abs(props.custoFixo) > 50) {
-      throw new Error('Custo fixo absoluto não pode exceder 50');
+      throw new DomainValidationError('Custo fixo absoluto não pode exceder 50', 'custoFixo');
     }
 
     if (Math.abs(props.custoPorGrau) > 20) {
-      throw new Error('Custo por grau absoluto não pode exceder 20');
+      throw new DomainValidationError('Custo por grau absoluto não pode exceder 20', 'custoPorGrau');
     }
 
     if (props.requerParametros) {
       if (!props.tipoParametro) {
-        throw new Error('Modificação que requer parâmetros deve especificar o tipo');
+        throw new DomainValidationError('Modificação que requer parâmetros deve especificar o tipo', 'tipoParametro');
       }
 
       if (
         props.tipoParametro === ModificationParameterType.GRAU &&
         (props.grauMinimo === undefined || props.grauMaximo === undefined)
       ) {
-        throw new Error(
+        throw new DomainValidationError(
           'Modificação com tipoParametro "grau" deve especificar grauMinimo e grauMaximo',
+          'tipoParametro',
         );
       }
     }
 
     if (props.tipoParametro === ModificationParameterType.SELECT) {
       if (!props.configuracoes && (!props.opcoes || props.opcoes.length === 0)) {
-        throw new Error(
+        throw new DomainValidationError(
           'Modificação com tipoParametro "select" deve especificar configurações ou opções simples',
+          'tipoParametro',
         );
       }
     }
 
     if (props.grauMinimo !== undefined && props.grauMaximo !== undefined) {
       if (props.grauMinimo > props.grauMaximo) {
-        throw new Error('grauMinimo não pode ser maior que grauMaximo');
+        throw new DomainValidationError('grauMinimo não pode ser maior que grauMaximo', 'grauMinimo');
       }
 
       if (props.grauMinimo < 0 || props.grauMaximo < 0) {
-        throw new Error('grauMinimo e grauMaximo devem ser não-negativos');
+        throw new DomainValidationError('grauMinimo e grauMaximo devem ser não-negativos', 'grauMinimo');
       }
     }
 
     if (props.configuracoes) {
       if (props.configuracoes.opcoes.length === 0) {
-        throw new Error('Configurações devem ter pelo menos uma opção');
+        throw new DomainValidationError('Configurações devem ter pelo menos uma opção', 'configuracoes');
       }
 
       for (const opcao of props.configuracoes.opcoes) {
         if (!opcao.id || opcao.id.trim() === '') {
-          throw new Error('ID da configuração é obrigatório');
+          throw new DomainValidationError('ID da configuração é obrigatório', 'configuracoes');
         }
         if (!opcao.nome || opcao.nome.trim() === '') {
-          throw new Error('Nome da configuração é obrigatório');
+          throw new DomainValidationError('Nome da configuração é obrigatório', 'configuracoes');
         }
       }
     }

@@ -2,7 +2,7 @@ import type { AggregateRoot } from '../entities/aggregate-root';
 import type { UniqueEntityId } from '../entities/unique-entity-ts';
 import type { DomainEvent } from './domain-event';
 
-type DomainEventCallback = (event: DomainEvent) => void;
+type DomainEventCallback = (event: DomainEvent) => void | Promise<void>;
 
 // biome-ignore lint/complexity/noStaticOnlyClass: DDD pattern for domain events management
 export class DomainEvents {
@@ -17,10 +17,10 @@ export class DomainEvents {
     }
   }
 
-  private static dispatchAggregateEvents(aggregate: AggregateRoot<unknown>): void {
-    aggregate.domainEvents.forEach((event: DomainEvent) => {
-      DomainEvents.dispatch(event);
-    });
+  private static async dispatchAggregateEvents(aggregate: AggregateRoot<unknown>): Promise<void> {
+    for (const event of aggregate.domainEvents) {
+      await DomainEvents.dispatch(event);
+    }
   }
 
   private static removeAggregateFromMarkedDispatchList(aggregate: AggregateRoot<unknown>): void {
@@ -35,11 +35,11 @@ export class DomainEvents {
     return DomainEvents.markedAggregates.find((aggregate) => aggregate.id.equals(id));
   }
 
-  public static dispatchEventsForAggregate(id: UniqueEntityId): void {
+  public static async dispatchEventsForAggregate(id: UniqueEntityId): Promise<void> {
     const aggregate = DomainEvents.findMarkedAggregateByID(id);
 
     if (aggregate) {
-      DomainEvents.dispatchAggregateEvents(aggregate);
+      await DomainEvents.dispatchAggregateEvents(aggregate);
       aggregate.clearEvents();
       DomainEvents.removeAggregateFromMarkedDispatchList(aggregate);
     }
@@ -61,14 +61,14 @@ export class DomainEvents {
     DomainEvents.markedAggregates = [];
   }
 
-  private static dispatch(event: DomainEvent): void {
+  private static async dispatch(event: DomainEvent): Promise<void> {
     const eventClassName: string = event.constructor.name;
 
     if (Object.hasOwn(DomainEvents.handlersMap, eventClassName)) {
       const handlers = DomainEvents.handlersMap[eventClassName];
 
       for (const handler of handlers) {
-        handler(event);
+        await handler(event);
       }
     }
   }

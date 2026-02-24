@@ -1,4 +1,5 @@
-import { AggregateRoot } from '@/core/entities/aggregate-root';
+import { OwnableEntity } from '@/core/entities/ownable-entity';
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
 import type { Optional } from '@/core/types/optional';
 import type { AppliedEffect } from './applied-effect';
@@ -9,8 +10,10 @@ import type { PowerCost } from './value-objects/power-cost';
 import type { PowerParameters } from './value-objects/power-parameters';
 import { PowerEffectList } from './watched-lists/power-effect-list';
 import { PowerGlobalModificationList } from './watched-lists/power-global-modification-list';
+import { PowerMadePublicEvent } from '../events/power-made-public-event';
 
 interface PowerProps {
+  userId?: string;
   nome: string;
   descricao: string;
   dominio: Domain;
@@ -19,13 +22,17 @@ interface PowerProps {
   globalModifications: PowerGlobalModificationList;
   custoTotal: PowerCost;
   custoAlternativo?: AlternativeCost;
-  custom: boolean;
+  isPublic: boolean;
   notas?: string;
   createdAt: Date;
   updatedAt?: Date;
 }
 
-export class Power extends AggregateRoot<PowerProps> {
+export class Power extends OwnableEntity<PowerProps> {
+  get userId(): string | undefined {
+    return this.props.userId;
+  }
+
   get nome(): string {
     return this.props.nome;
   }
@@ -58,8 +65,8 @@ export class Power extends AggregateRoot<PowerProps> {
     return this.props.custoAlternativo;
   }
 
-  get custom(): boolean {
-    return this.props.custom;
+  get isPublic(): boolean {
+    return this.props.isPublic;
   }
 
   get notas(): string | undefined {
@@ -74,217 +81,88 @@ export class Power extends AggregateRoot<PowerProps> {
     return this.props.updatedAt;
   }
 
-  isCustom(): boolean {
-    return this.props.custom === true;
+  makePublic(): Power {
+    if (this.isOfficial()) {
+      throw new DomainValidationError('Poderes oficiais não podem ser tornados públicos', 'isPublic');
+    }
+
+    const power = new Power(
+      {
+        ...this.props,
+        isPublic: true,
+        updatedAt: new Date(),
+      },
+      this.id,
+    );
+
+    power.addDomainEvent(new PowerMadePublicEvent(power));
+
+    return power;
   }
 
-  hasAlternativeCost(): boolean {
-    return !!this.props.custoAlternativo;
+  makePrivate(): Power {
+    if (this.isOfficial()) {
+      throw new DomainValidationError('Poderes oficiais não podem ser tornados privados', 'isPublic');
+    }
+
+    return new Power(
+      {
+        ...this.props,
+        isPublic: false,
+        updatedAt: new Date(),
+      },
+      this.id,
+    );
   }
 
-  hasMultipleEffects(): boolean {
-    return this.props.effects.getItems().length > 1;
+  getReferencedPeculiarityId(): string | undefined {
+    if (this.props.dominio.isPeculiar()) {
+      return this.props.dominio.peculiarId;
+    }
+    return undefined;
   }
 
   hasGlobalModifications(): boolean {
     return this.props.globalModifications.getItems().length > 0;
   }
 
-  getEffect(effectId: UniqueEntityId): AppliedEffect | undefined {
-    return this.props.effects.getItems().find((effect) => effect.id.equals(effectId));
-  }
-
-  getGlobalModification(index: number): AppliedModification | undefined {
-    return this.props.globalModifications.getItems()[index];
-  }
-
-  addEffect(effect: AppliedEffect): Power {
-    const effects = new PowerEffectList(this.props.effects.getItems());
-    effects.add(effect);
-
-    return new Power(
-      {
-        ...this.props,
-        effects,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  addGlobalModification(modification: AppliedModification): Power {
-    const globalModifications = new PowerGlobalModificationList(
-      this.props.globalModifications.getItems(),
-    );
-    globalModifications.add(modification);
-
-    return new Power(
-      {
-        ...this.props,
-        globalModifications,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  removeEffect(effectId: UniqueEntityId): Power {
-    const effect = this.props.effects.getItems().find((e) => e.id.equals(effectId));
-
-    if (!effect) {
-      throw new Error('Efeito não encontrado');
+  update(partial: {
+    nome?: string;
+    descricao?: string;
+    dominio?: Domain;
+    parametros?: PowerParameters;
+    effects?: AppliedEffect[];
+    globalModifications?: AppliedModification[];
+    custoTotal?: PowerCost;
+    custoAlternativo?: AlternativeCost;
+    notas?: string;
+  }): Power {
+    let newEffects = this.props.effects;
+    if (partial.effects !== undefined) {
+      newEffects = new PowerEffectList();
+      newEffects.update(partial.effects);
     }
 
-    const effects = new PowerEffectList(this.props.effects.getItems());
-    effects.remove(effect);
-
-    if (effects.getItems().length === 0) {
-      throw new Error('Um poder deve ter pelo menos um efeito');
+    let newGlobalMods = this.props.globalModifications;
+    if (partial.globalModifications !== undefined) {
+      newGlobalMods = new PowerGlobalModificationList();
+      newGlobalMods.update(partial.globalModifications);
     }
 
-    return new Power(
+    return Power.create(
       {
-        ...this.props,
-        effects,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  removeGlobalModification(index: number): Power {
-    const modification = this.props.globalModifications.getItems()[index];
-
-    if (!modification) {
-      throw new Error('Modificação global não encontrada');
-    }
-
-    const globalModifications = new PowerGlobalModificationList(
-      this.props.globalModifications.getItems(),
-    );
-    globalModifications.remove(modification);
-
-    return new Power(
-      {
-        ...this.props,
-        globalModifications,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateEffect(effectId: UniqueEntityId, updatedEffect: AppliedEffect): Power {
-    const currentItems = this.props.effects.getItems();
-    const newItems = currentItems.map((effect) =>
-      effect.id.equals(effectId) ? updatedEffect : effect,
-    );
-
-    const effects = new PowerEffectList();
-    effects.update(newItems);
-
-    return new Power(
-      {
-        ...this.props,
-        effects,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateGlobalModification(index: number, updatedModification: AppliedModification): Power {
-    const currentItems = this.props.globalModifications.getItems();
-    const newItems = currentItems.map((mod, i) => (i === index ? updatedModification : mod));
-
-    const globalModifications = new PowerGlobalModificationList();
-    globalModifications.update(newItems);
-
-    return new Power(
-      {
-        ...this.props,
-        globalModifications,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateNome(nome: string): Power {
-    if (!nome || nome.trim() === '') {
-      throw new Error('Nome do poder não pode ser vazio');
-    }
-
-    return new Power(
-      {
-        ...this.props,
-        nome: nome.trim(),
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateDescricao(descricao: string): Power {
-    return new Power(
-      {
-        ...this.props,
-        descricao: descricao.trim(),
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateDominio(dominio: Domain): Power {
-    return new Power(
-      {
-        ...this.props,
-        dominio,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateParametros(parametros: PowerParameters): Power {
-    return new Power(
-      {
-        ...this.props,
-        parametros,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateCustoTotal(custoTotal: PowerCost): Power {
-    return new Power(
-      {
-        ...this.props,
-        custoTotal,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateCustoAlternativo(custoAlternativo?: AlternativeCost): Power {
-    return new Power(
-      {
-        ...this.props,
-        custoAlternativo,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
-  updateNotas(notas?: string): Power {
-    return new Power(
-      {
-        ...this.props,
-        notas,
+        userId: this.props.userId,
+        nome: partial.nome ?? this.props.nome,
+        descricao: partial.descricao ?? this.props.descricao,
+        dominio: partial.dominio ?? this.props.dominio,
+        parametros: partial.parametros ?? this.props.parametros,
+        effects: newEffects,
+        globalModifications: newGlobalMods,
+        custoTotal: partial.custoTotal ?? this.props.custoTotal,
+        custoAlternativo: partial.custoAlternativo ?? this.props.custoAlternativo,
+        notas: partial.notas ?? this.props.notas,
+        isPublic: this.props.isPublic,
+        createdAt: this.props.createdAt,
         updatedAt: new Date(),
       },
       this.id,
@@ -293,41 +171,41 @@ export class Power extends AggregateRoot<PowerProps> {
 
   private static validate(props: PowerProps): void {
     if (!props.nome || props.nome.trim() === '') {
-      throw new Error('Nome do poder é obrigatório');
+      throw new DomainValidationError('Nome do poder é obrigatório', 'nome');
     }
 
     if (props.nome.length > 100) {
-      throw new Error('Nome do poder não pode exceder 100 caracteres');
+      throw new DomainValidationError('Nome do poder não pode exceder 100 caracteres', 'nome');
     }
 
     if (!props.descricao || props.descricao.trim() === '') {
-      throw new Error('Descrição do poder é obrigatória');
+      throw new DomainValidationError('Descrição do poder é obrigatória', 'descricao');
     }
 
     const effectItems = props.effects.getItems();
 
     if (effectItems.length === 0) {
-      throw new Error('Um poder deve ter pelo menos um efeito');
+      throw new DomainValidationError('Um poder deve ter pelo menos um efeito', 'effects');
     }
 
     if (effectItems.length > 20) {
-      throw new Error('Um poder não pode ter mais de 20 efeitos vinculados');
+      throw new DomainValidationError('Um poder não pode ter mais de 20 efeitos vinculados', 'effects');
     }
 
     const globalModItems = props.globalModifications.getItems();
     if (globalModItems.length > 50) {
-      throw new Error('Um poder não pode ter mais de 50 modificações globais');
+      throw new DomainValidationError('Um poder não pode ter mais de 50 modificações globais', 'globalModifications');
     }
   }
 
   static create(
-    props: Optional<PowerProps, 'custom' | 'createdAt' | 'notas' | 'globalModifications'>,
+    props: Optional<PowerProps, 'isPublic' | 'createdAt' | 'notas' | 'globalModifications'>,
     id?: UniqueEntityId,
   ): Power {
     const power = new Power(
       {
         ...props,
-        custom: props.custom ?? false,
+        isPublic: props.isPublic ?? false,
         createdAt: props.createdAt ?? new Date(),
         notas: props.notas,
         globalModifications: props.globalModifications ?? new PowerGlobalModificationList(),
@@ -340,18 +218,17 @@ export class Power extends AggregateRoot<PowerProps> {
     return power;
   }
 
-  static createCustom(props: Omit<PowerProps, 'custom' | 'createdAt'>, id?: UniqueEntityId): Power {
-    const power = new Power(
+  static createOfficial(
+    props: Omit<PowerProps, 'userId' | 'isPublic' | 'createdAt'>,
+    id?: UniqueEntityId,
+  ): Power {
+    return Power.create(
       {
         ...props,
-        custom: true,
-        createdAt: new Date(),
+        userId: undefined,
+        isPublic: false,
       },
       id,
     );
-
-    Power.validate(power.props);
-
-    return power;
   }
 }

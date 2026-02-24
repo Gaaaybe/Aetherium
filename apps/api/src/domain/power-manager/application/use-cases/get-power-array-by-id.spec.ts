@@ -8,9 +8,9 @@ import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerArrayPowerList } from '../../enterprise/entities/watched-lists/power-array-power-list';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryPowerArraysRepository } from '../test/in-memory-power-arrays-repository';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryPowerArraysRepository } from '@test/repositories/in-memory-power-arrays-repository';
+import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
 import { GetPowerArrayByIdUseCase } from './get-power-array-by-id';
 
 describe('GetPowerArrayByIdUseCase', () => {

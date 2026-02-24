@@ -1,3 +1,5 @@
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
+
 export type ActionType = 0 | 1 | 2 | 3 | 4 | 5;
 
 export type RangeType = 0 | 1 | 2 | 3 | 4 | 5 | 6;
@@ -43,15 +45,15 @@ export class PowerParameters {
 
   private static validate(props: PowerParametersProps): void {
     if (props.acao < 0 || props.acao > 5) {
-      throw new Error('Ação deve estar entre 0 e 5');
+      throw new DomainValidationError('Ação deve estar entre 0 e 5', 'acao');
     }
 
     if (props.alcance < 0 || props.alcance > 6) {
-      throw new Error('Alcance deve estar entre 0 e 6');
+      throw new DomainValidationError('Alcance deve estar entre 0 e 6', 'alcance');
     }
 
     if (props.duracao < 0 || props.duracao > 4) {
-      throw new Error('Duração deve estar entre 0 e 4');
+      throw new DomainValidationError('Duração deve estar entre 0 e 4', 'duracao');
     }
   }
 

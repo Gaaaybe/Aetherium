@@ -7,9 +7,10 @@ import {
   ModificationScope,
 } from '../../enterprise/entities/value-objects/applied-modification';
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryModificationsRepository } from '../test/in-memory-modifications-repository';
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryModificationsRepository } from '@test/repositories/in-memory-modifications-repository';
 import { CalculatePowerCostUseCase } from './calculate-power-cost';
+import { PowerCostCalculator } from '../../enterprise/services/power-cost-calculator';
 
 describe('CalculatePowerCostUseCase', () => {
   let sut: CalculatePowerCostUseCase;
@@ -19,7 +20,8 @@ describe('CalculatePowerCostUseCase', () => {
   beforeEach(() => {
     effectsRepository = new InMemoryEffectsRepository();
     modificationsRepository = new InMemoryModificationsRepository();
-    sut = new CalculatePowerCostUseCase(effectsRepository, modificationsRepository);
+    const powerCostCalculator = new PowerCostCalculator(effectsRepository, modificationsRepository);
+    sut = new CalculatePowerCostUseCase(powerCostCalculator);
   });
 
   it('should calculate cost for a simple effect without modifications', async () => {

@@ -6,8 +6,8 @@ import { Domain, DomainName } from '../../enterprise/entities/value-objects/doma
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
 import { GetPowerByIdUseCase } from './get-power-by-id';
 
 describe('GetPowerByIdUseCase', () => {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
 import { Power } from '../../enterprise/entities/power';
@@ -8,9 +8,13 @@ import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerArrayPowerList } from '../../enterprise/entities/watched-lists/power-array-power-list';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
-import { InMemoryEffectsRepository } from '../test/in-memory-effects-repository';
-import { InMemoryPowerArraysRepository } from '../test/in-memory-power-arrays-repository';
-import { InMemoryPowersRepository } from '../test/in-memory-powers-repository';
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
+import { InMemoryPowerArraysRepository } from '@test/repositories/in-memory-power-arrays-repository';
+import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
+import { DomainEvents } from '@/core/events/domain-events';
+import { OnPowerArrayMadePublic } from '../subscribers/on-power-array-made-public';
+import { OnPowerMadePublic } from '../subscribers/on-power-made-public';
 import { UpdatePowerArrayUseCase } from './update-power-array';
 
 describe('UpdatePowerArrayUseCase', () => {
@@ -18,12 +22,29 @@ describe('UpdatePowerArrayUseCase', () => {
   let powerArraysRepository: InMemoryPowerArraysRepository;
   let powersRepository: InMemoryPowersRepository;
   let effectsRepository: InMemoryEffectsRepository;
+  let peculiaritiesRepository: InMemoryPeculiaritiesRepository;
+  const userId = 'user-1';
 
   beforeEach(() => {
     powerArraysRepository = new InMemoryPowerArraysRepository();
     powersRepository = new InMemoryPowersRepository();
     effectsRepository = new InMemoryEffectsRepository();
-    sut = new UpdatePowerArrayUseCase(powerArraysRepository, powersRepository);
+    peculiaritiesRepository = new InMemoryPeculiaritiesRepository();
+
+    DomainEvents.clearHandlers();
+    DomainEvents.clearMarkedAggregates();
+    new OnPowerArrayMadePublic(powersRepository);
+    new OnPowerMadePublic(peculiaritiesRepository);
+
+    sut = new UpdatePowerArrayUseCase(
+      powerArraysRepository,
+      powersRepository,
+    );
+  });
+
+  afterEach(() => {
+    DomainEvents.clearHandlers();
+    DomainEvents.clearMarkedAggregates();
   });
 
   it('should update power array name', async () => {
@@ -53,6 +74,7 @@ describe('UpdatePowerArrayUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powersRepository.create(power);
@@ -66,12 +88,14 @@ describe('UpdatePowerArrayUseCase', () => {
       dominio: Domain.create({ name: DomainName.NATURAL }),
       powers: powersList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powerArraysRepository.create(powerArray);
 
     const result = await sut.execute({
       powerArrayId: powerArray.id.toString(),
+      userId,
       nome: 'Acervo Atualizado',
     });
 
@@ -109,6 +133,7 @@ describe('UpdatePowerArrayUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powersRepository.create(power);
@@ -122,12 +147,14 @@ describe('UpdatePowerArrayUseCase', () => {
       dominio: Domain.create({ name: DomainName.NATURAL }),
       powers: powersList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powerArraysRepository.create(powerArray);
 
     const result = await sut.execute({
       powerArrayId: powerArray.id.toString(),
+      userId,
       descricao: 'Descrição atualizada',
     });
 
@@ -165,6 +192,7 @@ describe('UpdatePowerArrayUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList1,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     const effectsList2 = new PowerEffectList();
@@ -177,6 +205,7 @@ describe('UpdatePowerArrayUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList2,
       custoTotal: PowerCost.create({ pda: 20, pe: 0, espacos: 20 }),
+      userId,
     });
 
     await powersRepository.create(power1);
@@ -191,12 +220,14 @@ describe('UpdatePowerArrayUseCase', () => {
       dominio: Domain.create({ name: DomainName.NATURAL }),
       powers: powersList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powerArraysRepository.create(powerArray);
 
     const result = await sut.execute({
       powerArrayId: powerArray.id.toString(),
+      userId,
       powerIds: [power1.id.toString(), power2.id.toString()],
     });
 
@@ -235,6 +266,7 @@ describe('UpdatePowerArrayUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powersRepository.create(power);
@@ -248,6 +280,7 @@ describe('UpdatePowerArrayUseCase', () => {
       dominio: Domain.create({ name: DomainName.NATURAL }),
       powers: powersList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powerArraysRepository.create(powerArray);
@@ -256,6 +289,7 @@ describe('UpdatePowerArrayUseCase', () => {
 
     const result = await sut.execute({
       powerArrayId: powerArray.id.toString(),
+      userId,
       parametrosBase: newParams,
     });
 
@@ -271,6 +305,7 @@ describe('UpdatePowerArrayUseCase', () => {
   it('should return error if power array not found', async () => {
     const result = await sut.execute({
       powerArrayId: 'acervo-inexistente',
+      userId,
       nome: 'Novo Nome',
     });
 
@@ -304,6 +339,7 @@ describe('UpdatePowerArrayUseCase', () => {
       parametros: PowerParameters.createDefault(),
       effects: effectsList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powersRepository.create(power);
@@ -317,12 +353,14 @@ describe('UpdatePowerArrayUseCase', () => {
       dominio: Domain.create({ name: DomainName.NATURAL }),
       powers: powersList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
+      userId,
     });
 
     await powerArraysRepository.create(powerArray);
 
     const result = await sut.execute({
       powerArrayId: powerArray.id.toString(),
+      userId,
       powerIds: ['poder-inexistente'],
     });
 

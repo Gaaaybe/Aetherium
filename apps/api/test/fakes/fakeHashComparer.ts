@@ -1,4 +1,4 @@
-import type { HashComparer } from '../../cryptography/hash-comparer';
+import type { HashComparer } from '@/domain/accounts/application/cryptography/hash-comparer';
 
 export class FakeHashComparer implements HashComparer {
   async compare(plain: string, hash: string): Promise<boolean> {

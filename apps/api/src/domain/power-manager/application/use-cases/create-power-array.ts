@@ -1,11 +1,13 @@
 import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
+import { DomainEvents } from '@/core/events/domain-events';
 import type { Power } from '../../enterprise/entities/power';
 import { PowerArray } from '../../enterprise/entities/power-array';
 import type { Domain } from '../../enterprise/entities/value-objects/domain';
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import type { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerArrayPowerList } from '../../enterprise/entities/watched-lists/power-array-power-list';
+import { InvalidVisibilityError } from './errors/invalid-visibility-error';
 import type { PowerArraysRepository } from '../repositories/power-arrays-repository';
 import type { PowersRepository } from '../repositories/powers-repository';
 
@@ -16,6 +18,8 @@ interface CreatePowerArrayUseCaseRequest {
   parametrosBase?: PowerParameters;
   powerIds: string[];
   notas?: string;
+  userId?: string;
+  isPublic?: boolean;
 }
 
 interface CreatePowerArrayUseCaseResponseData {
@@ -23,7 +27,7 @@ interface CreatePowerArrayUseCaseResponseData {
 }
 
 type CreatePowerArrayUseCaseResponse = Either<
-  ResourceNotFoundError,
+  ResourceNotFoundError | InvalidVisibilityError,
   CreatePowerArrayUseCaseResponseData
 >;
 
@@ -33,9 +37,16 @@ export class CreatePowerArrayUseCase {
     private powersRepository: PowersRepository,
   ) {}
 
-  async execute(request: CreatePowerArrayUseCaseRequest): Promise<CreatePowerArrayUseCaseResponse> {
-    const { nome, descricao, dominio, parametrosBase, powerIds, notas } = request;
-
+  async execute({
+    nome,
+    descricao,
+    dominio,
+    parametrosBase,
+    powerIds,
+    notas,
+    userId,
+    isPublic,
+  }: CreatePowerArrayUseCaseRequest): Promise<CreatePowerArrayUseCaseResponse> {
     const powers: Power[] = [];
     for (const powerId of powerIds) {
       const power = await this.powersRepository.findById(powerId);
@@ -45,39 +56,38 @@ export class CreatePowerArrayUseCase {
       powers.push(power);
     }
 
-    let totalPdA = 0;
-    let totalPE = 0;
-    let totalEspacos = 0;
-
-    for (const power of powers) {
-      totalPdA += power.custoTotal.pda;
-      totalPE += power.custoTotal.pe;
-      totalEspacos += power.custoTotal.espacos;
-    }
-
-    const custoTotal = PowerCost.create({
-      pda: totalPdA,
-      pe: totalPE,
-      espacos: totalEspacos,
-    });
+    const custoTotal = PowerCost.sum(powers.map((p) => p.custoTotal));
 
     const powersList = new PowerArrayPowerList();
     powersList.update(powers);
 
-    const powerArray = PowerArray.create({
-      nome,
-      descricao,
-      dominio,
-      parametrosBase,
-      powers: powersList,
-      custoTotal,
-      notas,
-    });
+    try {
+      let powerArray = PowerArray.create({
+        nome,
+        descricao,
+        dominio,
+        parametrosBase,
+        powers: powersList,
+        custoTotal,
+        notas,
+        userId,
+      });
 
-    await this.powerArraysRepository.create(powerArray);
+      if (isPublic) {
+        powerArray = powerArray.makePublic();
+      }
 
-    return right({
-      powerArray,
-    });
+      await this.powerArraysRepository.create(powerArray);
+      await DomainEvents.dispatchEventsForAggregate(powerArray.id);
+
+      return right({
+        powerArray,
+      });
+    } catch (error) {
+      if (error instanceof InvalidVisibilityError) {
+        return left(error);
+      }
+      throw error;
+    }
   }
 }

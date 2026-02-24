@@ -16,9 +16,7 @@ type GetPowerByIdUseCaseResponse = Either<ResourceNotFoundError, GetPowerByIdUse
 export class GetPowerByIdUseCase {
   constructor(private powersRepository: PowersRepository) {}
 
-  async execute(request: GetPowerByIdUseCaseRequest): Promise<GetPowerByIdUseCaseResponse> {
-    const { powerId } = request;
-
+  async execute({ powerId }: GetPowerByIdUseCaseRequest): Promise<GetPowerByIdUseCaseResponse> {
     const power = await this.powersRepository.findById(powerId);
 
     if (!power) {

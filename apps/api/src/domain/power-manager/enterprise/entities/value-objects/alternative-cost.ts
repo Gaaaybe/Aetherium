@@ -1,3 +1,5 @@
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
+
 export enum AlternativeCostType {
   PE = 'pe',
   PV = 'pv',
@@ -55,19 +57,19 @@ export class AlternativeCost {
 
   private static validate(props: AlternativeCostProps): void {
     if (props.quantidade <= 0) {
-      throw new Error('Quantidade de custo alternativo deve ser positiva');
+      throw new DomainValidationError('Quantidade de custo alternativo deve ser positiva', 'quantidade');
     }
 
     if (props.tipo === AlternativeCostType.ATRIBUTO && !props.atributo) {
-      throw new Error('Custo de atributo requer o nome do atributo');
+      throw new DomainValidationError('Custo de atributo requer o nome do atributo', 'atributo');
     }
 
     if (props.tipo === AlternativeCostType.ITEM && !props.itemId) {
-      throw new Error('Custo de item requer o ID do item');
+      throw new DomainValidationError('Custo de item requer o ID do item', 'itemId');
     }
 
     if (props.tipo === AlternativeCostType.MATERIAL && !props.descricao) {
-      throw new Error('Custo de material requer descrição');
+      throw new DomainValidationError('Custo de material requer descrição', 'descricao');
     }
   }
 

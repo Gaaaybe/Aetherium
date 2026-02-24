@@ -3,10 +3,10 @@ import { User } from '../../enterprise/entities/user';
 import { UserRole } from '../../enterprise/entities/value-objects/userRole';
 import { AuthenticateUserUseCase } from './authenticate-user';
 import { WrongCredentialsError } from './errors/wrong-credentials-error';
-import { FakeEncrypter } from './test/fakeEncrypter';
-import { FakeHashComparer } from './test/fakeHashComparer';
-import { FakeHashGenerator } from './test/fakeHashGenerator';
-import { InMemoryUsersRepository } from './test/inMemoryUsersRepository';
+import { FakeEncrypter } from '@test/fakes/fakeEncrypter';
+import { FakeHashComparer } from '@test/fakes/fakeHashComparer';
+import { FakeHashGenerator } from '@test/fakes/fakeHashGenerator';
+import { InMemoryUsersRepository } from '@test/repositories/inMemoryUsersRepository';
 
 let usersRepository: InMemoryUsersRepository;
 let hashComparer: FakeHashComparer;
@@ -54,7 +54,7 @@ describe('Authenticate User Use Case', () => {
       name: 'Master User',
       email: 'master@example.com',
       password: await hashGenerator.hash('123456'),
-      roles: [UserRole.MASTER],
+      roles: [UserRole.PLAYER, UserRole.MASTER],
     });
 
     await usersRepository.create(user);

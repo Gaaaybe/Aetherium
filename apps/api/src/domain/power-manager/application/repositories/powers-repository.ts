@@ -6,7 +6,8 @@ export interface PowersRepository {
   findMany(params: PaginationParams): Promise<Power[]>;
   findByUserId(userId: string, params: PaginationParams): Promise<Power[]>;
   findByDomain(domainName: string, params: PaginationParams): Promise<Power[]>;
-  findCustomPowers(params: PaginationParams): Promise<Power[]>;
+  findUserCreatedPowers(params: PaginationParams): Promise<Power[]>;
+  findPublic(params: PaginationParams): Promise<Power[]>;
   create(power: Power): Promise<void>;
   update(power: Power): Promise<void>;
   delete(id: string): Promise<void>;

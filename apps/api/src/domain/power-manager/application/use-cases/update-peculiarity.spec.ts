@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Peculiarity } from '../../enterprise/entities/peculiarity';
-import { InMemoryPeculiaritiesRepository } from '../test/in-memory-peculiarities-repository';
+import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
 import { UpdatePeculiarityUseCase } from './update-peculiarity';
 
 describe('UpdatePeculiarityUseCase', () => {
   let sut: UpdatePeculiarityUseCase;
   let peculiaritiesRepository: InMemoryPeculiaritiesRepository;
+  const userId = 'user-1';
 
   beforeEach(() => {
     peculiaritiesRepository = new InMemoryPeculiaritiesRepository();
@@ -14,7 +15,7 @@ describe('UpdatePeculiarityUseCase', () => {
 
   it('should update peculiarity name', async () => {
     const peculiarity = Peculiarity.create({
-      userId: 'user-1',
+      userId,
       nome: 'Nome Antigo',
       descricao: 'Descrição antiga com mais de dez caracteres',
       espiritual: true,
@@ -24,6 +25,7 @@ describe('UpdatePeculiarityUseCase', () => {
 
     const result = await sut.execute({
       peculiarityId: peculiarity.id.toString(),
+      userId,
       nome: 'Nome Atualizado',
     });
 
@@ -36,7 +38,7 @@ describe('UpdatePeculiarityUseCase', () => {
 
   it('should update peculiarity espiritual status', async () => {
     const peculiarity = Peculiarity.create({
-      userId: 'user-1',
+      userId,
       nome: 'Peculiaridade',
       descricao: 'Descrição com mais de dez caracteres',
       espiritual: true,
@@ -46,6 +48,7 @@ describe('UpdatePeculiarityUseCase', () => {
 
     const result = await sut.execute({
       peculiarityId: peculiarity.id.toString(),
+      userId,
       espiritual: false,
     });
 
@@ -58,6 +61,7 @@ describe('UpdatePeculiarityUseCase', () => {
   it('should return error if peculiarity not found', async () => {
     const result = await sut.execute({
       peculiarityId: 'inexistente',
+      userId,
       nome: 'Novo Nome',
     });
 
