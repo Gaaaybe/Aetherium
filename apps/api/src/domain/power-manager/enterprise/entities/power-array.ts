@@ -7,19 +7,12 @@ import type { PowerCost } from './value-objects/power-cost';
 import type { PowerParameters } from './value-objects/power-parameters';
 import { PowerArrayPowerList } from './watched-lists/power-array-power-list';
 
-export enum PowerArrayType {
-  ALTERNADO = 'ALTERNADO',
-  DINAMICO = 'DINAMICO',
-  NORMAL = 'NORMAL',
-}
-
 interface PowerArrayProps {
   nome: string;
   descricao: string;
   dominio: Domain;
   parametrosBase?: PowerParameters;
   powers: PowerArrayPowerList;
-  tipo: PowerArrayType;
   custoTotal: PowerCost;
   notas?: string;
   createdAt: Date;
@@ -47,10 +40,6 @@ export class PowerArray extends AggregateRoot<PowerArrayProps> {
     return this.props.powers;
   }
 
-  get tipo(): PowerArrayType {
-    return this.props.tipo;
-  }
-
   get custoTotal(): PowerCost {
     return this.props.custoTotal;
   }
@@ -65,14 +54,6 @@ export class PowerArray extends AggregateRoot<PowerArrayProps> {
 
   get updatedAt(): Date | undefined {
     return this.props.updatedAt;
-  }
-
-  isAlternado(): boolean {
-    return this.props.tipo === PowerArrayType.ALTERNADO;
-  }
-
-  isDinamico(): boolean {
-    return this.props.tipo === PowerArrayType.DINAMICO;
   }
 
   getPowerCount(): number {
@@ -204,17 +185,6 @@ export class PowerArray extends AggregateRoot<PowerArrayProps> {
     );
   }
 
-  updateTipo(tipo: PowerArrayType): PowerArray {
-    return new PowerArray(
-      {
-        ...this.props,
-        tipo,
-        updatedAt: new Date(),
-      },
-      this.id,
-    );
-  }
-
   updateCustoTotal(custoTotal: PowerCost): PowerArray {
     return new PowerArray(
       {
@@ -273,13 +243,12 @@ export class PowerArray extends AggregateRoot<PowerArrayProps> {
   }
 
   static create(
-    props: Optional<PowerArrayProps, 'tipo' | 'createdAt' | 'notas'>,
+    props: Optional<PowerArrayProps, 'createdAt' | 'notas'>,
     id?: UniqueEntityId,
   ): PowerArray {
     const arrayPower = new PowerArray(
       {
         ...props,
-        tipo: props.tipo ?? PowerArrayType.NORMAL,
         createdAt: props.createdAt ?? new Date(),
         notas: props.notas,
       },

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
 import { Power } from '../../enterprise/entities/power';
-import { PowerArray, PowerArrayType } from '../../enterprise/entities/power-array';
+import { PowerArray } from '../../enterprise/entities/power-array';
 import { Domain, DomainName } from '../../enterprise/entities/value-objects/domain';
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
@@ -122,7 +122,6 @@ describe('UpdatePowerArrayUseCase', () => {
       dominio: Domain.create({ name: DomainName.NATURAL }),
       powers: powersList,
       custoTotal: PowerCost.create({ pda: 10, pe: 0, espacos: 10 }),
-      tipo: PowerArrayType.NORMAL,
     });
 
     await powerArraysRepository.create(powerArray);
@@ -130,14 +129,12 @@ describe('UpdatePowerArrayUseCase', () => {
     const result = await sut.execute({
       powerArrayId: powerArray.id.toString(),
       descricao: 'Descrição atualizada',
-      tipo: PowerArrayType.ALTERNADO,
     });
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
       expect(result.value.powerArray.descricao).toBe('Descrição atualizada');
-      expect(result.value.powerArray.tipo).toBe(PowerArrayType.ALTERNADO);
-      expect(result.value.powerArray.isAlternado()).toBe(true);
+      expect(result.value.powerArray.nome).toBe('Acervo');
     }
   });
 

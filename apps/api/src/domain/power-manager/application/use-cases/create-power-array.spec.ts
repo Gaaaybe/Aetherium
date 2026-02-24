@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
 import { Power } from '../../enterprise/entities/power';
-import { PowerArrayType } from '../../enterprise/entities/power-array';
 import { Domain, DomainName } from '../../enterprise/entities/value-objects/domain';
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
@@ -118,17 +117,16 @@ describe('CreatePowerArrayUseCase', () => {
     await powersRepository.create(power);
 
     const result = await sut.execute({
-      nome: 'Acervo Alternado',
-      descricao: 'Poderes alternados',
+      nome: 'Meu Acervo de Poderes',
+      descricao: 'Conjunto de poderes naturais',
       dominio: Domain.create({ name: DomainName.NATURAL }),
       powerIds: [power.id.toString()],
-      tipo: PowerArrayType.ALTERNADO,
     });
 
     expect(result.isRight()).toBe(true);
     if (result.isRight()) {
-      expect(result.value.powerArray.tipo).toBe(PowerArrayType.ALTERNADO);
-      expect(result.value.powerArray.isAlternado()).toBe(true);
+      expect(result.value.powerArray.nome).toBe('Meu Acervo de Poderes');
+      expect(result.value.powerArray.powers.getItems()).toHaveLength(1);
     }
   });
 

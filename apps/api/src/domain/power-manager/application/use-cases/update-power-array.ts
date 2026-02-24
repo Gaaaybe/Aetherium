@@ -1,7 +1,7 @@
 import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
 import type { Power } from '../../enterprise/entities/power';
-import { PowerArray, type PowerArrayType } from '../../enterprise/entities/power-array';
+import { PowerArray } from '../../enterprise/entities/power-array';
 import type { Domain } from '../../enterprise/entities/value-objects/domain';
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import type { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
@@ -16,7 +16,6 @@ interface UpdatePowerArrayUseCaseRequest {
   dominio?: Domain;
   parametrosBase?: PowerParameters;
   powerIds?: string[];
-  tipo?: PowerArrayType;
   notas?: string;
 }
 
@@ -36,7 +35,7 @@ export class UpdatePowerArrayUseCase {
   ) {}
 
   async execute(request: UpdatePowerArrayUseCaseRequest): Promise<UpdatePowerArrayUseCaseResponse> {
-    const { powerArrayId, nome, descricao, dominio, parametrosBase, powerIds, tipo, notas } =
+    const { powerArrayId, nome, descricao, dominio, parametrosBase, powerIds, notas } =
       request;
 
     const existingPowerArray = await this.powerArraysRepository.findById(powerArrayId);
@@ -86,7 +85,6 @@ export class UpdatePowerArrayUseCase {
         parametrosBase: parametrosBase ?? existingPowerArray.parametrosBase,
         powers: newPowersList,
         custoTotal: newCustoTotal,
-        tipo: tipo ?? existingPowerArray.tipo,
         notas: notas ?? existingPowerArray.notas,
         createdAt: existingPowerArray.createdAt,
         updatedAt: new Date(),

@@ -1,7 +1,7 @@
 import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
 import type { Power } from '../../enterprise/entities/power';
-import { PowerArray, type PowerArrayType } from '../../enterprise/entities/power-array';
+import { PowerArray } from '../../enterprise/entities/power-array';
 import type { Domain } from '../../enterprise/entities/value-objects/domain';
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import type { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
@@ -15,7 +15,6 @@ interface CreatePowerArrayUseCaseRequest {
   dominio: Domain;
   parametrosBase?: PowerParameters;
   powerIds: string[];
-  tipo?: PowerArrayType;
   notas?: string;
 }
 
@@ -35,7 +34,7 @@ export class CreatePowerArrayUseCase {
   ) {}
 
   async execute(request: CreatePowerArrayUseCaseRequest): Promise<CreatePowerArrayUseCaseResponse> {
-    const { nome, descricao, dominio, parametrosBase, powerIds, tipo, notas } = request;
+    const { nome, descricao, dominio, parametrosBase, powerIds, notas } = request;
 
     const powers: Power[] = [];
     for (const powerId of powerIds) {
@@ -72,7 +71,6 @@ export class CreatePowerArrayUseCase {
       parametrosBase,
       powers: powersList,
       custoTotal,
-      tipo,
       notas,
     });
 
