@@ -28,6 +28,8 @@ model User {
   updatedAt DateTime?  @updatedAt
 
   peculiarities Peculiarity[]
+  powers        Power[]
+  powerArrays   PowerArray[]
 
   @@map("users")
 }
@@ -42,6 +44,7 @@ model Peculiarity {
   nome        String
   descricao   String
   espiritual  Boolean
+  isPublic    Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt
 
@@ -50,6 +53,8 @@ model Peculiarity {
   powerArraysWithDomain PowerArray[] @relation("PeculiarityDomainPowerArrays")
 
   @@index([userId])
+  @@index([isPublic])
+  @@index([userId, isPublic])
   @@map("peculiarities")
 }
 
@@ -69,9 +74,10 @@ enum DomainName {
 
 model Power {
   id          String    @id @default(uuid())
+  userId      String?   // NULL = poder oficial/sistema
   nome        String
   descricao   String
-  custom      Boolean   @default(false)
+  isPublic    Boolean   @default(false)
   notas       String?
 
   domainName             DomainName
@@ -95,20 +101,25 @@ model Power {
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
+  user             User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
   peculiarity      Peculiarity?    @relation("PeculiarityDomainPowers", fields: [domainPeculiarId], references: [id], onDelete: Restrict)
   appliedEffects   AppliedEffect[]
   powerArrayPowers PowerArrayPower[]
 
+  @@index([userId])
+  @@index([isPublic])
+  @@index([userId, isPublic])
   @@index([domainName])
   @@index([domainPeculiarId])
-  @@index([custom])
   @@map("powers")
 }
 
 model PowerArray {
   id          String         @id @default(uuid())
+  userId      String?        // NULL = acervo oficial/sistema
   nome        String
   descricao   String
+  isPublic    Boolean        @default(false)
   notas       String?
 
   domainName             DomainName
@@ -126,9 +137,13 @@ model PowerArray {
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
+  user             User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
   peculiarity      Peculiarity?      @relation("PeculiarityDomainPowerArrays", fields: [domainPeculiarId], references: [id], onDelete: Restrict)
   powerArrayPowers PowerArrayPower[]
 
+  @@index([userId])
+  @@index([isPublic])
+  @@index([userId, isPublic])
   @@index([domainName])
   @@index([domainPeculiarId])
   @@map("power_arrays")
