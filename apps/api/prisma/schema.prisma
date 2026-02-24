@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,12 +9,256 @@ datasource db {
   provider = "postgresql"
 }
 
+// ============================================
+// BOUNDED CONTEXT: ACCOUNTS
+// ============================================
+
+enum UserRole {
+  PLAYER
+  MASTER
+}
+
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String     @id @default(uuid())
+  email     String     @unique
   name      String
   password  String
-  createdAt DateTime @default(now())
+  roles     UserRole[] @default([PLAYER])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime?  @updatedAt
+
+  peculiarities Peculiarity[]
 
   @@map("users")
+}
+
+// ============================================
+// BOUNDED CONTEXT: POWER-MANAGER
+// ============================================
+
+model Peculiarity {
+  id          String    @id @default(uuid())
+  userId      String
+  nome        String
+  descricao   String
+  espiritual  Boolean
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  powersWithDomain Power[] @relation("PeculiarityDomainPowers")
+  powerArraysWithDomain PowerArray[] @relation("PeculiarityDomainPowerArrays")
+
+  @@index([userId])
+  @@map("peculiarities")
+}
+
+enum DomainName {
+  NATURAL
+  SAGRADO
+  SACRILEGIO
+  PSIQUICO
+  CIENTIFICO
+  PECULIAR
+  ARMA_BRANCA
+  ARMA_FOGO
+  ARMA_TENSAO
+  ARMA_EXPLOSIVA
+  ARMA_TECNOLOGICA
+}
+
+model Power {
+  id          String    @id @default(uuid())
+  nome        String
+  descricao   String
+  custom      Boolean   @default(false)
+  notas       String?
+
+  domainName             DomainName
+  domainAreaConhecimento String?
+  domainPeculiarId       String?
+
+  parametrosAcao   Int @default(2)
+  parametrosAlcance Int @default(1)
+  parametrosDuracao Int @default(0)
+
+  custoTotalPda     Int @default(0)
+  custoTotalPe      Int @default(0)
+  custoTotalEspacos Int @default(0)
+
+  custoAlternativoTipo       String?
+  custoAlternativoQuantidade Int?
+  custoAlternativoDescricao  String?
+  custoAlternativoAtributo   String?
+  custoAlternativoItemId     String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  peculiarity      Peculiarity?    @relation("PeculiarityDomainPowers", fields: [domainPeculiarId], references: [id], onDelete: Restrict)
+  appliedEffects   AppliedEffect[]
+  powerArrayPowers PowerArrayPower[]
+
+  @@index([domainName])
+  @@index([domainPeculiarId])
+  @@index([custom])
+  @@map("powers")
+}
+
+model PowerArray {
+  id          String         @id @default(uuid())
+  nome        String
+  descricao   String
+  notas       String?
+
+  domainName             DomainName
+  domainAreaConhecimento String?
+  domainPeculiarId       String?
+
+  parametrosBaseAcao    Int?
+  parametrosBaseAlcance Int?
+  parametrosBaseDuracao Int?
+
+  custoTotalPda     Int @default(0)
+  custoTotalPe      Int @default(0)
+  custoTotalEspacos Int @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
+
+  peculiarity      Peculiarity?      @relation("PeculiarityDomainPowerArrays", fields: [domainPeculiarId], references: [id], onDelete: Restrict)
+  powerArrayPowers PowerArrayPower[]
+
+  @@index([domainName])
+  @@index([domainPeculiarId])
+  @@map("power_arrays")
+}
+
+
+enum ModificationScope {
+  GLOBAL
+  LOCAL
+}
+
+enum ModificationType {
+  EXTRA
+  FALHA
+}
+
+model AppliedEffect {
+  id              String  @id @default(uuid())
+  powerId         String
+  effectBaseId    String
+  grau            Int
+  configuracaoId  String?
+  inputValue      String?
+  nota            String?
+  posicao         Int     @default(0)
+
+  custoPda     Int @default(0)
+  custoPe      Int @default(0)
+  custoEspacos Int @default(0)
+
+  appliedModifications AppliedModification[]
+
+  power      Power       @relation(fields: [powerId], references: [id], onDelete: Cascade)
+  effectBase EffectBase  @relation(fields: [effectBaseId], references: [id], onDelete: Restrict)
+
+  @@index([powerId])
+  @@index([effectBaseId])
+  @@map("applied_effects")
+}
+
+model AppliedModification {
+  id                  String            @id @default(uuid())
+  appliedEffectId     String
+  modificationBaseId  String
+  scope               ModificationScope
+  grau                Int               @default(1)
+  parametros          Json?
+  nota                String?
+  posicao             Int               @default(0)
+
+  appliedEffect    AppliedEffect    @relation(fields: [appliedEffectId], references: [id], onDelete: Cascade)
+  modificationBase ModificationBase @relation(fields: [modificationBaseId], references: [id], onDelete: Restrict)
+
+  @@index([appliedEffectId])
+  @@index([modificationBaseId])
+  @@index([scope])
+  @@map("applied_modifications")
+}
+
+model PowerArrayPower {
+  id           String   @id @default(uuid())
+  powerArrayId String
+  powerId      String
+  posicao      Int      @default(0)
+
+  powerArray PowerArray @relation(fields: [powerArrayId], references: [id], onDelete: Cascade)
+  power      Power      @relation(fields: [powerId], references: [id], onDelete: Cascade)
+
+  @@unique([powerArrayId, powerId])
+  @@index([powerArrayId])
+  @@index([powerId])
+  @@map("power_array_powers")
+}
+
+model EffectBase {
+  id               String   @id
+  nome             String
+  custoBase        Int
+  descricao        String
+  categorias       String[]
+  exemplos         String?
+
+  parametrosPadraoAcao    Int @default(2)
+  parametrosPadraoAlcance Int @default(1)
+  parametrosPadraoDuracao Int @default(0)
+
+  requerInput      Boolean @default(false)
+  tipoInput        String?
+  labelInput       String?
+  opcoesInput      String[] @default([])
+  placeholderInput String?
+
+  // Contém: tipo, label, opcoes[] {id, nome, modificadorCusto, grauMinimo, descricao, custoProgressivo}
+  configuracoes Json?
+
+  custom Boolean @default(false)
+
+  appliedEffects AppliedEffect[]
+
+  @@index([custom])
+  @@map("effect_bases")
+}
+
+model ModificationBase {
+  id            String   @id
+  nome          String
+  tipo          ModificationType
+  custoFixo     Int
+  custoPorGrau  Int
+  descricao     String
+  categoria     String
+  observacoes   String?
+  detalhesGrau  String?
+
+  requerParametros Boolean  @default(false)
+  tipoParametro    String?
+  opcoes           String[] @default([])
+  grauMinimo       Int?
+  grauMaximo       Int?
+  placeholder      String?
+
+  // Contém: tipo, label, opcoes[] {id, nome, modificadorCusto, modificadorCustoFixo, descricao}
+  configuracoes Json?
+
+  custom Boolean @default(false)
+
+  appliedModifications AppliedModification[]
+
+  @@index([tipo])
+  @@index([categoria])
+  @@index([custom])
+  @@map("modification_bases")
 }
