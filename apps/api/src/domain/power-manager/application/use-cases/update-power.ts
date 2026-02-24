@@ -2,16 +2,16 @@ import { type Either, left, right } from '@/core/either';
 import { NotAllowedError } from '@/core/errors/not-allowed-error';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
 import { DomainEvents } from '@/core/events/domain-events';
-import type { Power } from '../../enterprise/entities/power';
 import type { AppliedEffect } from '../../enterprise/entities/applied-effect';
+import type { Power } from '../../enterprise/entities/power';
 import type { AlternativeCost } from '../../enterprise/entities/value-objects/alternative-cost';
 import type { AppliedModification } from '../../enterprise/entities/value-objects/applied-modification';
 import type { Domain } from '../../enterprise/entities/value-objects/domain';
 import type { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
-import { InvalidVisibilityError } from './errors/invalid-visibility-error';
 import type { PowerCostCalculator } from '../../enterprise/services/power-cost-calculator';
 import type { PeculiaritiesRepository } from '../repositories/peculiarities-repository';
 import type { PowersRepository } from '../repositories/powers-repository';
+import { InvalidVisibilityError } from './errors/invalid-visibility-error';
 
 interface UpdatePowerUseCaseRequest {
   powerId: string;
@@ -66,7 +66,9 @@ export class UpdatePowerUseCase {
       return left(new NotAllowedError());
     }
 
-    let newCustoTotal: undefined | import('../../enterprise/entities/value-objects/power-cost').PowerCost;
+    let newCustoTotal:
+      | undefined
+      | import('../../enterprise/entities/value-objects/power-cost').PowerCost;
 
     if (effects !== undefined || globalModifications !== undefined) {
       const costResult = await this.powerCostCalculator.calculate({

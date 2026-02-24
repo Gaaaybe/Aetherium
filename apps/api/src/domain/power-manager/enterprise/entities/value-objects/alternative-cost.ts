@@ -57,7 +57,10 @@ export class AlternativeCost {
 
   private static validate(props: AlternativeCostProps): void {
     if (props.quantidade <= 0) {
-      throw new DomainValidationError('Quantidade de custo alternativo deve ser positiva', 'quantidade');
+      throw new DomainValidationError(
+        'Quantidade de custo alternativo deve ser positiva',
+        'quantidade',
+      );
     }
 
     if (props.tipo === AlternativeCostType.ATRIBUTO && !props.atributo) {

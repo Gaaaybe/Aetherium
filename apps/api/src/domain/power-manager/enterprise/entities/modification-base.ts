@@ -1,6 +1,6 @@
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import { Entity } from '@/core/entities/entity';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { Optional } from '@/core/types/optional';
 
 export enum ModificationType {
@@ -200,12 +200,18 @@ export class ModificationBase extends Entity<ModificationBaseProps> {
     }
 
     if (Math.abs(props.custoPorGrau) > 20) {
-      throw new DomainValidationError('Custo por grau absoluto não pode exceder 20', 'custoPorGrau');
+      throw new DomainValidationError(
+        'Custo por grau absoluto não pode exceder 20',
+        'custoPorGrau',
+      );
     }
 
     if (props.requerParametros) {
       if (!props.tipoParametro) {
-        throw new DomainValidationError('Modificação que requer parâmetros deve especificar o tipo', 'tipoParametro');
+        throw new DomainValidationError(
+          'Modificação que requer parâmetros deve especificar o tipo',
+          'tipoParametro',
+        );
       }
 
       if (
@@ -230,17 +236,26 @@ export class ModificationBase extends Entity<ModificationBaseProps> {
 
     if (props.grauMinimo !== undefined && props.grauMaximo !== undefined) {
       if (props.grauMinimo > props.grauMaximo) {
-        throw new DomainValidationError('grauMinimo não pode ser maior que grauMaximo', 'grauMinimo');
+        throw new DomainValidationError(
+          'grauMinimo não pode ser maior que grauMaximo',
+          'grauMinimo',
+        );
       }
 
       if (props.grauMinimo < 0 || props.grauMaximo < 0) {
-        throw new DomainValidationError('grauMinimo e grauMaximo devem ser não-negativos', 'grauMinimo');
+        throw new DomainValidationError(
+          'grauMinimo e grauMaximo devem ser não-negativos',
+          'grauMinimo',
+        );
       }
     }
 
     if (props.configuracoes) {
       if (props.configuracoes.opcoes.length === 0) {
-        throw new DomainValidationError('Configurações devem ter pelo menos uma opção', 'configuracoes');
+        throw new DomainValidationError(
+          'Configurações devem ter pelo menos uma opção',
+          'configuracoes',
+        );
       }
 
       for (const opcao of props.configuracoes.opcoes) {

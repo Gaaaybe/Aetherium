@@ -15,9 +15,7 @@ type FetchPowersUseCaseResponse = Either<null, FetchPowersUseCaseResponseData>;
 export class FetchPowersUseCase {
   constructor(private powersRepository: PowersRepository) {}
 
-  async execute({
-    page,
-  }: FetchPowersUseCaseRequest): Promise<FetchPowersUseCaseResponse> {
+  async execute({ page }: FetchPowersUseCaseRequest): Promise<FetchPowersUseCaseResponse> {
     const powers = await this.powersRepository.findPublic({ page });
 
     return right({

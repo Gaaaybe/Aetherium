@@ -1,6 +1,6 @@
+import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Peculiarity } from '../../enterprise/entities/peculiarity';
-import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
 import { UpdatePeculiarityUseCase } from './update-peculiarity';
 
 describe('UpdatePeculiarityUseCase', () => {

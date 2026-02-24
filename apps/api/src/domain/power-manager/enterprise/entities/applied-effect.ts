@@ -1,6 +1,6 @@
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import { Entity } from '@/core/entities/entity';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { Optional } from '@/core/types/optional';
 import type { AppliedModification, ModificationScope } from './value-objects/applied-modification';
 import type { PowerCost } from './value-objects/power-cost';

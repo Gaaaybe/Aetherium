@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
 import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { CreatePeculiarityUseCase } from './create-peculiarity';
 
 describe('CreatePeculiarityUseCase', () => {

@@ -1,5 +1,5 @@
-import type { ModificationBase } from '@/domain/power-manager/enterprise/entities/modification-base';
 import type { ModificationsRepository } from '@/domain/power-manager/application/repositories/modifications-repository';
+import type { ModificationBase } from '@/domain/power-manager/enterprise/entities/modification-base';
 
 export class InMemoryModificationsRepository implements ModificationsRepository {
   public items: ModificationBase[] = [];

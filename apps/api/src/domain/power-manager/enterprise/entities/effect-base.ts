@@ -1,6 +1,6 @@
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import { Entity } from '@/core/entities/entity';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { Optional } from '@/core/types/optional';
 import { PowerParameters } from './value-objects/power-parameters';
 
@@ -155,7 +155,10 @@ export class EffectBase extends Entity<EffectBaseProps> {
 
     if (props.requerInput) {
       if (!props.tipoInput) {
-        throw new DomainValidationError('Efeito que requer input deve especificar o tipo', 'tipoInput');
+        throw new DomainValidationError(
+          'Efeito que requer input deve especificar o tipo',
+          'tipoInput',
+        );
       }
       if (!props.labelInput) {
         throw new DomainValidationError('Efeito que requer input deve ter uma label', 'labelInput');
@@ -163,14 +166,20 @@ export class EffectBase extends Entity<EffectBaseProps> {
 
       if (props.tipoInput === EffectInputType.SELECT) {
         if (!props.opcoesInput || props.opcoesInput.length === 0) {
-          throw new DomainValidationError('Efeito com input tipo "select" deve ter opções', 'opcoesInput');
+          throw new DomainValidationError(
+            'Efeito com input tipo "select" deve ter opções',
+            'opcoesInput',
+          );
         }
       }
     }
 
     if (props.configuracoes) {
       if (props.configuracoes.opcoes.length === 0) {
-        throw new DomainValidationError('Configurações devem ter pelo menos uma opção', 'configuracoes');
+        throw new DomainValidationError(
+          'Configurações devem ter pelo menos uma opção',
+          'configuracoes',
+        );
       }
 
       for (const opcao of props.configuracoes.opcoes) {

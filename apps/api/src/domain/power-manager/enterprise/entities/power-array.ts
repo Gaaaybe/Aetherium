@@ -1,12 +1,12 @@
 import { OwnableEntity } from '@/core/entities/ownable-entity';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { Optional } from '@/core/types/optional';
 import { PowerArrayMadePublicEvent } from '../events/power-array-made-public-event';
 import type { Domain } from './value-objects/domain';
 import type { PowerCost } from './value-objects/power-cost';
 import type { PowerParameters } from './value-objects/power-parameters';
-import { PowerArrayPowerList } from './watched-lists/power-array-power-list';
+import type { PowerArrayPowerList } from './watched-lists/power-array-power-list';
 
 interface PowerArrayProps {
   userId?: string;
@@ -96,7 +96,10 @@ export class PowerArray extends OwnableEntity<PowerArrayProps> {
 
   makePublic(): PowerArray {
     if (this.isOfficial()) {
-      throw new DomainValidationError('Acervos oficiais não podem ser tornados públicos', 'isPublic');
+      throw new DomainValidationError(
+        'Acervos oficiais não podem ser tornados públicos',
+        'isPublic',
+      );
     }
 
     const privatePowerIds = this.props.powers
@@ -120,7 +123,10 @@ export class PowerArray extends OwnableEntity<PowerArrayProps> {
 
   makePrivate(): PowerArray {
     if (this.isOfficial()) {
-      throw new DomainValidationError('Acervos oficiais não podem ser tornados privados', 'isPublic');
+      throw new DomainValidationError(
+        'Acervos oficiais não podem ser tornados privados',
+        'isPublic',
+      );
     }
 
     return new PowerArray(
@@ -160,11 +166,17 @@ export class PowerArray extends OwnableEntity<PowerArrayProps> {
     const allSameDomain = powerItems.every((power) => power.dominio.equals(firstDomain));
 
     if (!allSameDomain) {
-      throw new DomainValidationError('Todos os poderes de um acervo devem ter o mesmo domínio', 'dominio');
+      throw new DomainValidationError(
+        'Todos os poderes de um acervo devem ter o mesmo domínio',
+        'dominio',
+      );
     }
 
     if (!props.dominio.equals(firstDomain)) {
-      throw new DomainValidationError('O domínio do acervo deve ser igual ao domínio dos poderes', 'dominio');
+      throw new DomainValidationError(
+        'O domínio do acervo deve ser igual ao domínio dos poderes',
+        'dominio',
+      );
     }
   }
 

@@ -9,10 +9,7 @@ export class OnPowerMadePublic {
   }
 
   setupSubscriptions(): void {
-    DomainEvents.register(
-      this.publishReferencedPeculiarity.bind(this),
-      PowerMadePublicEvent.name,
-    );
+    DomainEvents.register(this.publishReferencedPeculiarity.bind(this), PowerMadePublicEvent.name);
   }
 
   private async publishReferencedPeculiarity(event: DomainEvent): Promise<void> {

@@ -9,10 +9,10 @@ import type { Domain } from '../../enterprise/entities/value-objects/domain';
 import type { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
 import { PowerGlobalModificationList } from '../../enterprise/entities/watched-lists/power-global-modification-list';
-import { InvalidVisibilityError } from './errors/invalid-visibility-error';
 import type { PowerCostCalculator } from '../../enterprise/services/power-cost-calculator';
 import type { PeculiaritiesRepository } from '../repositories/peculiarities-repository';
 import type { PowersRepository } from '../repositories/powers-repository';
+import { InvalidVisibilityError } from './errors/invalid-visibility-error';
 
 interface CreatePowerUseCaseRequest {
   userId?: string;

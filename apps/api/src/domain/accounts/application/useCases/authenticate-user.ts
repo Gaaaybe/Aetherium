@@ -1,7 +1,7 @@
 import { type Either, left, right } from '@/core/either';
 import type { Encrypter } from '../cryptography/encrypter';
 import type { HashComparer } from '../cryptography/hash-comparer';
-import type { UsersRepository } from '../repositories/usersRepository';
+import type { UsersRepository } from '../repositories/users-repository';
 import { WrongCredentialsError } from './errors/wrong-credentials-error';
 
 interface AuthenticateUserUseCaseRequest {

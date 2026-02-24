@@ -1,4 +1,3 @@
-
 export abstract class ValueObjectList<T> {
   private currentItems: T[];
   private initial: T[];

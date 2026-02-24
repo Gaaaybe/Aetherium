@@ -1,3 +1,6 @@
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryPowerArraysRepository } from '@test/repositories/in-memory-power-arrays-repository';
+import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
@@ -8,9 +11,6 @@ import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerArrayPowerList } from '../../enterprise/entities/watched-lists/power-array-power-list';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
-import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
-import { InMemoryPowerArraysRepository } from '@test/repositories/in-memory-power-arrays-repository';
-import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
 import { DeletePowerArrayUseCase } from './delete-power-array';
 
 describe('DeletePowerArrayUseCase', () => {

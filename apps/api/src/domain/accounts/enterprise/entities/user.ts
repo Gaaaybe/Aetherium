@@ -1,6 +1,6 @@
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import { Entity } from '@/core/entities/entity';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { Optional } from '@/core/types/optional';
 import { UserRole } from './value-objects/userRole';
 
@@ -96,7 +96,10 @@ export class User extends Entity<UserProps> {
     }
 
     if (props.password.length < 6) {
-      throw new DomainValidationError('Senha do usuário deve ter no mínimo 6 caracteres', 'password');
+      throw new DomainValidationError(
+        'Senha do usuário deve ter no mínimo 6 caracteres',
+        'password',
+      );
     }
 
     if (!props.roles || !props.roles.includes(UserRole.PLAYER)) {

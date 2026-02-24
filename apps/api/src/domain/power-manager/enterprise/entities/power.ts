@@ -1,7 +1,8 @@
 import { OwnableEntity } from '@/core/entities/ownable-entity';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { Optional } from '@/core/types/optional';
+import { PowerMadePublicEvent } from '../events/power-made-public-event';
 import type { AppliedEffect } from './applied-effect';
 import type { AlternativeCost } from './value-objects/alternative-cost';
 import type { AppliedModification } from './value-objects/applied-modification';
@@ -10,7 +11,6 @@ import type { PowerCost } from './value-objects/power-cost';
 import type { PowerParameters } from './value-objects/power-parameters';
 import { PowerEffectList } from './watched-lists/power-effect-list';
 import { PowerGlobalModificationList } from './watched-lists/power-global-modification-list';
-import { PowerMadePublicEvent } from '../events/power-made-public-event';
 
 interface PowerProps {
   userId?: string;
@@ -83,7 +83,10 @@ export class Power extends OwnableEntity<PowerProps> {
 
   makePublic(): Power {
     if (this.isOfficial()) {
-      throw new DomainValidationError('Poderes oficiais não podem ser tornados públicos', 'isPublic');
+      throw new DomainValidationError(
+        'Poderes oficiais não podem ser tornados públicos',
+        'isPublic',
+      );
     }
 
     const power = new Power(
@@ -102,7 +105,10 @@ export class Power extends OwnableEntity<PowerProps> {
 
   makePrivate(): Power {
     if (this.isOfficial()) {
-      throw new DomainValidationError('Poderes oficiais não podem ser tornados privados', 'isPublic');
+      throw new DomainValidationError(
+        'Poderes oficiais não podem ser tornados privados',
+        'isPublic',
+      );
     }
 
     return new Power(
@@ -189,12 +195,18 @@ export class Power extends OwnableEntity<PowerProps> {
     }
 
     if (effectItems.length > 20) {
-      throw new DomainValidationError('Um poder não pode ter mais de 20 efeitos vinculados', 'effects');
+      throw new DomainValidationError(
+        'Um poder não pode ter mais de 20 efeitos vinculados',
+        'effects',
+      );
     }
 
     const globalModItems = props.globalModifications.getItems();
     if (globalModItems.length > 50) {
-      throw new DomainValidationError('Um poder não pode ter mais de 50 modificações globais', 'globalModifications');
+      throw new DomainValidationError(
+        'Um poder não pode ter mais de 50 modificações globais',
+        'globalModifications',
+      );
     }
   }
 
@@ -219,7 +231,7 @@ export class Power extends OwnableEntity<PowerProps> {
   }
 
   static createOfficial(
-    props: Omit<PowerProps, 'userId' | 'isPublic' | 'createdAt'>,
+    props: Omit<PowerProps, 'userId' | 'isPublic' | 'createdAt' | 'notas' | 'globalModifications' | 'updatedAt'> & Partial<Pick<PowerProps, 'notas' | 'globalModifications'>>,
     id?: UniqueEntityId,
   ): Power {
     return Power.create(

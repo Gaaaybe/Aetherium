@@ -1,10 +1,10 @@
 import { type Either, left, right } from '@/core/either';
 import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
+import type { EffectsRepository } from '../../application/repositories/effects-repository';
+import type { ModificationsRepository } from '../../application/repositories/modifications-repository';
 import type { AppliedEffect } from '../entities/applied-effect';
 import type { AppliedModification } from '../entities/value-objects/applied-modification';
 import { PowerCost } from '../entities/value-objects/power-cost';
-import type { EffectsRepository } from '../../application/repositories/effects-repository';
-import type { ModificationsRepository } from '../../application/repositories/modifications-repository';
 
 export interface PowerCostCalculationResult {
   custoTotal: PowerCost;
@@ -25,7 +25,9 @@ export class PowerCostCalculator {
   async calculate({
     effects,
     globalModifications = [],
-  }: PowerCostCalculationInput): Promise<Either<ResourceNotFoundError, PowerCostCalculationResult>> {
+  }: PowerCostCalculationInput): Promise<
+    Either<ResourceNotFoundError, PowerCostCalculationResult>
+  > {
     const custoPorEfeito = new Map<string, PowerCost>();
     let totalPdA = 0;
     let totalPE = 0;

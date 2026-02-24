@@ -1,4 +1,9 @@
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
+import { InMemoryPowerArraysRepository } from '@test/repositories/in-memory-power-arrays-repository';
+import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { DomainEvents } from '@/core/events/domain-events';
 import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
 import { Power } from '../../enterprise/entities/power';
@@ -8,11 +13,6 @@ import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerArrayPowerList } from '../../enterprise/entities/watched-lists/power-array-power-list';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
-import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
-import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
-import { InMemoryPowerArraysRepository } from '@test/repositories/in-memory-power-arrays-repository';
-import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
-import { DomainEvents } from '@/core/events/domain-events';
 import { OnPowerArrayMadePublic } from '../subscribers/on-power-array-made-public';
 import { OnPowerMadePublic } from '../subscribers/on-power-made-public';
 import { UpdatePowerArrayUseCase } from './update-power-array';
@@ -36,10 +36,7 @@ describe('UpdatePowerArrayUseCase', () => {
     new OnPowerArrayMadePublic(powersRepository);
     new OnPowerMadePublic(peculiaritiesRepository);
 
-    sut = new UpdatePowerArrayUseCase(
-      powerArraysRepository,
-      powersRepository,
-    );
+    sut = new UpdatePowerArrayUseCase(powerArraysRepository, powersRepository);
   });
 
   afterEach(() => {

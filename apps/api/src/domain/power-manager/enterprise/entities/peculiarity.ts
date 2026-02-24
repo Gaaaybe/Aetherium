@@ -1,6 +1,6 @@
 import { OwnableEntity } from '@/core/entities/ownable-entity';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { UniqueEntityId } from '@/core/entities/unique-entity-ts';
+import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import type { Optional } from '@/core/types/optional';
 
 interface PeculiarityProps {
@@ -42,11 +42,7 @@ export class Peculiarity extends OwnableEntity<PeculiarityProps> {
     return this.props.updatedAt;
   }
 
-  update(partial: {
-    nome?: string;
-    descricao?: string;
-    espiritual?: boolean;
-  }): Peculiarity {
+  update(partial: { nome?: string; descricao?: string; espiritual?: boolean }): Peculiarity {
     return Peculiarity.create(
       {
         userId: this.props.userId,
@@ -93,11 +89,17 @@ export class Peculiarity extends OwnableEntity<PeculiarityProps> {
     }
 
     if (props.nome.length < 3) {
-      throw new DomainValidationError('Nome da peculiaridade deve ter no mínimo 3 caracteres', 'nome');
+      throw new DomainValidationError(
+        'Nome da peculiaridade deve ter no mínimo 3 caracteres',
+        'nome',
+      );
     }
 
     if (props.nome.length > 100) {
-      throw new DomainValidationError('Nome da peculiaridade deve ter no máximo 100 caracteres', 'nome');
+      throw new DomainValidationError(
+        'Nome da peculiaridade deve ter no máximo 100 caracteres',
+        'nome',
+      );
     }
 
     if (!props.descricao || props.descricao.trim() === '') {
@@ -105,11 +107,17 @@ export class Peculiarity extends OwnableEntity<PeculiarityProps> {
     }
 
     if (props.descricao.length < 10) {
-      throw new DomainValidationError('Descrição da peculiaridade deve ter no mínimo 10 caracteres', 'descricao');
+      throw new DomainValidationError(
+        'Descrição da peculiaridade deve ter no mínimo 10 caracteres',
+        'descricao',
+      );
     }
 
     if (props.descricao.length > 500) {
-      throw new DomainValidationError('Descrição da peculiaridade deve ter no máximo 500 caracteres', 'descricao');
+      throw new DomainValidationError(
+        'Descrição da peculiaridade deve ter no máximo 500 caracteres',
+        'descricao',
+      );
     }
 
     if (typeof props.espiritual !== 'boolean') {

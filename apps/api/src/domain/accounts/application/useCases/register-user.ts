@@ -3,7 +3,7 @@ import { AlreadyExistsError } from '@/core/errors/alreadyExistsError';
 import { User } from '../../enterprise/entities/user';
 import { UserRole } from '../../enterprise/entities/value-objects/userRole';
 import type { HashGenerator } from '../cryptography/hash-generator';
-import type { UsersRepository } from '../repositories/usersRepository';
+import type { UsersRepository } from '../repositories/users-repository';
 
 interface RegisterUserUseCaseRequest {
   name: string;
@@ -32,9 +32,8 @@ export class RegisterUserUseCase {
   }: RegisterUserUseCaseRequest): Promise<RegisterUserUseCaseResponse> {
     const passwordHash = await this.hashGenerator.hash(password);
 
-    const roles: UserRole[] = masterConfirm === true
-      ? [UserRole.PLAYER, UserRole.MASTER]
-      : [UserRole.PLAYER];
+    const roles: UserRole[] =
+      masterConfirm === true ? [UserRole.PLAYER, UserRole.MASTER] : [UserRole.PLAYER];
 
     const userWithSameEmail = await this.usersRepository.findByEmail(email);
     if (userWithSameEmail) {

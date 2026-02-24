@@ -1,12 +1,12 @@
+import { FakeEncrypter } from '@test/fakes/fakeEncrypter';
+import { FakeHashComparer } from '@test/fakes/fakeHashComparer';
+import { FakeHashGenerator } from '@test/fakes/fakeHashGenerator';
+import { InMemoryUsersRepository } from '@test/repositories/inMemoryUsersRepository';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { User } from '../../enterprise/entities/user';
 import { UserRole } from '../../enterprise/entities/value-objects/userRole';
 import { AuthenticateUserUseCase } from './authenticate-user';
 import { WrongCredentialsError } from './errors/wrong-credentials-error';
-import { FakeEncrypter } from '@test/fakes/fakeEncrypter';
-import { FakeHashComparer } from '@test/fakes/fakeHashComparer';
-import { FakeHashGenerator } from '@test/fakes/fakeHashGenerator';
-import { InMemoryUsersRepository } from '@test/repositories/inMemoryUsersRepository';
 
 let usersRepository: InMemoryUsersRepository;
 let hashComparer: FakeHashComparer;

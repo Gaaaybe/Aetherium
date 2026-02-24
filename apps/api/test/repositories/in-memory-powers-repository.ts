@@ -1,6 +1,6 @@
 import type { PaginationParams } from '@/core/repositories/paginationParams';
-import type { Power } from '@/domain/power-manager/enterprise/entities/power';
 import type { PowersRepository } from '@/domain/power-manager/application/repositories/powers-repository';
+import type { Power } from '@/domain/power-manager/enterprise/entities/power';
 
 export class InMemoryPowersRepository implements PowersRepository {
   public items: Power[] = [];

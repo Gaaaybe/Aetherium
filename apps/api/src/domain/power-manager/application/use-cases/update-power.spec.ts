@@ -1,4 +1,9 @@
+import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
+import { InMemoryModificationsRepository } from '@test/repositories/in-memory-modifications-repository';
+import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
+import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { DomainEvents } from '@/core/events/domain-events';
 import { AppliedEffect } from '../../enterprise/entities/applied-effect';
 import { EffectBase } from '../../enterprise/entities/effect-base';
 import { ModificationBase, ModificationType } from '../../enterprise/entities/modification-base';
@@ -10,12 +15,7 @@ import { Domain, DomainName } from '../../enterprise/entities/value-objects/doma
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerEffectList } from '../../enterprise/entities/watched-lists/power-effect-list';
-import { InMemoryEffectsRepository } from '@test/repositories/in-memory-effects-repository';
-import { InMemoryModificationsRepository } from '@test/repositories/in-memory-modifications-repository';
-import { InMemoryPeculiaritiesRepository } from '@test/repositories/in-memory-peculiarities-repository';
-import { InMemoryPowersRepository } from '@test/repositories/in-memory-powers-repository';
 import { PowerCostCalculator } from '../../enterprise/services/power-cost-calculator';
-import { DomainEvents } from '@/core/events/domain-events';
 import { OnPowerMadePublic } from '../subscribers/on-power-made-public';
 import { UpdatePowerUseCase } from './update-power';
 
@@ -33,20 +33,13 @@ describe('UpdatePowerUseCase', () => {
     effectsRepository = new InMemoryEffectsRepository();
     modificationsRepository = new InMemoryModificationsRepository();
     peculiaritiesRepository = new InMemoryPeculiaritiesRepository();
-    powerCostCalculator = new PowerCostCalculator(
-      effectsRepository,
-      modificationsRepository,
-    );
+    powerCostCalculator = new PowerCostCalculator(effectsRepository, modificationsRepository);
 
     DomainEvents.clearHandlers();
     DomainEvents.clearMarkedAggregates();
     new OnPowerMadePublic(peculiaritiesRepository);
 
-    sut = new UpdatePowerUseCase(
-      powersRepository,
-      powerCostCalculator,
-      peculiaritiesRepository,
-    );
+    sut = new UpdatePowerUseCase(powersRepository, powerCostCalculator, peculiaritiesRepository);
   });
 
   afterEach(() => {

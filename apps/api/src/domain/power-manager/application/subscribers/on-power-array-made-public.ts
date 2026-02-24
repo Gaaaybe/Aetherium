@@ -9,10 +9,7 @@ export class OnPowerArrayMadePublic {
   }
 
   setupSubscriptions(): void {
-    DomainEvents.register(
-      this.publishPrivatePowers.bind(this),
-      PowerArrayMadePublicEvent.name,
-    );
+    DomainEvents.register(this.publishPrivatePowers.bind(this), PowerArrayMadePublicEvent.name);
   }
 
   private async publishPrivatePowers(event: DomainEvent): Promise<void> {

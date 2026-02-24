@@ -70,7 +70,10 @@ export class Domain {
 
   private static validate(props: DomainProps): void {
     if (props.name === DomainName.CIENTIFICO && !props.areaConhecimento) {
-      throw new DomainValidationError('Domínio Científico requer área de conhecimento', 'areaConhecimento');
+      throw new DomainValidationError(
+        'Domínio Científico requer área de conhecimento',
+        'areaConhecimento',
+      );
     }
 
     if (props.name === DomainName.PECULIAR && !props.peculiarId) {
@@ -82,7 +85,10 @@ export class Domain {
       props.name !== DomainName.PECULIAR &&
       (props.areaConhecimento || props.peculiarId)
     ) {
-      throw new DomainValidationError('Apenas domínios Científico e Peculiar podem ter campos específicos', 'name');
+      throw new DomainValidationError(
+        'Apenas domínios Científico e Peculiar podem ter campos específicos',
+        'name',
+      );
     }
   }
 

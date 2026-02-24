@@ -7,9 +7,9 @@ import type { Domain } from '../../enterprise/entities/value-objects/domain';
 import { PowerCost } from '../../enterprise/entities/value-objects/power-cost';
 import type { PowerParameters } from '../../enterprise/entities/value-objects/power-parameters';
 import { PowerArrayPowerList } from '../../enterprise/entities/watched-lists/power-array-power-list';
-import { InvalidVisibilityError } from './errors/invalid-visibility-error';
 import type { PowerArraysRepository } from '../repositories/power-arrays-repository';
 import type { PowersRepository } from '../repositories/powers-repository';
+import { InvalidVisibilityError } from './errors/invalid-visibility-error';
 
 interface CreatePowerArrayUseCaseRequest {
   nome: string;

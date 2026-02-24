@@ -1,4 +1,3 @@
-
 export class DomainValidationError extends Error {
   readonly field?: string;
 

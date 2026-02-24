@@ -1,8 +1,8 @@
+import { FakeHashGenerator } from '@test/fakes/fakeHashGenerator';
+import { InMemoryUsersRepository } from '@test/repositories/inMemoryUsersRepository';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AlreadyExistsError } from '@/core/errors/alreadyExistsError';
 import { RegisterUserUseCase } from './register-user';
-import { FakeHashGenerator } from '@test/fakes/fakeHashGenerator';
-import { InMemoryUsersRepository } from '@test/repositories/inMemoryUsersRepository';
 
 let usersRepository: InMemoryUsersRepository;
 let hashGenerator: FakeHashGenerator;

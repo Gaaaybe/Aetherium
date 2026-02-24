@@ -1,6 +1,6 @@
 import type { PaginationParams } from '@/core/repositories/paginationParams';
-import type { PowerArray } from '@/domain/power-manager/enterprise/entities/power-array';
 import type { PowerArraysRepository } from '@/domain/power-manager/application/repositories/power-arrays-repository';
+import type { PowerArray } from '@/domain/power-manager/enterprise/entities/power-array';
 
 export class InMemoryPowerArraysRepository implements PowerArraysRepository {
   public items: PowerArray[] = [];
