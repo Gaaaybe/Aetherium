@@ -1,12 +1,12 @@
 import type { ModificationBase } from '../../enterprise/entities/modification-base';
 
-export interface ModificationsRepository {
-  findById(id: string): Promise<ModificationBase | null>;
-  findAll(): Promise<ModificationBase[]>;
-  findByType(type: 'extra' | 'falha'): Promise<ModificationBase[]>;
-  findByCategory(category: string): Promise<ModificationBase[]>;
-  findCustomModifications(): Promise<ModificationBase[]>;
-  create(modification: ModificationBase): Promise<void>;
-  update(modification: ModificationBase): Promise<void>;
-  delete(id: string): Promise<void>;
+export abstract class ModificationsRepository {
+  abstract findById(id: string): Promise<ModificationBase | null>;
+  abstract findAll(): Promise<ModificationBase[]>;
+  abstract findByType(type: 'extra' | 'falha'): Promise<ModificationBase[]>;
+  abstract findByCategory(category: string): Promise<ModificationBase[]>;
+  abstract findCustomModifications(): Promise<ModificationBase[]>;
+  abstract create(modification: ModificationBase): Promise<void>;
+  abstract update(modification: ModificationBase): Promise<void>;
+  abstract delete(id: string): Promise<void>;
 }
