@@ -1,7 +1,7 @@
-import type { UsersRepository } from '@/domain/accounts/application/repositories/users-repository';
+import { UsersRepository } from '@/domain/accounts/application/repositories/users-repository';
 import type { User } from '@/domain/accounts/enterprise/entities/user';
 
-export class InMemoryUsersRepository implements UsersRepository {
+export class InMemoryUsersRepository extends UsersRepository {
   public items: User[] = [];
 
   async findByEmail(email: string): Promise<User | null> {

@@ -1,8 +1,8 @@
 import type { PaginationParams } from '@/core/repositories/paginationParams';
-import type { PowerArraysRepository } from '@/domain/power-manager/application/repositories/power-arrays-repository';
+import { PowerArraysRepository } from '@/domain/power-manager/application/repositories/power-arrays-repository';
 import type { PowerArray } from '@/domain/power-manager/enterprise/entities/power-array';
 
-export class InMemoryPowerArraysRepository implements PowerArraysRepository {
+export class InMemoryPowerArraysRepository extends PowerArraysRepository {
   public items: PowerArray[] = [];
 
   async findById(id: string): Promise<PowerArray | null> {

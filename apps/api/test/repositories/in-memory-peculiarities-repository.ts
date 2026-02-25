@@ -1,8 +1,8 @@
 import type { PaginationParams } from '@/core/repositories/paginationParams';
-import type { PeculiaritiesRepository } from '@/domain/power-manager/application/repositories/peculiarities-repository';
+import { PeculiaritiesRepository } from '@/domain/power-manager/application/repositories/peculiarities-repository';
 import type { Peculiarity } from '@/domain/power-manager/enterprise/entities/peculiarity';
 
-export class InMemoryPeculiaritiesRepository implements PeculiaritiesRepository {
+export class InMemoryPeculiaritiesRepository extends PeculiaritiesRepository {
   public items: Peculiarity[] = [];
 
   async findById(id: string): Promise<Peculiarity | null> {

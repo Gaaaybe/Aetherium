@@ -1,7 +1,7 @@
-import type { ModificationsRepository } from '@/domain/power-manager/application/repositories/modifications-repository';
+import { ModificationsRepository } from '@/domain/power-manager/application/repositories/modifications-repository';
 import type { ModificationBase } from '@/domain/power-manager/enterprise/entities/modification-base';
 
-export class InMemoryModificationsRepository implements ModificationsRepository {
+export class InMemoryModificationsRepository extends ModificationsRepository {
   public items: ModificationBase[] = [];
 
   async findById(id: string): Promise<ModificationBase | null> {

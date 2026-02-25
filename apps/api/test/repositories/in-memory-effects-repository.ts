@@ -1,7 +1,7 @@
-import type { EffectsRepository } from '@/domain/power-manager/application/repositories/effects-repository';
+import { EffectsRepository } from '@/domain/power-manager/application/repositories/effects-repository';
 import type { EffectBase } from '@/domain/power-manager/enterprise/entities/effect-base';
 
-export class InMemoryEffectsRepository implements EffectsRepository {
+export class InMemoryEffectsRepository extends EffectsRepository {
   public items: EffectBase[] = [];
 
   async findById(id: string): Promise<EffectBase | null> {

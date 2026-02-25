@@ -1,8 +1,8 @@
 import type { PaginationParams } from '@/core/repositories/paginationParams';
-import type { PowersRepository } from '@/domain/power-manager/application/repositories/powers-repository';
+import { PowersRepository } from '@/domain/power-manager/application/repositories/powers-repository';
 import type { Power } from '@/domain/power-manager/enterprise/entities/power';
 
-export class InMemoryPowersRepository implements PowersRepository {
+export class InMemoryPowersRepository extends PowersRepository {
   public items: Power[] = [];
 
   async findById(id: string): Promise<Power | null> {
