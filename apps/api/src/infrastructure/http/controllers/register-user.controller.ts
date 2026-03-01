@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { z } from 'zod';
 import { AlreadyExistsError } from '@/core/errors/alreadyExistsError';
-import type { RegisterUserUseCase } from '@/domain/accounts/application/useCases/register-user';
+import { RegisterUserUseCase } from '@/domain/accounts/application/useCases/register-user';
 import { Public } from '@/infrastructure/auth/public';
 import { ZodValidationPipe } from '../pipes/zod-validation-pipe';
 
