@@ -13,7 +13,7 @@
     "target": "ES2023",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": ".",
+    "baseUrl": ".", // deprecated in TS 7.0 — required for path aliases; use "ignoreDeprecations": "6.0" once TS 6.0 is released to suppress the warning
     "paths": {
       "@/*": ["src/*"],
       "@test/*": ["test/*"]
