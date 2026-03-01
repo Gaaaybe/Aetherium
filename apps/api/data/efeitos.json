@@ -1,0 +1,1160 @@
+[
+      {
+    "id": "afligir",
+    "nome": "Afligir",
+    "custoBase": 2,
+    "descricao": "Você impõe uma ou mais condições debilitantes em um alvo com um ataque corpoa-corpo.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 1,
+      "duracao": 0
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Qual condição?",
+    "categorias": ["Ataque", "Debuff", "Suporte"],
+    "exemplos": "Envenenar, paralisar, queimar",
+    "configuracoes":{
+      "tipo":"select",
+      "label": "Patamar de Afligir",
+      "opcoes":[
+        {
+          "id": "fracas",
+          "nome": "Fraca - Patamar 1",
+          "grauMinimo": 1,
+          "modificadorCusto": 0,
+          "descricao": "Condições Fracas (Apenas para afligir de grau 1 ou mais)."
+        },
+        {
+          "id": "medias",
+          "nome": "Medias - Patamar 2",
+          "grauMinimo": 3,
+          "modificadorCusto": 1,
+          "descricao": "Condições Medias (Apenas para afligir de grau 3 ou mais)."
+        },
+        {
+          "id": "fortes",
+          "nome": "Fortes - Patamar 3",
+          "grauMinimo": 6,
+          "modificadorCusto": 2,
+          "descricao": "Condições Fortes (Apenas para afligir de grau 6 ou mais)."
+        },
+        {
+          "id": "extremas",
+          "nome": "Extremas - Patamar 4",
+          "grauMinimo": 7,
+          "modificadorCusto": 3,
+          "descricao": "Condições Extremas (Apenas para afligir de grau 7 ou mais)."
+        }
+      ]
+    }
+  },
+  {
+    "id": "dano",
+    "nome": "Dano",
+    "custoBase": 2,
+    "descricao": "Causa dano ao alvo. O valor de dano é determinado pelo Grau do efeito.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 1,
+      "duracao": 0
+    },
+    "categorias": ["Ataque"],
+    "exemplos": "Bola de fogo, rajada de energia, soco energizado"
+  },
+  {
+    "id": "enfraquecer",
+    "nome": "Enfraquecer",
+    "custoBase": 1,
+    "descricao": "Você reduz temporariamente atributos, perícias, PV, PE, dano, RD ou características críticas do alvo. O tipo de enfraquecimento determina o custo base.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 1,
+      "duracao": 0
+    },
+    "categorias": ["Ataque", "Debuff", "Suporte"],
+    "exemplos": "Drenar força, reduzir velocidade, quebrar armadura, enfraquecer lâmina",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Tipo de Enfraquecimento",
+      "opcoes": [
+        {
+          "id": "pericia",
+          "nome": "Perícia",
+          "modificadorCusto": 0,
+          "descricao": "Você tem uma quantidade padrão de -3, para redução que pode ser distribuído entre os atributos do alvo (Você deve definir quais atributos esse efeito enfraquece ao compraresse efeito), no grau 2 -5, no grau 3 -10, depoisdisso aumentará em 15 por grau desse efeito,sendo grau 4 (-25) e assim por diante. Ao escolher enfraquecer atributo."
+        },
+        {
+          "id": "pe",
+          "nome": "Pontos de Energia (PE)",
+          "modificadorCusto": 2,
+          "descricao": "Este efeito permite enfraquecer os Pontos de Energia (PE) de um alvo. Fórmula de Enfraquecimento: O alvo perde uma quantidade de PE Maximo igual a 4 × Grau do efeito.(Exemplo: Grau 1 = 4 PE; Grau 5 = 20 PE; Grau10 = 40 PE).A quantidade de PE Enfraquecida é fixa pela fórmula. Este efeito não pode ser alvo de qualquer modificador que altere valores numéricos."
+        },
+        {
+          "id": "critico-multiplicador",
+          "nome": "Crítico - Multiplicador",
+          "modificadorCusto": 0,
+          "custoProgressivo": "dobrado",
+          "descricao": "Reduz multiplicador de crítico em -1 a cada 2 graus (ex: x3→x2→x1). Custo dobra: grau 1-2 (+0/grau), grau 3-4 (+0/grau), grau 5-6 (+0/grau), etc. Mínimo x0"
+        },
+        {
+          "id": "critico-margem",
+          "nome": "Crítico - Margem",
+          "modificadorCusto": 0,
+          "custoProgressivo": "dobrado",
+          "descricao": "Reduz margem de crítico em +1 a cada 2 graus (ex: 19-20→20). Custo dobra: grau 1-2 (+0/grau), grau 3-4 (+0/grau), grau 5-6 (+0/grau), etc. Não reduz abaixo de 20"
+        },
+        {
+          "id": "atributo",
+          "nome": "Atributo",
+          "modificadorCusto": 1,
+          "descricao": "Você tem uma quantidade padrão de -3, para redução que pode ser distribuído entre os atributos do alvo (Você deve definir quais atributos esse efeito enfraquece ao compraresse efeito), no grau 2 -5, no grau 3 -10, depoisdisso aumentará em 15 por grau desse efeito,sendo grau 4 (-25) e assim por diante. Ao escolher enfraquecer atributo."
+        },
+        {
+          "id": "dano",
+          "nome": "Dano",
+          "modificadorCusto": 2,
+          "descricao": "Reduz dano específico (por domínio ou tipo de arma). Deve especificar fonte ao comprar"
+        },
+        {
+          "id": "rd",
+          "nome": "Redução de Dano (RD)",
+          "modificadorCusto": 2,
+          "descricao": "Reduz a RD do alvo, tornando-o mais vulnerável a ataques"
+        },
+        {
+          "id": "pv",
+          "nome": "Pontos de Vida (PV)",
+          "modificadorCusto": 2,
+          "descricao": "Reduz PV máximos temporariamente"
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Especificar alvo",
+    "placeholderInput": "Ex: Força, Percepção, Dano de fogo, etc."
+  },
+  {
+    "id": "fortalecer",
+    "nome": "Fortalecer",
+    "custoBase": 1,
+    "descricao": "Você concede bônus temporários em atributos, perícias, PV, PE, dano, RD ou características críticas do alvo. O tipo de fortalecimento determina o custo base.",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 1
+    },
+    "categorias": ["Geral", "Buff", "Suporte"],
+    "exemplos": "Aumentar força, vigor, espada flamejante, armadura mágica, lâmina afiada",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Tipo de Fortalecimento",
+      "opcoes": [
+        {
+          "id": "pericia",
+          "nome": "Perícia",
+          "modificadorCusto": 0,
+          "descricao": "Aumenta perícia do alvo. Bônus: +3 (grau 1), +5 (grau 2), +10 (grau 3), +15 por grau adicional"
+        },
+        {
+          "id": "pe",
+          "nome": "Pontos de Energia (PE)",
+          "modificadorCusto": 2,
+          "descricao": "Este efeito permite Fortalecer os Pontos de Energia (PE) de um alvo. Fórmula de Fortalecimento: O alvo ganha uma quantidade de PE Temporario (Se permanentes esses PE recuperam totalmente num descanso) igual a 4 × Grau do efeito.(Exemplo: Grau 1 = 4 PE; Grau 5 = 20 PE; Grau10 = 40 PE).A quantidade de PE Fortalecida é fixa pela fórmula. Este efeito não pode ser alvo de qualquer modificador que altere valores numéricos."
+        },
+        {
+          "id": "critico-multiplicador",
+          "nome": "Crítico - Multiplicador",
+          "modificadorCusto": 0,
+          "custoProgressivo": "dobrado",
+          "descricao": "Aumenta multiplicador de crítico em +1 a cada 2 graus. Custo adicional dobra: grau 1-2 (+1/grau), grau 3-4 (+2/grau), grau 5-6 (+4/grau), etc."
+        },
+        {
+          "id": "critico-margem",
+          "nome": "Crítico - Margem",
+          "modificadorCusto": 0,
+          "custoProgressivo": "dobrado",
+          "descricao": "Aumenta margem de crítico em -1 a cada 2 graus (ex: 20→19-20→18-20). Custo adicional dobra: grau 1-2 (+1/grau), grau 3-4 (+2/grau), grau 5-6 (+4/grau), etc."
+        },
+        {
+          "id": "alcance",
+          "nome": "Alcance (Arma)",
+          "modificadorCusto": 1,
+          "descricao": "Aumenta alcance de ataques simples da arma em +2 metros por grau. Requer Afeta Objetos"
+        },
+        {
+          "id": "dano",
+          "nome": "Dano",
+          "modificadorCusto": 2,
+          "descricao": "Aumenta dano específico (por domínio ou arma). +2 (grau 1), dobra a cada grau até +1024 (grau 10)"
+        },
+        {
+          "id": "rd",
+          "nome": "Redução de Dano (RD)",
+          "modificadorCusto": 2,
+          "descricao": "Aumenta RD do alvo. +2 (grau 1), dobra a cada grau até +1024 (grau 10)"
+        },
+        {
+          "id": "pv",
+          "nome": "Pontos de Vida (PV)",
+          "modificadorCusto": 2,
+          "descricao": "Concede PV temporários. Quantidade = rolagem de cura conforme tabela de dano/cura"
+        },
+        {
+          "id": "acoes",
+          "nome": "Ações",
+          "modificadorCusto": 2,
+          "descricao": "Concede ações padrões extras: +1 ação (grau 2), +2 ações (grau 6), +3 ações (grau 10)"
+        },
+        {
+          "id": "atributo",
+          "nome": "Atributo",
+          "modificadorCusto": 3,
+          "descricao": "Aumenta atributo do alvo. Bônus: +3 (grau 1), +5 (grau 2), +10 (grau 3), +15 por grau adicional"
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Especificar alvo",
+    "placeholderInput": "Ex: Força, Percepção, Dano de espada, etc."
+  },
+  {
+    "id": "nulificar",
+    "nome": "Nulificar",
+    "custoBase": 2,
+    "descricao": "Pode contra-atacar efeitos específicos de um descritor ou domínio, como fogo, efeitos mentais, domínios, etc. Permite cancelar ou neutralizar poderes e técnicas adversários.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 2,
+      "duracao": 0
+    },
+    "categorias": ["Ataque", "Suporte"],
+    "exemplos": "Dissipar magia, cancelar poder, anti-magia, contra-feitiço",
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Descritor ou domínio",
+    "placeholderInput": "Ex: Fogo, Mental, Domínio Natural, Ilusões..."
+  },
+  {
+    "id": "alongamento",
+    "nome": "Alongamento",
+    "custoBase": 1,
+    "descricao": "Você pode esticar seu corpo e/ou membros. O grau determina a distância máxima que você pode alcançar com o alongamento.",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 1
+    },
+    "categorias": ["Geral", "Utilidade"],
+    "exemplos": "Braços elásticos, corpo de borracha, membros extensíveis"
+  },
+  {
+    "id": "crescimento",
+    "nome": "Crescimento",
+    "custoBase": 3,
+    "descricao": "Você pode aumentar o tamanho do alvo temporariamente, ganhando Força e Vigor ao custo de se tornar maior, mais pesado, menos ágil e incapaz de manobrar através de espaços pequenos.",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 1
+    },
+    "categorias": ["Geral", "Buff"],
+    "exemplos": "Gigantismo, expansão corporal, forma titã"
+  },
+  {
+    "id": "encolhimento",
+    "nome": "Encolhimento",
+    "custoBase": 3,
+    "descricao": "Você pode diminuir de tamanho de um alvo temporariamente, o tornando menor e mais difícil de ver — e acertar, porém, também, perdendo Força e velocidade.",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 1
+    },
+    "categorias": ["Geral", "Buff"],
+    "exemplos": "Miniaturização, forma pixie, compressão molecular"
+  },
+  {
+    "id": "caracteristica",
+    "nome": "Característica",
+    "custoBase": 4,
+    "descricao": "Você tem uma característica menor — um efeito que concede uma habilidade útil de vez em quando — por grau. Na prática, isto é uma versão do Benefício 'Criar Benefício', mas um poder ou técnica em vez de algo que provém de talento, ou de forma mundana.",
+    "parametrosPadrao": {
+      "acao": 5,
+      "alcance": 0,
+      "duracao": 4
+    },
+    "categorias": ["Geral", "Utilidade"],
+    "exemplos": "Bioluminescência, respirar debaixo d'água, comunicação com animais, visão noturna",
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Descrição da característica",
+    "placeholderInput": "Ex: Bioluminescência, Respirar debaixo d'água, Visão noturna..."
+  },
+  {
+    "id": "camuflagem",
+    "nome": "Camuflagem",
+    "custoBase": 3,
+    "descricao": "Você ganha camuflagem total contra um sentido específico, embora ainda seja detectável por outros sentidos (incluindo outros sentidos do mesmo tipo; assim, você pode ter camuflagem contra visão normal, mas não contra qualquer outro sentido visual, como térmica). Cada grau adicional concede camuflagem contra outro sentido; 2 graus concedem camuflagem contra um tipo inteiro de sentido. Camuflagem contra sentidos visuais custam o dobro (2 graus para um sentido visual, 4 para todos os sentidos visuais). Assim, com Camuflagem 5, você pode ter camuflagem contra todos os sentidos visuais (4 graus) e contra audição normal (1 grau), por exemplo. Você não pode ter camuflagem contra sentidos do tato, uma vez que isso exige ser intangível.",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 1
+    },
+    "categorias": ["Sensorial", "Utilidade"],
+    "exemplos": "Invisibilidade, silêncio, mascaramento de calor, esconder aura",
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Sentido(s) camuflado(s)",
+    "placeholderInput": "Ex: Visão normal, Audição, Todos os sentidos visuais..."
+  },
+  {
+    "id": "compreender",
+    "nome": "Compreender",
+    "custoBase": 6,
+    "descricao": "Você compreende diferentes tipos de comunicação. Cada grau neste efeito permite que você escolha uma das opções disponíveis (Animais, Espíritos, Idiomas, Máquinas, Objetos, Plantas). Algumas opções requerem 2 graus para comunicação completa (falar e compreender).",
+    "parametrosPadrao": {
+      "acao": 5,
+      "alcance": 0,
+      "duracao": 4
+    },
+    "categorias": ["Sensorial", "Comunicação"],
+    "exemplos": "Falar com animais, mediunidade, poliglota, tecnomancia, psicometria",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Tipo de Compreensão",
+      "opcoes": [
+        {
+          "id": "animais-compreender",
+          "nome": "Animais (Compreender)",
+          "modificadorCusto": 0,
+          "grauMinimo": 1,
+          "descricao": "Você pode compreender animais. Pode fazer perguntas e receber respostas, mas os animais não são mais amistosos ou cooperativos que o normal. Animais desconfiados tendem a ser breves e evasivos, enquanto animais estúpidos fazem comentários vazios."
+        },
+        {
+          "id": "animais-falar",
+          "nome": "Animais (Falar e Compreender)",
+          "modificadorCusto": 4,
+          "grauMinimo": 2,
+          "descricao": "Você pode tanto falar quanto compreender o 'idioma' dos animais. Caso um animal seja amistoso, pode realizar algum favor ou serviço para você."
+        },
+        {
+          "id": "espiritos-medium",
+          "nome": "Espíritos (Médium)",
+          "modificadorCusto": 0,
+          "grauMinimo": 1,
+          "descricao": "Você opera como um 'médium', sendo capaz de perceber os espíritos e relatar o que ouve e vê. Pode se comunicar com seres espirituais incorpóreos e normalmente invisíveis e inaudíveis, como fantasmas ou entidades extradimensionais."
+        },
+        {
+          "id": "espiritos-comunicacao",
+          "nome": "Espíritos (Comunicação Completa)",
+          "modificadorCusto": 4,
+          "grauMinimo": 2,
+          "descricao": "Você também é compreendido pelos habitantes do mundo espiritual. À escolha do mestre, este efeito pode se estender a mortos-vivos, demônios ou outras entidades sobrenaturais."
+        },
+        {
+          "id": "idiomas-compreender",
+          "nome": "Idiomas (Compreender)",
+          "modificadorCusto": 0,
+          "grauMinimo": 1,
+          "descricao": "Você pode compreender um idioma especial de qualquer criatura inteligente (apenas um, compre esse efeito outras vezes para mais idiomas). Este efeito não permite que você fale com criaturas que não tenham um idioma."
+        },
+        {
+          "id": "idiomas-ler",
+          "nome": "Idiomas (Ler e Compreender)",
+          "modificadorCusto": 4,
+          "grauMinimo": 2,
+          "descricao": "Você pode ler qualquer idioma que você compreenda."
+        },
+        {
+          "id": "maquinas",
+          "nome": "Máquinas",
+          "modificadorCusto": 4,
+          "grauMinimo": 2,
+          "descricao": "Você pode se comunicar com dispositivos eletrônicos, fazendo indagações e compreendendo suas respostas. A maioria está limitada por sua programação e periféricos em termos de o que 'sabem', e podem não ser capazes de responder certas perguntas. De acordo com o mestre, você pode usar a perícia Tecnologia como uma perícia de interação quando se comunica com máquinas."
+        },
+        {
+          "id": "objetos",
+          "nome": "Objetos",
+          "modificadorCusto": 4,
+          "grauMinimo": 2,
+          "descricao": "Você pode se comunicar com objetos inanimados, concedendo-lhes a capacidade de falar com você ou simplesmente 'lendo' impressões vindas deles. Objetos 'sabem' apenas sobre eventos que os afetem diretamente ou que ocorram em sua área imediata. O mestre pode aplicar as diretrizes de Pós-cognição a este efeito."
+        },
+        {
+          "id": "plantas",
+          "nome": "Plantas",
+          "modificadorCusto": 4,
+          "grauMinimo": 2,
+          "descricao": "Você pode se comunicar com plantas, tanto as normais quanto criaturas-planta. A consciência que uma planta tem de seus arredores é limitada, então ela pode não ser capaz de responder perguntas sobre eventos fora da área próxima."
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Especificar (opcional)",
+    "placeholderInput": "Ex: Idioma específico, tipo de animal, etc."
+  },
+  {
+    "id": "comunicacao",
+    "nome": "Comunicação",
+    "custoBase": 4,
+    "descricao": "Você pode se comunicar usando um meio que não seja sua voz normal. Escolha um sentido como seu meio de Comunicação (auditiva, olfativa, mental, rádio, tátil, visual, ou um sentido especial). Sua Comunicação é instantânea, mas afeta apenas uma pessoa (é enviada a um único alvo dentro do alcance). O alvo deve ter um meio de receber sua transmissão. Você pode receber uma Comunicação do seu mesmo tipo. O alvo pode ignorar sua Comunicação. A Comunicação é dependente de idioma. Ativar é uma ação livre. Alcance por grau: 1 (30m), 4 (1,5km), 7 (estado/nação), 10 (mundial), 13 (ilimitado). Outros com sentidos aguçados podem perceber suas transmissões com Percepção.",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 2,
+      "duracao": 1
+    },
+    "categorias": ["Sensorial", "Comunicação"],
+    "exemplos": "Telepatia, rádio mental, ligação telepática, transmissão ultrassônica",
+    "requerInput": true,
+    "tipoInput": "select",
+    "labelInput": "Meio de comunicação",
+    "opcoesInput": ["Auditiva (ultrassom, ventriloquismo)", "Olfativa (feromônios)", "Mental (telepatia)", "Rádio (AM/FM/micro-ondas)", "Tátil (vibração)", "Visual (laser/fibra ótica)", "Especial (neutrinos, grávitons, mágica)"],
+    "placeholderInput": "Selecione o meio"
+  },
+  {
+    "id": "leitura-mental",
+    "nome": "Leitura Mental",
+    "custoBase": 3,
+    "descricao": "Você pode ler a mente de outro personagem. Faça um teste de efeito oposto por Vontade do alvo. O nível de sucesso determina o nível de contato, limitado pelo grau do efeito. Nível 1 (Grau 1+): Pensamentos superficiais - lê o que o alvo está pensando agora, transcende idiomas. Nível 2 (Grau 3+): Pensamentos pessoais - pode investigar mais fundo, fazer perguntas e receber respostas. Nível 3 (Grau 6+): Memória - pode ler lembranças e memórias exatas do alvo, uma por rodada. Nível 4 (Grau 9+): Subconsciente - pode ler memórias reprimidas, traumas profundos, outras personalidades. Se perder o teste oposto, não pode ler a mente. Com 2+ falhas, tentativas extras na mesma cena exigem inspiração. Para nível maior de contato, precisa de nova ação padrão e novo teste.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 1,
+      "duracao": 1
+    },
+    "categorias": ["Sensorial", "Utilidade"],
+    "exemplos": "Telepatia, leitura de pensamentos, sondagem mental, invasão psíquica"
+  },
+  {
+    "id": "controle-mental",
+    "nome": "Controle Mental",
+    "custoBase": 6,
+    "descricao": "Você pode impor sua vontade sobre a mente de outros. Faça um Teste de Efeito oposto pelo teste de Vontade do alvo. SUCESSO: Você estabelece controle. O nível de controle é determinado pelo Grau (veja Patamares). FALHA: Alvo resiste e percebe tentativa (a menos que tenha Sutil). RESISTÊNCIA CONTÍNUA: Alvo tem novo teste de Vontade no final de cada turno dele para quebrar controle. ORDENS SUICIDAS: Se ordenar algo obviamente suicida ou oposto à natureza fundamental do alvo (mãe matar filho), ele recebe +2 Vantagens no teste imediato. PATAMARES: Patamar 1 (Grau 2) - Influência/Sugestão: planta ideia, emoção ou tendência (não controla ações diretas, alvo racionaliza como ideia própria). Patamar 2 (Grau 5) - Compulsão/Ordem Única: força ação específica ou emoção intensa (Provocação, Charme, Comando de uma frase). Patamar 3 (Grau 9) - Dominação/Marionete: controle total de funções motoras e mentais, dita todas ações (só um alvo dominado por vez sem modificações).",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 5,
+      "duracao": 1
+    },
+    "categorias": ["Ataque", "Controle", "Debuff"],
+    "exemplos": "Dominação mental, hipnose poderosa, controle telepático, possessão mental, lavagem cerebral",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Patamar de Controle",
+      "opcoes": [
+        {
+          "id": "patamar-1-influencia",
+          "nome": "Patamar 1: Influência (Grau 2+)",
+          "grauMinimo": 2,
+          "modificadorCusto": 0,
+          "descricao": "Sugestão - Planta ideia, emoção ou tendência. Aplicações: Tendência ('Você sente que aquele guarda é suspeito'), Empurrão ('Você está com sede'), Dúvida ('Talvez eu deva deixar a porta destrancada'). Limite: Alvo racionaliza influência como ideia dele, não fará nada que não faria sob leve pressão social."
+        },
+        {
+          "id": "patamar-2-compulsao",
+          "nome": "Patamar 2: Compulsão (Grau 5+)",
+          "grauMinimo": 5,
+          "modificadorCusto": 0,
+          "descricao": "Ordem Única - Força ação específica ou estado emocional intenso. Aplicações: Provocação (compelido a atacar ignorando defesas), Charme (considera você amigo, não ataca, protege), Comando (uma frase: 'Largue arma', 'Corra', 'Fique parado', 'Diga verdade'). Limite: Ordem rege ação principal do turno, alvo escolhe como executa."
+        },
+        {
+          "id": "patamar-3-dominacao",
+          "nome": "Patamar 3: Dominação (Grau 9+)",
+          "grauMinimo": 9,
+          "modificadorCusto": 0,
+          "descricao": "Marionete - Controle total de funções motoras e mentais. Aplicações: Controle Total (dita todas ações, movimentos, falas - você joga com ficha dele no turno dele), Programação (gatilhos complexos: 'Quando Rei entrar, ataque-o'). Limite: Apenas um alvo dominado por vez com concentração, exceto com modificações de área/divisão."
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Especificar tipo de controle",
+    "placeholderInput": "Ex: Sugestão telepática, Comando verbal, Dominação total"
+  },
+  {
+    "id": "sentidos",
+    "nome": "Sentidos",
+    "custoBase": 3,
+    "descricao": "Este efeito permite ao personagem desbloquear sentidos superiores. Ao adquiri-lo, escolha um sentido (visão, audição, olfato, etc.) e uma capacidade desbloqueada. Cada efeito permite escolher apenas uma capacidade. Para múltiplas capacidades no mesmo sentido, compre efeitos adicionais. Se estiver comprando sentidos extras dentro do mesmo poder, cada sentido adicional além do primeiro custa +2 por grau (Modificação Global). PATAMARES: As capacidades são divididas em patamares baseados no grau. PATAMAR 1 (Grau 2): +1 por Grau - Radial, Rastrear, Sentido de Direção, Sentido de Distância, Sentido de Perigo, Sentido de Tempo, Ultra-audição, Ultravisão, À Distância, Detecção, Estendido, Visão Ampliada. PATAMAR 2 (Grau 4): +3 por Grau - Contra-Ataca Camuflagem Única, Rádio, Rápido, Visão na Penumbra, Elo de Comunicação, Infravisão, Percepção, Detecção Acurado, Avaliação, Visão Microbiológica. PATAMAR 3 (Grau 5): +4 por Grau - Contra-Ataca Camuflagem Universal, Penetra Camuflagem (Obstáculos/Raio-X), Pós-cognição, Visão no Escuro, Visão Molecular. PATAMAR 4 (Grau 7): +6 por Grau - Precognição, Analítico, Visão Atômica. O grau determina qual patamar você pode acessar e quantas capacidades pode ter.",
+    "parametrosPadrao": {
+      "acao": 5,
+      "alcance": 0,
+      "duracao": 4
+    },
+    "categorias": ["Sensorial"],
+    "exemplos": "Visão de raio-X (Penetra Camuflagem), super audição (Radial+Aguçado), sentido sísmico (Detecção), visão de calor (Infravisão), precognição",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Patamar de Capacidade",
+      "opcoes": [
+        {
+          "id": "patamar-1",
+          "nome": "Patamar 1 (Grau 2+)",
+          "grauMinimo": 2,
+          "modificadorCusto": 1,
+          "descricao": "Capacidades básicas: Radial, Rastrear, Sentidos de Direção/Distância/Perigo/Tempo, Ultra-audição, Ultravisão, À Distância, Detecção, Estendido, Visão Ampliada."
+        },
+        {
+          "id": "patamar-2",
+          "nome": "Patamar 2 (Grau 4+)",
+          "grauMinimo": 4,
+          "modificadorCusto": 3,
+          "descricao": "Capacidades avançadas: Contra-Ataca Camuflagem Única, Rádio, Rápido, Visão na Penumbra, Elo de Comunicação, Infravisão, Percepção, Detecção Acurado, Avaliação, Visão Microbiológica."
+        },
+        {
+          "id": "patamar-3",
+          "nome": "Patamar 3 (Grau 5+)",
+          "grauMinimo": 5,
+          "modificadorCusto": 4,
+          "descricao": "Capacidades superiores: Contra-Ataca Camuflagem Universal, Penetra Camuflagem (Raio-X), Pós-cognição, Visão no Escuro, Visão Molecular."
+        },
+        {
+          "id": "patamar-4",
+          "nome": "Patamar 4 (Grau 7+)",
+          "grauMinimo": 7,
+          "modificadorCusto": 6,
+          "descricao": "Capacidades supremas: Precognição, Analítico (análise completa de alvos), Visão Atômica."
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Especificar sentido e capacidade",
+    "placeholderInput": "Ex: Visão - Penetra Camuflagem, Audição - Radial+Ultra-audição, Olfato - Rastrear"
+  },
+  {
+    "id": "sentido-remoto",
+    "nome": "Sentido Remoto",
+    "custoBase": 3,
+    "descricao": "Você desloca sua percepção, tornando-se um observador fantasma ou uma âncora para ataques à distância. A distância máxima é determinada pelo seu Grau neste efeito na Tabela Universal de Distância. O SENSOR: Você cria um ponto de percepção invisível e intangível no local alvo. Não precisa ver o local, mas deve definir distância e direção ou conhecer o local (se tiver extra Acurado). ATAQUE VIA SENSOR: Se possui ataques com alcance Percepção, pode originá-los do Sensor. Para o alvo, o ataque surge do nada ou do Sensor invisível. SOBREPOSIÇÃO: Enquanto usa este poder, seus sentidos naturais no corpo físico são substituídos pelos sentidos remotos. Você fica Desprevenido contra ameaças ao corpo físico. DETECÇÃO: O Sensor não é indetectável. Criaturas no local podem sentir que estão sendo observadas com teste de Intuição (ou Percepção Mística) contra seu Teste de Efeito. Sucesso: Sentem presença, calafrio ou perturbação. INTERAÇÃO SENSORIAL: Pode usar seus efeitos de Sentidos (Visão no Escuro, Analítico, etc.) através do Sensor, desde que façam parte do pacote projetado. Custo alto porque estende alcance de todos os poderes baseados em percepção.",
+    "parametrosPadrao": {
+      "acao": 2,
+      "alcance": 6,
+      "duracao": 1
+    },
+    "categorias": ["Sensorial", "Comunicação"],
+    "exemplos": "Clarividência, clariaudiência, olho arcano, câmera remota, projeção astral, espionagem psíquica",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Pacote de Sentidos",
+      "opcoes": [
+        {
+          "id": "sentido-unico",
+          "nome": "Sentido Único Não-Visual",
+          "modificadorCusto": 0,
+          "descricao": "Um único sentido não-visual (Audição, Faro, Mental, etc.). Difícil de usar para mirar ataques precisos sem extra Acurado."
+        },
+        {
+          "id": "visao-apenas",
+          "nome": "Visão (Sozinha)",
+          "modificadorCusto": 1,
+          "descricao": "Apenas sentidos visuais deslocados. Permite observação visual clara, mas sem outros sentidos."
+        },
+        {
+          "id": "visao-audicao",
+          "nome": "Visão + Audição (Pacote Espionagem)",
+          "modificadorCusto": 2,
+          "descricao": "Visão e audição combinadas. Ideal para espionagem e reconhecimento completo."
+        },
+        {
+          "id": "todos-sentidos",
+          "nome": "Todos os Sentidos (Projeção Completa)",
+          "modificadorCusto": 3,
+          "descricao": "Desloca todos os seus sentidos. Projeção completa da consciência, como se estivesse fisicamente presente."
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Especificar sentidos",
+    "placeholderInput": "Ex: Visão, Audição + Visão, Mental, Todos"
+  },
+  {
+    "id": "escavacao",
+    "nome": "Escavação",
+    "custoBase": 4,
+    "descricao": "Você pode escavar através do solo. Move-se através de terra e areia a um grau de velocidade igual ao grau de Escavação –5. Para grau negativo, subtraia do seu deslocamento pela quantidade negativa ao invés de somar. Exemplo: Escavação 8 = grau de velocidade 3 (100km/h fora de combate e +6m no deslocamento, apenas escavando). Funciona em terra, areia e materiais similares.",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 1
+    },
+    "categorias": ["Movimento"],
+    "exemplos": "Escavação super-rápida, toupeira humana, escavação sísmica, perfuração de túneis"
+  },
+  {
+    "id": "aceleracao",
+    "nome": "Aceleração",
+    "custoBase": 4,
+    "descricao": "Você pode se mover mais rápido que o normal. Você tem grau de velocidade terrestre adicional igual ao seu grau neste efeito. Isso também melhora todas as formas de movimento baseadas na velocidade terrestre. Além disso, some o grau de deslocamento com seu deslocamento. Esta é a única forma de aumentar deslocamento. Exemplo: Aceleração 10 = grau de velocidade 10 (16.000 km/h) + deslocamento +20m.",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 1
+    },
+    "categorias": ["Movimento"],
+    "exemplos": "Super velocidade, velocista, flash, corrida supersônica, movimento blur"
+  },
+  {
+    "id": "movimentacao",
+    "nome": "Movimentação",
+    "custoBase": 4,
+    "descricao": "Você tem uma forma especial de movimento. Para cada grau neste efeito, escolha uma das opções: Adaptação ao Ambiente (não sofre penalidades em ambiente específico), Andar na Água (2 graus = não afunda mesmo caído), Balançar-se (usa linhas para mover-se), Deslizar (move-se caído sem penalidades), Escalar Paredes (velocidade –4, +1 grau = velocidade total sem vulnerável), Estabilidade (reduz penalidade de obstáculos), Movimento Dimensional (5 = 2 dimensões, 8 = grupo, 13 = qualquer), Permear (2 = vel –4, 4 = vel –1, 6 = vel normal através de sólidos), Queda Segura (cai sem ferir), Sem Rastros (não deixa pegadas, +graus = outros sentidos), Viagem Espacial (velocidade ×10 por grau no espaço), Viagem Temporal (5 = 1 ponto fixo, 10 = passado OU futuro, 13 = qualquer tempo).",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 1
+    },
+    "categorias": ["Movimento", "Utilidade"],
+    "exemplos": "Escalar paredes (Homem-Aranha), viagem dimensional, atravessar paredes, andar na água",
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Formas de movimento",
+    "placeholderInput": "Ex: Escalar Paredes, Queda Segura, Permear (metal)"
+  },
+  {
+    "id": "natacao",
+    "nome": "Natação",
+    "custoBase": 3,
+    "descricao": "Você nada rápido. Você tem grau de velocidade aquática adicional igual ao seu grau neste efeito –2. Com isso, você também ignora o custo dobrado de deslocamento na água. Exemplo: Natação 7 = grau de velocidade aquática 5 (400 km/h fora de combate, +10m deslocamento na água sem custo dobrado).",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 1
+    },
+    "categorias": ["Movimento"],
+    "exemplos": "Super natação, natação supersônica, movimento aquático, adaptação marinha"
+  },
+  {
+    "id": "salto",
+    "nome": "Salto",
+    "custoBase": 3,
+    "descricao": "Você pode dar saltos prodigiosos, muito mais longos do que até mesmo um atleta olímpico é capaz. Normalmente o salto é 1/3 de um teste de Atletismo em metros, limitado pelo deslocamento em combate. Com esse efeito, você recebe Aceleração igual ao seu grau de Salto –1 para qualquer salto. Em combate, isso aumenta o limite do salto já que aumenta seu deslocamento. Exemplo: Salto 6 = Aceleração 5 durante saltos (+10m deslocamento, aumentando o limite máximo de distância do salto).",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 0
+    },
+    "categorias": ["Movimento"],
+    "exemplos": "Super salto, salto gigante, pulo de gafanhoto, salto sobre edifícios"
+  },
+  {
+    "id": "teleporte",
+    "nome": "Teleporte",
+    "custoBase": 3,
+    "descricao": "Você pode se mover instantaneamente de um lugar para outro sem atravessar a distância entre os dois pontos. Você pode teleportar a si mesmo e até 1kg de massa adicional a um grau de distância igual ao seu grau nesse efeito como uma ação de movimento. Passageiros resistentes podem fazer um teste de resistência para evitar serem levados com você.",
+    "parametrosPadrao": {
+      "acao": 2,
+      "alcance": 6,
+      "duracao": 0
+    },
+    "categorias": ["Movimento"],
+    "exemplos": "Teleporte, teletransporte, passo das sombras, portal instantâneo, blink"
+  },
+  {
+    "id": "voo",
+    "nome": "Voo",
+    "custoBase": 3,
+    "descricao": "Você pode voar, incluindo flutuar em um mesmo lugar. Você tem um grau de velocidade e deslocamento de voo igual ao seu grau neste efeito.",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 1
+    },
+    "categorias": ["Movimento"],
+    "exemplos": "Voo, levitação, asas, propulsão aérea, antigravidade"
+  },
+  {
+    "id": "ambiente",
+    "nome": "Ambiente",
+    "custoBase": 3,
+    "descricao": "Você pode mudar o ambiente: aumentar ou diminuir a temperatura, criar luz, fazer chover e assim por diante. Seu Ambiente afeta um raio pelo grau desse efeito, ao seu redor. Cada grau adicional amplia o raio em um Grau de distância. Cada efeito abaixo é um Ambiente separado (use Efeitos Alternativos ou some custos/use Seletivo para múltiplos simultâneos). Calor/Frio: 2 PdA = intenso, 4 PdA = extremo. Impedir Movimento: 2 PdA = terreno difícil com teste Atletismo, 4 PdA = sem teste. Luz: 2 PdA = reduz camuflagem (total→parcial→nenhuma), 4 PdA = luz solar (elimina camuflagem de escuridão). Visibilidade: 2 PdA = Enfraquecer Percepção pelo grau do efeito.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 6,
+      "duracao": 1
+    },
+    "categorias": ["Controle"],
+    "exemplos": "Controle climático, nevasca, luz solar, névoa densa, zona de calor",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Tipo de Ambiente",
+      "opcoes": [
+        {
+          "id": "calor-frio-intenso",
+          "nome": "Calor ou Frio (Intenso)",
+          "modificadorCusto": 0,
+          "descricao": "Cria calor ou frio intenso na área (escolha um ao comprar)"
+        },
+        {
+          "id": "calor-frio-extremo",
+          "nome": "Calor ou Frio (Extremo)",
+          "modificadorCusto": 3,
+          "descricao": "Cria calor ou frio extremo na área (escolha um ao comprar)"
+        },
+        {
+          "id": "impedir-movimento-teste",
+          "nome": "Impedir Movimento (com teste)",
+          "modificadorCusto": 0,
+          "descricao": "Terreno difícil, alvos fazem teste Atletismo para se livrar no início do turno"
+        },
+        {
+          "id": "impedir-movimento-total",
+          "nome": "Impedir Movimento (sem teste)",
+          "modificadorCusto": 3,
+          "descricao": "Terreno difícil sem possibilidade de teste para se livrar"
+        },
+        {
+          "id": "luz-parcial",
+          "nome": "Luz (Parcial)",
+          "modificadorCusto": 0,
+          "descricao": "Reduz camuflagem: total→parcial, parcial→nenhuma"
+        },
+        {
+          "id": "luz-total",
+          "nome": "Luz (Luz Solar)",
+          "modificadorCusto": 3,
+          "descricao": "Luz intensa como dia ensolarado, elimina toda camuflagem por escuridão"
+        },
+        {
+          "id": "visibilidade",
+          "nome": "Visibilidade Reduzida",
+          "modificadorCusto": 0,
+          "descricao": "Impõe Enfraquecer pelo grau desse efeito em testes de Percepção"
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Especificar efeito ambiental",
+    "placeholderInput": "Ex: Nevasca, Névoa densa, Zona de calor extremo"
+  },
+  {
+    "id": "criar",
+    "nome": "Criar",
+    "custoBase": 3,
+    "descricao": "Você materializa objetos sólidos a partir do nada, feitos de matéria como pedra, gelo ou energia solidificada. O descritor (tipo de matéria criada) deve ser definido ao comprar o efeito. Os objetos criados são sólidos e funcionais enquanto o efeito for sustentado. Pode criar estruturas, barreiras, ferramentas, ou qualquer objeto sólido dentro do descritor escolhido. O tamanho e complexidade dos objetos dependem do grau do efeito.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 2,
+      "duracao": 1
+    },
+    "categorias": ["Controle"],
+    "exemplos": "Criação de gelo, parede de pedra, construtos de energia, barreira cristalina",
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Descritor (tipo de matéria)",
+    "placeholderInput": "Ex: Gelo, Pedra, Energia solidificada, Cristal"
+  },
+  {
+    "id": "fabricar",
+    "nome": "Fabricar",
+    "custoBase": 2,
+    "descricao": "Fabricar é a maestria de projetar e construir itens. Processo dividido em: 1) Aprender Receita (gasta PdA uma vez, receita permanente), 2) Fabricar Item (gasta Tempo, Materiais/Dinheiro, Energia/PE). Fabricação Mundana (2 PdA/grau): Cria itens base sem efeitos especiais de uma categoria (armas brancas, comidas, roupas, joias). Criação de Itens Especiais (4 PdA/grau): Cria itens complexos com efeitos (receita de item único). Passos: escolher item base, adicionar efeitos (grau máximo = grau Fabricar, custo total limitado por Fabricar), criar receita. Nível do item = soma dos graus de todos efeitos. Requer descritores apropriados. Necessita teste de efeito.",
+    "parametrosPadrao": {
+      "acao": 6,
+      "alcance": 0,
+      "duracao": 4
+    },
+    "categorias": ["Controle"],
+    "exemplos": "Ferreiro místico, alquimista, engenheiro arcano, artesão lendário",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Tipo de Fabricação",
+      "opcoes": [
+        {
+          "id": "mundana",
+          "nome": "Fabricação Mundana",
+          "modificadorCusto": 0,
+          "descricao": "Cria itens base sem efeitos especiais de uma categoria (armas, roupas, comidas, etc.)"
+        },
+        {
+          "id": "especial",
+          "nome": "Criação de Itens Especiais",
+          "modificadorCusto": 2,
+          "descricao": "Cria itens complexos com efeitos (receita única por item). Grau máximo de efeitos = grau Fabricar"
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Categoria/Descritor",
+    "placeholderInput": "Ex: Armas brancas, Poções alquímicas, Itens arcanos"
+  },
+  {
+    "id": "transformacao",
+    "nome": "Transformação",
+    "custoBase": 3,
+    "descricao": "Você pode reestruturar a matéria, alterando a forma e composição fundamental de objetos inanimados. Deve tocar o objeto. Se segurado/vestido por outro, requer teste de efeito (defendido pelas defesas). Transformação Específica (3 PdA): Uma substância em outra (madeira→pedra, consertar objeto). Transformação Limitada (5 PdA, Grau 4+): Grupo amplo→coisa única OU coisa única→grupo amplo (qualquer metal→chumbo, água→qualquer líquido). Transformação Ampla (8 PdA, Grau 7+): Grupo amplo→grupo amplo (qualquer sólido→qualquer sólido). Transformação Universal (12 PdA, Grau 10+): Qualquer matéria inanimada→qualquer outra.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 1,
+      "duracao": 1
+    },
+    "categorias": ["Controle"],
+    "exemplos": "Transmutação, alquimia, moldar matéria, polimorfia de objetos",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Versatilidade da Transformação",
+      "opcoes": [
+        {
+          "id": "especifica",
+          "nome": "Específica",
+          "modificadorCusto": 0,
+          "descricao": "Uma substância em outra específica (ex: madeira em pedra, consertar objetos)"
+        },
+        {
+          "id": "limitada",
+          "nome": "Limitada",
+          "modificadorCusto": 2,
+          "grauMinimo": 4,
+          "descricao": "Grupo amplo→coisa única OU coisa única→grupo amplo (ex: qualquer metal→chumbo)"
+        },
+        {
+          "id": "ampla",
+          "nome": "Ampla",
+          "modificadorCusto": 5,
+          "grauMinimo": 7,
+          "descricao": "Grupo amplo→grupo amplo (ex: qualquer sólido→qualquer outro sólido)"
+        },
+        {
+          "id": "universal",
+          "nome": "Universal",
+          "modificadorCusto": 9,
+          "grauMinimo": 10,
+          "descricao": "Qualquer matéria inanimada→qualquer outra matéria"
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Especificar transformações",
+    "placeholderInput": "Ex: Madeira em pedra, Qualquer metal em ouro"
+  },
+  {
+    "id": "imbuir-poder",
+    "nome": "Imbuir Poder",
+    "custoBase": 4,
+    "descricao": "Aplicação dedicada a imbuir poderes em itens existentes. Um artesão pode infundir poder em um objeto, elevando-o. Necessário para aumentar ou diminuir características de itens (utiliza efeito Fortalecer). Também pode imbuir itens de aprimoramento para armas, trajes e proteções, aumentando dano ou RD. Requer teste de efeito - falhas podem danificar o item. Ação Completa não pode ser executada em combate. Efeito permanente quando bem-sucedido.",
+    "parametrosPadrao": {
+      "acao": 0,
+      "alcance": 1,
+      "duracao": 4
+    },
+    "categorias": ["Controle", "Utilidade"],
+    "exemplos": "Encantamento de armas, imbuir escudos, forjar itens mágicos, aprimorar equipamentos"
+  },
+  {
+    "id": "controle-da-sorte",
+    "nome": "Controle da Sorte",
+    "custoBase": 4,
+    "descricao": "Você pode gastar inspiração de formas especiais. Para cada grau, escolha UMA habilidade: (1) Gastar inspiração em benefício de outros com efeitos normais. (2) Conceder sua inspiração para outros (uma vez por rodada por personagem). (3) A cada 2 graus, alvo tem +1 vantagem em rolagem específica (deve ser única habilidade do poder, mas pode ter modificações). (4) A cada 2 graus, alvo tem +1 desvantagem em rolagem específica (deve ser única habilidade do poder, mas pode ter modificações). Ataques simples valem como um tipo de rolagem. Deve escolher a habilidade e, para (3) e (4), a rolagem específica ao comprar.",
+    "parametrosPadrao": {
+      "acao": 4,
+      "alcance": 2,
+      "duracao": 0
+    },
+    "categorias": ["Controle", "Utilidade", "Suporte"],
+    "exemplos": "Manipulação de probabilidade, benção da sorte, azar, controle do destino",
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Habilidade escolhida",
+    "placeholderInput": "Ex: Conceder inspiração, +1 vantagem em ataques à distância"
+  },
+  {
+    "id": "ilusao",
+    "nome": "Ilusão",
+    "custoBase": 1,
+    "descricao": "Você controla os sentidos de outras pessoas para criar impressões falsas (imagens, sons, cheiros, impressões mentais/radar). Ilusões afetam tipos de sentido conforme custo: 1 PdA = 1 tipo, 2 PdA = 2 tipos, até 5 PdA = todos os tipos. Sentidos visuais contam como 2 tipos. Área: 4 metros circular. Ilusões não têm substância nem afetam o mundo real (não iluminam, aquecem, alimentam). Requer teste de efeito para convencimento. Alvos podem testar Intuição para descobrir (ao interagir). Ilusão descoberta = outros ganham +1 vantagem. Manter ilusão estática = ação livre; ilusão ativa = ação padrão. Sentidos com Contra-Ataca Ilusão detectam imediatamente.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 5,
+      "duracao": 1
+    },
+    "categorias": ["Controle"],
+    "exemplos": "Ilusões visuais, miragens, fantasmas, holograma, invisibilidade ilusória",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Tipos de Sentido Afetados",
+      "opcoes": [
+        {
+          "id": "um-tipo",
+          "nome": "1 Tipo de Sentido",
+          "modificadorCusto": 0,
+          "descricao": "Afeta apenas um tipo de sentido (auditivo, olfativo, tátil, mental, rádio)"
+        },
+        {
+          "id": "dois-tipos",
+          "nome": "2 Tipos de Sentido",
+          "modificadorCusto": 1,
+          "descricao": "Afeta dois tipos de sentido simultaneamente"
+        },
+        {
+          "id": "visual",
+          "nome": "Sentido Visual (conta como 2)",
+          "modificadorCusto": 1,
+          "descricao": "Afeta sentidos visuais (conta como 2 tipos de sentido)"
+        },
+        {
+          "id": "tres-tipos",
+          "nome": "3 Tipos de Sentido",
+          "modificadorCusto": 2,
+          "descricao": "Afeta três tipos de sentido simultaneamente"
+        },
+        {
+          "id": "quatro-tipos",
+          "nome": "4 Tipos de Sentido",
+          "modificadorCusto": 3,
+          "descricao": "Afeta quatro tipos de sentido simultaneamente"
+        },
+        {
+          "id": "todos-tipos",
+          "nome": "Todos os Tipos de Sentido",
+          "modificadorCusto": 4,
+          "descricao": "Afeta todos os tipos de sentido (ilusão perfeita)"
+        }
+      ]
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Descrição da ilusão",
+    "placeholderInput": "Ex: Parede de pedra, Clone ilusório, Sons de batalha"
+  },
+  {
+    "id": "invocar",
+    "nome": "Invocar",
+    "custoBase": 7,
+    "descricao": "Você pode chamar outra criatura — um lacaio — para ajudá-lo. Lacaio é criado como personagem independente com (grau × 10) PdA. Nível do lacaio = metade do seu nível (limite de grau de efeito = seu nível). Todos os atributos da criatura invocada = metade dos seus. PE atuais da criatura = custo de invocação. Lacaios (mesmo heroicos) não podem ter efeitos de invocação. Alcance: Perto (até 30m). Duração sustentada - lacaio permanece enquanto você mantiver o efeito.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 1,
+      "duracao": 1
+    },
+    "categorias": ["Controle"],
+    "exemplos": "Invocar elemental, convocar espíritos, portais de invocação, lacaios místicos",
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Tipo de lacaio",
+    "placeholderInput": "Ex: Elemental de fogo, Espírito guardião, Demônio menor"
+  },
+  {
+    "id": "mover-alvo",
+    "nome": "Mover Alvo",
+    "custoBase": 3,
+    "descricao": "Você pode mover alvos sem tocar neles. Mover Alvo não tem ação/reação - objeto em movimento não arrasta personagem movendo-o. Não conta como 'contato físico' ou 'toque' para efeitos que exijam. Para mover alvos vivos, necessário teste de efeito com resistência (apenas se alvo não quiser). Pode mover objetos e criaturas telecineticamente. Peso/tamanho movido depende do grau do efeito.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 2,
+      "duracao": 1
+    },
+    "categorias": ["Controle", "Movimento"],
+    "exemplos": "Telecinese, levitação de objetos, arremesso telecinético, controle gravitacional"
+  },
+  {
+    "id": "mudar-efeito",
+    "nome": "Mudar Efeito",
+    "custoBase": 6,
+    "descricao": "Você reescreve ativamente as regras de um poder de um alvo. Escolha um único Poder (sem modificação Inato) que alvo dentro do alcance esteja usando (Duração: Ativada, Permanente ou Manutenção). Teste de Efeito oposto: [1d20 + Grau + Mod. Chave] vs. maior entre [Vontade do Alvo] ou [Teste de Efeito do Poder Alvo]. Sucesso: 'hackeia' o poder, aplica uma manipulação (dura enquanto mantiver): (1) Adicionar Falha, (2) Remover Falha, (3) Adicionar Extra, (4) Remover Extra, (5) Alterar Descritor (ex: Fogo→Gelo, Corte→Impacto). Requer Ação Livre cada turno para manter.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 2,
+      "duracao": 2
+    },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Poder alvo e manipulação",
+    "placeholderInput": "Ex: Adicionar Falha X, Remover Extra Y",
+    "categorias": ["Controle"],
+    "exemplos": "Hack de poderes, manipulação arcana, reescrita de efeitos, sabotagem mística"
+  },
+  {
+    "id": "recuperacao",
+    "nome": "Recuperação",
+    "custoBase": 3,
+    "descricao": "Você pode recuperar danos, condições, lesões ou energia de um alvo. O tipo de recuperação determina o custo base. Dano: recupera PVs conforme tabela de dano/cura (grau determina quantidade de dados). Não funciona em criaturas sem Vigor ou objetos. Condição: remove condições (exceto morrendo, faminto, surpreendido, aflições verdadeiras). Grau deve ser ≥ grau do efeito que causou a condição. Lesão: reduz tempo de cuidados prolongados (não verdadeiro) ou cura lesões verdadeiras ao longo do tempo (tabela de tempo invertida). Grau 7+ = ação livre. Energia: recupera PE = grau do custo do efeito. Deve ter 2+ falhas verdadeiras (não contam para redução de custo). Não pode ser fortalecido/enfraquecido.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 1,
+      "duracao": 0
+    },
+    "categorias": ["Suporte", "Cura"],
+    "exemplos": "Toque curativo, purificar, regeneração, restaurar energia, cura milagrosa",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Tipo de Recuperação",
+      "opcoes": [
+        {
+          "id": "dano",
+          "nome": "Dano (PV)",
+          "modificadorCusto": 0,
+          "descricao": "Recupera PVs do alvo conforme tabela de dano/cura. Requer teste de efeito se alvo não aceitar"
+        },
+        {
+          "id": "condicao",
+          "nome": "Condição",
+          "modificadorCusto": 2,
+          "descricao": "Remove condições (exceto morrendo, faminto, surpreendido). Grau deve ser ≥ grau do efeito causador"
+        },
+        {
+          "id": "lesao",
+          "nome": "Lesão e Regeneração",
+          "modificadorCusto": 3,
+          "descricao": "Cura lesões (aflições verdadeiras). Não verdadeiro = reduz tempo de cuidados. Verdadeiro = cura ao longo do tempo. Grau 7+ = ação livre"
+        },
+        {
+          "id": "energia",
+          "nome": "Energia (PE)",
+          "modificadorCusto": 5,
+          "descricao": "Recupera uma quantidade de PE igual a 4 × Grau do efeito. Deve ter 2+ falhas verdadeiras. Efeitos colaterais duram 1+ dia. Não fortalecível"
+        }
+      ]
+    }
+  },
+  {
+    "id": "membros-extras",
+    "nome": "Membros Extras",
+    "custoBase": 5,
+    "descricao": "O alvo tem membros manipuladores extras, como braços, tentáculos ou até mesmo cabelo ou cauda preênseis. Cada grau neste efeito concede um membro extra.",
+    "parametrosPadrao": {
+      "acao": 5,
+      "alcance": 0,
+      "duracao": 4
+    },
+    "categorias": ["Geral"],
+    "exemplos": "Braços extras, tentáculos, cauda preênsil, cabelo manipulador"
+  },
+  {
+    "id": "mudar-forma",
+    "nome": "Mudar de Forma",
+    "custoBase": 5,
+    "descricao": "Você pode alterar sua aparência. Suas características não mudam; sua nova forma é uma mudança meramente cosmética. Você ganha fortalecer no mesmo grau deste efeito em testes de Enganação para se disfarçar como a forma assumida (veja as diretrizes para Disfarçar-se em Enganação).",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 2
+    },
+    "categorias": ["Geral", "Utilidade"],
+    "exemplos": "Disfarce perfeito, imitação de aparência, camuflagem social"
+  },
+  {
+    "id": "oscilante",
+    "nome": "Oscilante",
+    "custoBase": 7,
+    "descricao": "Você pode ganhar ou usar virtualmente qualquer efeito do tipo e descritor apropriados! Um efeito Oscilante lhe concede (grau x 7) PdA que você pode alocar em diferentes efeitos, gerando outros poderes. Use uma ação em seu turno e escolha onde alocar. É uma boa ideia ter um 'menu' de pontos pré-prontos para acelerar esse processo durante o jogo.",
+    "parametrosPadrao": {
+      "acao": 1,
+      "alcance": 0,
+      "duracao": 2
+    },
+    "categorias": ["Geral"],
+    "exemplos": "Adaptação de poderes, versatilidade total, controle de energia"
+  },
+  {
+    "id": "metamorfia",
+    "nome": "Metamorfia",
+    "custoBase": 10,
+    "descricao": "O alvo se transforma completamente em uma 'Forma Alternativa' pré-definida. Esta forma funciona exatamente como uma criatura Invocar com o extra Heroico: ela é criada como um personagem independente com até o seu Nível de personagem e um orçamento de PdA igual a (Grau deste Efeito x 10).",
+    "parametrosPadrao": {
+      "acao": 0,
+      "alcance": 0,
+      "duracao": 3
+    },
+    "categorias": ["Geral"],
+    "exemplos": "Forma de batalha, transformação heroica, segunda identidade",
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Forma Alternativa",
+    "placeholderInput": "Ex: Forma de Dragão, Forma Elemental, Forma Bestial..."
+  },
+  {
+    "id": "intangibilidade",
+    "nome": "Intangibilidade",
+    "custoBase": 5,
+    "descricao": "Você pode assumir uma forma menos sólida. Você pode alternar entre a forma normal e a Intangível uma vez por rodada, como uma ação livre. Por padrão sua forma tangível é sua forma 'normal', mas o mestre pode permitir que você faça de sua forma Intangível sua forma 'normal'; nesse caso, permanecer sólido tem duração sustentada para você! Intangível oferece quatro graus de efeito (Pode escolher um dependendo do grau desse efeito).",
+    "parametrosPadrao": {
+      "acao": 3,
+      "alcance": 0,
+      "duracao": 1
+    },
+    "categorias": ["Defesa"],
+    "exemplos": "Forma fantasmagórica, fase etérea, corpo de névoa, forma espectral"
+  },
+  {
+    "id": "imortalidade",
+    "nome": "Imortalidade",
+    "custoBase": 3,
+    "descricao": "Você pode se recuperar da morte! Caso sua condição se torne morto, você pode retornar à vida depois de um tempo. Quando ressuscita, está com 1 PV e continua com lesões ou condições permanentes que estavam antes, além disso você também perde toda a inspiração. Tempo de ressurreição: Grau 1 (1 semana), Grau 2 (4 dias), Grau 3 (2 dias), Grau 4 (16h), Grau 5 (8h), Grau 6 (4h), Grau 7 (2h), Grau 8 (1h), Grau 9 (30min), Grau 10 (15min), Grau 11 (7min), Grau 12 (2 rodadas), Grau 13 (1 rodada).",
+    "parametrosPadrao": {
+      "acao": 5,
+      "alcance": 0,
+      "duracao": 4
+    },
+    "categorias": ["Defesa"],
+    "exemplos": "Fator de cura, ressurreição automática, imortalidade, renascimento"
+  },
+  {
+    "id": "imunidade",
+    "nome": "Imunidade",
+    "custoBase": 1,
+    "descricao": "Você é imune a certos efeitos, sendo bem-sucedido automaticamente em testes de resistência contra eles. Escolha qual será o efeito ao comprar Imunidade. É possível ter imunidade a vários efeitos, porém você irá gastar mais para cada. Os efeitos são divididos em patamares que alteram o custo. Efeitos verdadeiros não podem ser imunizados e modificação verdadeira não pode ser aplicada a esse efeito.",
+    "parametrosPadrao": {
+      "acao": 5,
+      "alcance": 0,
+      "duracao": 4
+    },
+    "categorias": ["Defesa"],
+    "exemplos": "Imune a veneno, imune a fogo, imune a efeitos mentais",
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Tipo de efeito/descritor",
+    "placeholderInput": "Ex: Veneno, Frio, Efeitos Mentais, Fogo...",
+    "configuracoes": {
+      "tipo": "select",
+      "label": "Patamar de Imunidade",
+      "opcoes": [
+        {
+          "id": "patamar-1",
+          "nome": "Patamar 1",
+          "modificadorCusto": 0,
+          "grauMinimo": 2,
+          "descricao": "Envelhecimento, doença, veneno, uma condição ambiental (frio, calor, pressão alta, radiação ou vácuo), um tipo de sufocamento (respirar normalmente debaixo d'água ou em uma atmosfera alienígena), inanição e sede, necessidade de dormir ou um descritor raro de poder, condições fracas."
+        },
+        {
+          "id": "patamar-2",
+          "nome": "Patamar 2",
+          "modificadorCusto": 2,
+          "grauMinimo": 4,
+          "descricao": "Acertos críticos (não pode usar a modificação resistência), sufocamento (você nunca precisa respirar) ou um descritor incomum de poder (como químico, gravidade, necromântico etc.), condições médias."
+        },
+        {
+          "id": "patamar-3",
+          "nome": "Patamar 3",
+          "modificadorCusto": 4,
+          "grauMinimo": 6,
+          "descricao": "Efeitos de alteração, efeitos de Aflição sensorial, efeitos de emoção, armadilha (agarrar, cordas), efeitos de fadiga, perícias de interação ou um efeito específico de Dano (como munição, fogo, frio, eletricidade, queda, magia, radiação, sônico, etc.), condições fortes."
+        },
+        {
+          "id": "patamar-4",
+          "nome": "Patamar 4",
+          "modificadorCusto": 6,
+          "grauMinimo": 8,
+          "descricao": "Um descritor comum de poder (como fogo, frio, eletricidade, radiação, ou descritores ligados ao clima), suporte vital (inclui imunidade à doença, a veneno, a todas as condições ambientais, sufocamento, inanição e sede), condições extremas, exceto morrendo."
+        },
+        {
+          "id": "patamar-5",
+          "nome": "Patamar 5",
+          "modificadorCusto": 8,
+          "grauMinimo": 10,
+          "descricao": "Um descritor de poder comum (Impacto, espiritual, por exemplo)."
+        },
+        {
+          "id": "patamar-total",
+          "nome": "Imunidade Total",
+          "modificadorCusto": 20,
+          "grauMinimo": 12,
+          "descricao": "Todos os efeitos resistidos por alguma perícia de resistência (também para ataques simples, porém escolha entre esses)."
+        }
+      ]
+    }
+  }
+]
