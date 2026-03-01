@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { type Either, left, right } from '@/core/either';
 import { AlreadyExistsError } from '@/core/errors/alreadyExistsError';
 import { User } from '../../enterprise/entities/user';
@@ -18,6 +19,7 @@ interface RegisterUserUseCaseResponseData {
 
 type RegisterUserUseCaseResponse = Either<AlreadyExistsError, RegisterUserUseCaseResponseData>;
 
+@Injectable()
 export class RegisterUserUseCase {
   constructor(
     private usersRepository: UsersRepository,

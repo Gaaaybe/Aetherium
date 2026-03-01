@@ -10,7 +10,7 @@ interface UserProps {
   password: string;
   roles: UserRole[];
   createdAt: Date;
-  updatedAt?: Date;
+  updatedAt?: Date | null;
 }
 
 export class User extends Entity<UserProps> {

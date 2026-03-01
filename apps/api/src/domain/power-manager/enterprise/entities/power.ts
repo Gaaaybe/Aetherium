@@ -231,7 +231,11 @@ export class Power extends OwnableEntity<PowerProps> {
   }
 
   static createOfficial(
-    props: Omit<PowerProps, 'userId' | 'isPublic' | 'createdAt' | 'notas' | 'globalModifications' | 'updatedAt'> & Partial<Pick<PowerProps, 'notas' | 'globalModifications'>>,
+    props: Omit<
+      PowerProps,
+      'userId' | 'isPublic' | 'createdAt' | 'notas' | 'globalModifications' | 'updatedAt'
+    > &
+      Partial<Pick<PowerProps, 'notas' | 'globalModifications'>>,
     id?: UniqueEntityId,
   ): Power {
     return Power.create(
