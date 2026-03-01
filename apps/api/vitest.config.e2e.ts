@@ -7,7 +7,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    exclude: ['**/*.e2e-spec.ts', 'node_modules/**'],
+    include: ['**/*.e2e-spec.ts'],
+    setupFiles: ['./test/setup-e2e.ts'],
+    fileParallelism: false,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
