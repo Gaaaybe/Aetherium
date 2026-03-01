@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class CatalogService {
-  private readonly dataPath = join(__dirname, '../data');
+  private readonly dataPath = join(__dirname,'../../../../data');
 
   getScales() {
     const filePath = join(this.dataPath, 'escalas.json');

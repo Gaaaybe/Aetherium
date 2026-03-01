@@ -1,21 +1,22 @@
 import { Controller, Get } from '@nestjs/common';
 import { CatalogService } from '@/infrastructure/services/catalog.service';
+import { Public } from '@/infrastructure/auth/public';
 
-@Controller('catalog')
+@Controller('/catalog')
 export class CatalogController {
   constructor(private readonly catalogService: CatalogService) {}
-
-  @Get('scales')
+  @Public()
+  @Get('/scales')
   getScales() {
     return this.catalogService.getScales();
   }
-
-  @Get('universal-table')
+  @Public()
+  @Get('/universal-table')
   getUniversalTable() {
     return this.catalogService.getUniversalTable();
   }
-
-  @Get('domains')
+  @Public()
+  @Get('/domains')
   getDomains() {
     return this.catalogService.getDomains();
   }
