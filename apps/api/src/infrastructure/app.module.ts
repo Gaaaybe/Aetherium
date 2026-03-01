@@ -1,11 +1,9 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { PowerCreationModule } from './power-creation.module';
+import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
+import { HttpModule } from './http/http.module';
 
 @Module({
-  imports: [PowerCreationModule],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, HttpModule],
 })
 export class AppModule {}
