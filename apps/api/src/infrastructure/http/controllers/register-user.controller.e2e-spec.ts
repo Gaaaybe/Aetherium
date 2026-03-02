@@ -3,7 +3,6 @@ import { PrismaService } from '@/infrastructure/database/prisma/prisma.service'
 import { INestApplication } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
-import { describe, beforeAll, test, expect } from 'vitest'
 
 
 describe('Register user controller (E2E)', () => {
