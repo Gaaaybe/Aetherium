@@ -2,13 +2,13 @@
 FROM node:22-alpine AS builder
 
 # Habilita o pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@8.15.8 --activate
 
 # Define diretório de trabalho
 WORKDIR /app
 
 # Copia os arquivos de dependência e configuração
-COPY package.json pnpm-lock.yaml prisma.config.ts ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml prisma.config.ts ./
 COPY prisma ./prisma/
 COPY data ./data/
 
@@ -29,12 +29,12 @@ RUN pnpm run build
 # Production stage
 FROM node:22-alpine AS production
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@8.15.8 --activate
 
 WORKDIR /app
 
 # Copia pacotes para produção e a configuração do Prisma 7
-COPY package.json pnpm-lock.yaml prisma.config.ts ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml prisma.config.ts ./
 COPY prisma ./prisma/
 COPY data ./data/
 
