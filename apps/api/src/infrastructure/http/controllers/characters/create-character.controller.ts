@@ -1,6 +1,6 @@
-import { BadRequestException, Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { z } from 'zod';
-import { CreateCharacterUseCase } from '@/domain/character-manager/application/use-cases/create-character';
+import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
@@ -37,7 +37,7 @@ type CreateCharacterBodySchema = z.infer<typeof createCharacterBodySchema>;
 
 @Controller('/characters')
 export class CreateCharacterController {
-  constructor(private createCharacter: CreateCharacterUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Post()
   @HttpCode(201)
@@ -45,17 +45,7 @@ export class CreateCharacterController {
     @Body(new ZodValidationPipe(createCharacterBodySchema)) body: CreateCharacterBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.createCharacter.execute({
-      userId: user.sub,
-      narrative: body.narrative,
-      attributes: body.attributes,
-      spiritualPrinciple: body.spiritualPrinciple,
-    });
-
-    if (result.isLeft()) {
-      throw new BadRequestException(result.value.message);
-    }
-
-    return CharacterPresenter.toHTTP(result.value.character);
+    const character = await this.charactersService.create(user.sub, body);
+    return CharacterPresenter.toHTTP(character);
   }
 }

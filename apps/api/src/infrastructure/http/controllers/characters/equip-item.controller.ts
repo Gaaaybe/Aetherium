@@ -9,14 +9,13 @@ import {
   Post,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { EquipItemUseCase } from '@/domain/character-manager/application/use-cases/equip-item';
-import { NotAllowedError } from '@/domain/character-manager/application/use-cases/errors/not-allowed-error';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
+import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
+import { ItemsRepository } from '@/domain/item-manager/application/repositories/items-repository';
+import { ResourceNotFoundError, NotAllowedError, DomainValidationError } from '@/modules/character-manager/errors/character-errors';
 
 const equipItemBodySchema = z.object({
   slot: z.enum(['suit', 'accessory', 'hand', 'quick-access']),
@@ -25,12 +24,10 @@ const equipItemBodySchema = z.object({
 
 type EquipItemBodySchema = z.infer<typeof equipItemBodySchema>;
 
-import { ItemsRepository } from '@/domain/item-manager/application/repositories/items-repository';
-
 @Controller('/characters/:characterId/items/:itemId/equip')
 export class EquipItemController {
   constructor(
-    private equipItem: EquipItemUseCase,
+    private charactersService: CharactersService,
     private itemsRepository: ItemsRepository,
   ) {}
 
@@ -42,31 +39,32 @@ export class EquipItemController {
     @Body(new ZodValidationPipe(equipItemBodySchema)) body: EquipItemBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.equipItem.execute({
-      characterId,
-      userId: user.sub,
-      itemId,
-      slot: body.slot,
-      quantity: body.quantity,
-    });
+    try {
+      const character = await this.charactersService.equipItem(
+        characterId,
+        user.sub,
+        itemId,
+        body.slot,
+        body.quantity,
+      );
 
-    if (result.isLeft()) {
-      const error = result.value;
+      const items = await this.itemsRepository.findByCharacterId(characterId);
 
-      switch (error.constructor) {
-        case ResourceNotFoundError:
-          throw new NotFoundException(error.message);
-        case NotAllowedError:
-          throw new ForbiddenException(error.message);
-        case DomainValidationError:
-          throw new BadRequestException(error.message);
-        default:
-          throw new BadRequestException(error.message);
+      return CharacterPresenter.toHTTP(character, [], items);
+    } catch (error: any) {
+      if (error instanceof ResourceNotFoundError || error.constructor.name === 'ResourceNotFoundError') {
+        throw new NotFoundException(error.message);
       }
+
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
+        throw new ForbiddenException(error.message);
+      }
+
+      if (error instanceof DomainValidationError || error.constructor.name === 'DomainValidationError') {
+        throw new BadRequestException(error.message);
+      }
+
+      throw error;
     }
-
-    const items = await this.itemsRepository.findByCharacterId(characterId);
-
-    return CharacterPresenter.toHTTP(result.value.character, [], items);
   }
 }

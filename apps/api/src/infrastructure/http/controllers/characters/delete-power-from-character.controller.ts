@@ -7,17 +7,15 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { DeletePowerFromCharacterUseCase } from '@/domain/character-manager/application/use-cases/delete-power-from-character';
-import { NotAllowedError } from '@/domain/character-manager/application/use-cases/errors/not-allowed-error';
+import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
 import { CharacterPresenter } from '../../presenters/character.presenter';
+import { ResourceNotFoundError, NotAllowedError, DomainValidationError } from '@/modules/character-manager/errors/character-errors';
 
 @Controller('/characters/:characterId/powers/:powerId/remove')
 export class DeletePowerFromCharacterController {
-  constructor(private deletePowerFromCharacter: DeletePowerFromCharacterUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Post()
   @HttpCode(200)
@@ -26,30 +24,28 @@ export class DeletePowerFromCharacterController {
     @Param('powerId') powerId: string,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.deletePowerFromCharacter.execute({
-      characterId,
-      userId: user.sub,
-      powerId,
-    });
+    try {
+      const character = await this.charactersService.deletePowerFromCharacter(
+        characterId,
+        user.sub,
+        powerId,
+      );
 
-    if (result.isLeft()) {
-      const error = result.value;
-
-      if (error instanceof ResourceNotFoundError) {
+      return CharacterPresenter.toHTTP(character);
+    } catch (error: any) {
+      if (error instanceof ResourceNotFoundError || error.constructor.name === 'ResourceNotFoundError') {
         throw new NotFoundException(error.message);
       }
 
-      if (error instanceof NotAllowedError) {
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
         throw new ForbiddenException(error.message);
       }
 
-      if (error instanceof DomainValidationError) {
+      if (error instanceof DomainValidationError || error.constructor.name === 'DomainValidationError') {
         throw new BadRequestException(error.message);
       }
 
-      throw new BadRequestException('Failed to remove power');
+      throw error;
     }
-
-    return CharacterPresenter.toHTTP(result.value.character);
   }
 }

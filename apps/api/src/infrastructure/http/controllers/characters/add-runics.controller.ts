@@ -9,14 +9,12 @@ import {
   Post,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { AddRunicsUseCase } from '@/domain/character-manager/application/use-cases/add-runics';
-import { NotAllowedError } from '@/domain/character-manager/application/use-cases/errors/not-allowed-error';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
+import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
+import { ResourceNotFoundError, NotAllowedError, DomainValidationError } from '@/modules/character-manager/errors/character-errors';
 
 const addRunicsBodySchema = z.object({
   amount: z.number().int().min(1),
@@ -26,7 +24,7 @@ type AddRunicsBodySchema = z.infer<typeof addRunicsBodySchema>;
 
 @Controller('/characters/:characterId/runics/add')
 export class AddRunicsController {
-  constructor(private addRunics: AddRunicsUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Post()
   @HttpCode(200)
@@ -35,27 +33,28 @@ export class AddRunicsController {
     @Body(new ZodValidationPipe(addRunicsBodySchema)) body: AddRunicsBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.addRunics.execute({
-      characterId,
-      userId: user.sub,
-      amount: body.amount,
-    });
+    try {
+      const character = await this.charactersService.addRunics(
+        characterId,
+        user.sub,
+        body.amount,
+      );
 
-    if (result.isLeft()) {
-      const error = result.value;
-
-      switch (error.constructor) {
-        case ResourceNotFoundError:
-          throw new NotFoundException(error.message);
-        case NotAllowedError:
-          throw new ForbiddenException(error.message);
-        case DomainValidationError:
-          throw new BadRequestException(error.message);
-        default:
-          throw new BadRequestException(error.message);
+      return CharacterPresenter.toHTTP(character);
+    } catch (error: any) {
+      if (error instanceof ResourceNotFoundError || error.constructor.name === 'ResourceNotFoundError') {
+        throw new NotFoundException(error.message);
       }
-    }
 
-    return CharacterPresenter.toHTTP(result.value.character);
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
+        throw new ForbiddenException(error.message);
+      }
+
+      if (error instanceof DomainValidationError || error.constructor.name === 'DomainValidationError') {
+        throw new BadRequestException(error.message);
+      }
+
+      throw error;
+    }
   }
 }

@@ -71,9 +71,9 @@ describe('Acquire Domain Mastery (e2e)', () => {
     const response = await request(app.getHttpServer())
       .post(`/characters/${characterId}/domains`)
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ domainId: 'sagrado', masteryLevel: 'INICIANTE' });
+      .send({ domainId: 'arma-branca', masteryLevel: 'INICIANTE' });
 
     expect(response.statusCode).toBe(201);
-    expect(response.body.domainMasteries).toContainEqual(expect.objectContaining({ domainId: 'sagrado' }));
+    expect(response.body.domainMasteries).toContainEqual(expect.objectContaining({ domainId: 'arma-branca' }));
   });
 });

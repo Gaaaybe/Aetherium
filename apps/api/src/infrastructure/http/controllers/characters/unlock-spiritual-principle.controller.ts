@@ -9,14 +9,12 @@ import {
   Post,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
-import { UnlockSpiritualPrincipleUseCase } from '@/domain/character-manager/application/use-cases/unlock-spiritual-principle';
-import { NotAllowedError } from '@/domain/character-manager/application/use-cases/errors/not-allowed-error';
+import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
+import { ResourceNotFoundError, NotAllowedError, DomainValidationError } from '@/modules/character-manager/errors/character-errors';
 
 const unlockSpiritualPrincipleBodySchema = z.object({
   stage: z.enum(['NORMAL', 'DIVINE']).optional().default('NORMAL'),
@@ -26,7 +24,7 @@ type UnlockSpiritualPrincipleBodySchema = z.infer<typeof unlockSpiritualPrincipl
 
 @Controller('/characters/:characterId/spiritual-awakening')
 export class UnlockSpiritualPrincipleController {
-  constructor(private unlockSpiritualPrinciple: UnlockSpiritualPrincipleUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Post()
   @HttpCode(200)
@@ -35,15 +33,15 @@ export class UnlockSpiritualPrincipleController {
     @Body(new ZodValidationPipe(unlockSpiritualPrincipleBodySchema)) body: UnlockSpiritualPrincipleBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.unlockSpiritualPrinciple.execute({
-      characterId,
-      userId: user.sub,
-      stage: body.stage,
-    });
+    try {
+      const character = await this.charactersService.unlockSpiritualPrinciple(
+        characterId,
+        user.sub,
+        body.stage,
+      );
 
-    if (result.isLeft()) {
-      const error = result.value;
-
+      return CharacterPresenter.toHTTP(character);
+    } catch (error) {
       if (error instanceof ResourceNotFoundError) {
         throw new NotFoundException(error.message);
       }
@@ -56,9 +54,7 @@ export class UnlockSpiritualPrincipleController {
         throw new BadRequestException(error.message);
       }
 
-      throw new BadRequestException('Failed to unlock spiritual principle');
+      throw error;
     }
-
-    return CharacterPresenter.toHTTP(result.value.character);
   }
 }

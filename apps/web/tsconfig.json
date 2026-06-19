@@ -22,7 +22,8 @@
     "baseUrl": ".",
     "ignoreDeprecations": "5.0",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@aetherium/rules-engine": ["../../packages/rules-engine/src/index.ts"]
     }
   },
   "include": ["src"],

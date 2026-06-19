@@ -1,11 +1,11 @@
 import { Injectable, type OnModuleInit } from '@nestjs/common';
 import { DomainEvents } from '@/core/events/domain-events';
 import { CharacterItemDiscardedEvent } from '@/domain/character-manager/enterprise/events/character-item-discarded-event';
-import { ItemsRepository } from '../repositories/items-repository';
+import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
 
 @Injectable()
 export class OnCharacterItemDiscarded implements OnModuleInit {
-  constructor(private itemsRepository: ItemsRepository) {}
+  constructor(private prisma: PrismaService) {}
 
   onModuleInit(): void {
     this.setupSubscriptions();
@@ -31,10 +31,15 @@ export class OnCharacterItemDiscarded implements OnModuleInit {
       return;
     }
 
-    const item = await this.itemsRepository.findById(discardedItemId);
+    const item = await this.prisma.item.findUnique({
+      where: { id: discardedItemId },
+      select: { isPublic: true },
+    });
 
     if (item && !item.isPublic) {
-      await this.itemsRepository.delete(discardedItemId);
+      await this.prisma.item.delete({
+        where: { id: discardedItemId },
+      });
     }
   }
 }

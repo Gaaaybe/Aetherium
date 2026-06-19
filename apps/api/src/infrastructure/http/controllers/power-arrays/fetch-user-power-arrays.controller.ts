@@ -1,20 +1,16 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { FetchUserPowerArraysUseCase } from '@/domain/power-manager/application/use-cases/fetch-user-power-arrays';
+import { PowersService } from '@/modules/power-manager/powers.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
-import { PowerArrayPresenter } from '../../presenters/power-array.presenter';
+import { formatPowerArrayToHTTP } from '@/modules/power-manager/dto/power.dto';
 
 @Controller('/power-arrays/me')
 export class FetchUserPowerArraysController {
-  constructor(private fetchUserPowerArrays: FetchUserPowerArraysUseCase) {}
+  constructor(private powersService: PowersService) {}
 
   @Get()
   async handle(@Query('page') page: string, @CurrentUser() user: UserPayload) {
-    const result = await this.fetchUserPowerArrays.execute({
-      userId: user.sub,
-      page: page ? Number(page) : 1,
-    });
-
-    return result.value!.powerArrays.map(PowerArrayPresenter.toHTTP);
+    const raws = await this.powersService.fetchUserPowerArrays(user.sub, page ? Number(page) : 1);
+    return raws.map(formatPowerArrayToHTTP);
   }
 }

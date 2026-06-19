@@ -1,10 +1,20 @@
-import { BadRequestException, Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  HttpCode,
+  NotFoundException,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { z } from 'zod';
-import { AcquireBenefitUseCase } from '@/domain/character-manager/application/use-cases/acquire-benefit';
+import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
+import { ResourceNotFoundError, NotAllowedError, DomainValidationError } from '@/modules/character-manager/errors/character-errors';
 
 const acquireBenefitBodySchema = z.object({
   benefitName: z.string().min(1),
@@ -15,7 +25,7 @@ type AcquireBenefitBodySchema = z.infer<typeof acquireBenefitBodySchema>;
 
 @Controller('/characters/:characterId/benefits')
 export class AcquireBenefitController {
-  constructor(private acquireBenefit: AcquireBenefitUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Post()
   @HttpCode(201)
@@ -24,17 +34,29 @@ export class AcquireBenefitController {
     @Body(new ZodValidationPipe(acquireBenefitBodySchema)) body: AcquireBenefitBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.acquireBenefit.execute({
-      characterId,
-      userId: user.sub,
-      benefitName: body.benefitName,
-      targetDegree: body.targetDegree,
-    });
+    try {
+      const { character } = await this.charactersService.acquireBenefit(
+        characterId,
+        user.sub,
+        body.benefitName,
+        body.targetDegree,
+      );
 
-    if (result.isLeft()) {
-      throw new BadRequestException(result.value.message);
+      return CharacterPresenter.toHTTP(character);
+    } catch (error: any) {
+      if (error instanceof ResourceNotFoundError || error.constructor.name === 'ResourceNotFoundError') {
+        throw new NotFoundException(error.message);
+      }
+
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
+        throw new ForbiddenException(error.message);
+      }
+
+      if (error instanceof DomainValidationError || error.constructor.name === 'DomainValidationError') {
+        throw new BadRequestException(error.message);
+      }
+
+      throw error;
     }
-
-    return CharacterPresenter.toHTTP(result.value.character);
   }
 }

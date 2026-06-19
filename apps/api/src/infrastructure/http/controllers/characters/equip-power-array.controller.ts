@@ -7,17 +7,15 @@ import {
   Param,
   Patch,
 } from '@nestjs/common';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { EquipPowerArrayUseCase } from '@/domain/character-manager/application/use-cases/equip-power-array';
-import { NotAllowedError } from '@/domain/character-manager/application/use-cases/errors/not-allowed-error';
+import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
 import { CharacterPresenter } from '../../presenters/character.presenter';
+import { ResourceNotFoundError, NotAllowedError, DomainValidationError } from '@/modules/character-manager/errors/character-errors';
 
 @Controller('/characters/:characterId/power-arrays/:powerArrayId/equip')
 export class EquipPowerArrayController {
-  constructor(private equipPowerArray: EquipPowerArrayUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Patch()
   @HttpCode(200)
@@ -26,34 +24,31 @@ export class EquipPowerArrayController {
     @Param('powerArrayId') powerArrayId: string,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.equipPowerArray.execute({
-      characterId,
-      userId: user.sub,
-      powerArrayId,
-    });
+    try {
+      const character = await this.charactersService.equipPowerArray(
+        characterId,
+        user.sub,
+        powerArrayId,
+      );
 
-    if (result.isLeft()) {
-      const error = result.value;
-
-      if (error instanceof ResourceNotFoundError) {
+      return CharacterPresenter.toHTTP(character);
+    } catch (error: any) {
+      if (error instanceof ResourceNotFoundError || error.constructor.name === 'ResourceNotFoundError') {
         throw new NotFoundException(error.message);
       }
 
-      if (error instanceof NotAllowedError) {
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
         throw new ForbiddenException(error.message);
       }
 
-      if (error instanceof DomainValidationError && error.message.includes('não encontrado')) {
-        throw new NotFoundException(error.message);
-      }
-
-      if (error instanceof DomainValidationError) {
+      if (error instanceof DomainValidationError || error.constructor.name === 'DomainValidationError') {
+        if (error.message.includes('não encontrado')) {
+          throw new NotFoundException(error.message);
+        }
         throw new BadRequestException(error.message);
       }
 
-      throw new BadRequestException('Failed to equip power array');
+      throw error;
     }
-
-    return CharacterPresenter.toHTTP(result.value.character);
   }
 }

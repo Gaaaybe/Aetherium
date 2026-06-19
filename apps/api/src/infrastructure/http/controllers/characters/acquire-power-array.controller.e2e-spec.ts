@@ -36,7 +36,7 @@ describe('Power Array Character Controllers (e2e)', () => {
   };
 
   const validPowerBody = {
-    dominio: { name: 'natural' },
+    dominio: { name: 'arma-branca' },
     parametros: { acao: 0, alcance: 0, duracao: 0 },
     effects: [
       {
@@ -98,6 +98,11 @@ describe('Power Array Character Controllers (e2e)', () => {
 
     characterId = characterResponse.body.id;
 
+    await request(app.getHttpServer())
+      .post(`/characters/${characterId}/domains`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ domainId: 'arma-branca', masteryLevel: 'INICIANTE' });
+
     
     const power1Response = await request(app.getHttpServer())
       .post('/powers')
@@ -128,7 +133,7 @@ describe('Power Array Character Controllers (e2e)', () => {
       .send({
         nome: 'Test Power Array',
         descricao: 'A test power array for character testing',
-        dominio: { name: 'natural' },
+        dominio: { name: 'arma-branca' },
         powerIds: [power1Id, power2Id],
         isPublic: true,
       });

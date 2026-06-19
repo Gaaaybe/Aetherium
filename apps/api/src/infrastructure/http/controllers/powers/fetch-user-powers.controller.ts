@@ -1,20 +1,16 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { FetchUserPowersUseCase } from '@/domain/power-manager/application/use-cases/fetch-user-powers';
+import { PowersService } from '@/modules/power-manager/powers.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
-import { PowerPresenter } from '../../presenters/power.presenter';
+import { formatPowerToHTTP } from '@/modules/power-manager/dto/power.dto';
 
 @Controller('/powers/me')
 export class FetchUserPowersController {
-  constructor(private fetchUserPowers: FetchUserPowersUseCase) {}
+  constructor(private powersService: PowersService) {}
 
   @Get()
   async handle(@Query('page') page: string, @CurrentUser() user: UserPayload) {
-    const result = await this.fetchUserPowers.execute({
-      userId: user.sub,
-      page: page ? Number(page) : 1,
-    });
-
-    return result.value!.powers.map(PowerPresenter.toHTTP);
+    const raws = await this.powersService.fetchUserPowers(user.sub, page ? Number(page) : 1);
+    return raws.map(formatPowerToHTTP);
   }
 }

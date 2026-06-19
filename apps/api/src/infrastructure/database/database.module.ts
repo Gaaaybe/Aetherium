@@ -7,16 +7,12 @@ import { ItemsLookupPort as CharacterItemsLookupPort } from '@/domain/character-
 import { PowerArraysLookupPort as CharacterPowerArraysLookupPort } from '@/domain/character-manager/application/repositories/power-arrays-lookup-port';
 import { PowersLookupPort as CharacterPowersLookupPort } from '@/domain/character-manager/application/repositories/powers-lookup-port';
 import { ItemsRepository } from '@/domain/item-manager/application/repositories/items-repository';
-import { PowersLookupPort } from '@/domain/item-manager/application/repositories/powers-lookup-port';
-import { PowerArraysLookupPort } from '@/domain/item-manager/application/repositories/power-arrays-lookup-port';
 import { EffectsRepository } from '@/domain/power-manager/application/repositories/effects-repository';
 import { ModificationsRepository } from '@/domain/power-manager/application/repositories/modifications-repository';
 import { PeculiaritiesRepository } from '@/domain/power-manager/application/repositories/peculiarities-repository';
 import { PowerDependenciesRepository } from '@/domain/power-manager/application/repositories/power-dependencies-repository';
 import { PowerArraysRepository } from '@/domain/power-manager/application/repositories/power-arrays-repository';
 import { PowersRepository } from '@/domain/power-manager/application/repositories/powers-repository';
-import { PrismaPowersLookupAdapter } from './prisma-powers-lookup-adapter';
-import { PrismaPowerArraysLookupAdapter } from './prisma-power-arrays-lookup-adapter';
 import { CatalogBenefitsLookupAdapter } from './catalog-benefits-lookup-adapter';
 import { CatalogDomainsLookupAdapter } from './catalog-domains-lookup-adapter';
 import { PrismaCharacterManagerItemsLookupAdapter } from './prisma-character-manager-items-lookup-adapter';
@@ -53,8 +49,6 @@ import { PrismaUsersRepository } from './prisma/repositories/prisma-users-reposi
     { provide: ModificationsRepository, useClass: PrismaModificationsRepository },
     { provide: EffectsRepository, useClass: PrismaEffectsRepository },
     { provide: ItemsRepository, useClass: PrismaItemsRepository },
-    { provide: PowersLookupPort, useClass: PrismaPowersLookupAdapter },
-    { provide: PowerArraysLookupPort, useClass: PrismaPowerArraysLookupAdapter },
   ],
   exports: [
     PrismaService,
@@ -72,8 +66,6 @@ import { PrismaUsersRepository } from './prisma/repositories/prisma-users-reposi
     ModificationsRepository,
     EffectsRepository,
     ItemsRepository,
-    PowersLookupPort,
-    PowerArraysLookupPort,
   ],
 })
 export class DatabaseModule {}

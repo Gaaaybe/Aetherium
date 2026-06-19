@@ -30,6 +30,10 @@ export class InMemoryCharactersRepository extends CharactersRepository {
     return characters;
   }
 
+  async findMany(): Promise<Character[]> {
+    return this.items;
+  }
+
   async delete(character: Character): Promise<void> {
     const itemIndex = this.items.findIndex((item) => item.id.equals(character.id));
 

@@ -36,7 +36,7 @@ describe('EquipPowerController (e2e)', () => {
   const validPowerBody = {
     nome: 'Combat Power',
     descricao: 'A combat power for equipping',
-    dominio: { name: 'natural' },
+    dominio: { name: 'arma-branca' },
     parametros: { acao: 0, alcance: 0, duracao: 0 },
     effects: [
       {
@@ -97,6 +97,11 @@ describe('EquipPowerController (e2e)', () => {
       .send(validCharacterBody);
 
     characterId = characterResponse.body.id;
+
+    await request(app.getHttpServer())
+      .post(`/characters/${characterId}/domains`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ domainId: 'arma-branca', masteryLevel: 'INICIANTE' });
 
     
     const powerResponse = await request(app.getHttpServer())

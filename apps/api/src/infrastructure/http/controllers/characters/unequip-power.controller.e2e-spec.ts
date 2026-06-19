@@ -36,7 +36,7 @@ describe('UnequipPowerController (e2e)', () => {
   const validPowerBody = {
     nome: 'Tactical Power',
     descricao: 'A tactical power for unequipping',
-    dominio: { name: 'natural' },
+    dominio: { name: 'arma-branca' },
     parametros: { acao: 1, alcance: 2, duracao: 0 },
     effects: [
       {
@@ -97,6 +97,11 @@ describe('UnequipPowerController (e2e)', () => {
       .send(validCharacterBody);
 
     characterId = characterResponse.body.id;
+
+    await request(app.getHttpServer())
+      .post(`/characters/${characterId}/domains`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ domainId: 'arma-branca', masteryLevel: 'INICIANTE' });
 
     
     const powerResponse = await request(app.getHttpServer())
@@ -191,7 +196,7 @@ describe('UnequipPowerController (e2e)', () => {
     const newPowerBody = {
       nome: 'Unequipped Power',
       descricao: 'A power that was never equipped',
-      dominio: { name: 'natural' },
+      dominio: { name: 'arma-branca' },
       parametros: { acao: 1, alcance: 1, duracao: 0 },
       effects: [
         {

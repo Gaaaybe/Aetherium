@@ -1,17 +1,20 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { FetchModificationsUseCase } from '@/domain/power-manager/application/use-cases/fetch-modifications';
+import { PowersService } from '@/modules/power-manager/powers.service';
 import { Public } from '@/infrastructure/auth/public';
-import { ModificationBasePresenter } from '../../presenters/modification-base.presenter';
+import { formatModificationBaseToHTTP } from '@/modules/power-manager/dto/power.dto';
 
 @Controller('/modifications')
 export class FetchModificationsController {
-  constructor(private fetchModifications: FetchModificationsUseCase) {}
+  constructor(private powersService: PowersService) {}
 
   @Public()
   @Get()
-  async handle(@Query('type') type?: 'extra' | 'falha', @Query('category') category?: string) {
-    const result = await this.fetchModifications.execute({ type, category });
+  async handle(
+    @Query('type') type?: 'extra' | 'falha',
+    @Query('category') category?: string,
+  ) {
+    const modifications = await this.powersService.fetchModifications(type, category);
 
-    return result.value!.modifications.map(ModificationBasePresenter.toHTTP);
+    return modifications.map(formatModificationBaseToHTTP);
   }
 }

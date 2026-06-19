@@ -1,9 +1,0 @@
-packages:
-  - "."
-onlyBuiltDependencies:
-  - '@swc/core'
-  - '@nestjs/core'
-  - '@prisma/engines'
-  - 'esbuild'
-  - 'prisma'
-  - '@prisma/client'
