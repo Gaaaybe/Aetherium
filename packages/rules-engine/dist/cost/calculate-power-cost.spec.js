@@ -1,8 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const vitest_1 = require("vitest");
-const calculate_power_cost_js_1 = require("./calculate-power-cost.js");
-(0, vitest_1.describe)('calculatePowerCost pure function', () => {
+import { describe, expect, it } from 'vitest';
+import { calculatePowerCost } from './calculate-power-cost.js';
+describe('calculatePowerCost pure function', () => {
     const effectBases = {
         dano: {
             id: 'dano',
@@ -44,8 +42,8 @@ const calculate_power_cost_js_1 = require("./calculate-power-cost.js");
             custoPorGrau: 1,
         },
     };
-    (0, vitest_1.it)('should calculate cost for a simple effect without modifications', () => {
-        const result = (0, calculate_power_cost_js_1.calculatePowerCost)({
+    it('should calculate cost for a simple effect without modifications', () => {
+        const result = calculatePowerCost({
             effects: [
                 {
                     id: 'applied-dano',
@@ -58,12 +56,12 @@ const calculate_power_cost_js_1 = require("./calculate-power-cost.js");
             effectBases,
             modificationBases,
         });
-        (0, vitest_1.expect)(result.success).toBe(true);
-        (0, vitest_1.expect)(result.result?.custoTotal.pda).toBe(10);
-        (0, vitest_1.expect)(result.result?.custoTotal.espacos).toBe(6);
+        expect(result.success).toBe(true);
+        expect(result.result?.custoTotal.pda).toBe(10);
+        expect(result.result?.custoTotal.espacos).toBe(6);
     });
-    (0, vitest_1.it)('should calculate cost with extra modification', () => {
-        const result = (0, calculate_power_cost_js_1.calculatePowerCost)({
+    it('should calculate cost with extra modification', () => {
+        const result = calculatePowerCost({
             effects: [
                 {
                     id: 'applied-dano',
@@ -81,11 +79,11 @@ const calculate_power_cost_js_1 = require("./calculate-power-cost.js");
             effectBases,
             modificationBases,
         });
-        (0, vitest_1.expect)(result.success).toBe(true);
-        (0, vitest_1.expect)(result.result?.custoTotal.pda).toBe(60);
+        expect(result.success).toBe(true);
+        expect(result.result?.custoTotal.pda).toBe(60);
     });
-    (0, vitest_1.it)('should calculate cost with falha modification (reducing cost)', () => {
-        const result = (0, calculate_power_cost_js_1.calculatePowerCost)({
+    it('should calculate cost with falha modification (reducing cost)', () => {
+        const result = calculatePowerCost({
             effects: [
                 {
                     id: 'applied-dano',
@@ -103,11 +101,11 @@ const calculate_power_cost_js_1 = require("./calculate-power-cost.js");
             effectBases,
             modificationBases,
         });
-        (0, vitest_1.expect)(result.success).toBe(true);
-        (0, vitest_1.expect)(result.result?.custoTotal.pda).toBe(10); // Minimum cost per grade is 1
+        expect(result.success).toBe(true);
+        expect(result.result?.custoTotal.pda).toBe(10); // Minimum cost per grade is 1
     });
-    (0, vitest_1.it)('should calculate cost for multiple effects', () => {
-        const result = (0, calculate_power_cost_js_1.calculatePowerCost)({
+    it('should calculate cost for multiple effects', () => {
+        const result = calculatePowerCost({
             effects: [
                 {
                     id: 'dano-effect',
@@ -126,12 +124,12 @@ const calculate_power_cost_js_1 = require("./calculate-power-cost.js");
             effectBases,
             modificationBases,
         });
-        (0, vitest_1.expect)(result.success).toBe(true);
-        (0, vitest_1.expect)(result.result?.custoTotal.pda).toBe(13);
-        (0, vitest_1.expect)(result.result?.custoTotal.espacos).toBe(6); // max(5, 3) + 1 = 6
+        expect(result.success).toBe(true);
+        expect(result.result?.custoTotal.pda).toBe(13);
+        expect(result.result?.custoTotal.espacos).toBe(6); // max(5, 3) + 1 = 6
     });
-    (0, vitest_1.it)('should calculate cost with global modifications', () => {
-        const result = (0, calculate_power_cost_js_1.calculatePowerCost)({
+    it('should calculate cost with global modifications', () => {
+        const result = calculatePowerCost({
             effects: [
                 {
                     id: 'applied-dano',
@@ -150,11 +148,11 @@ const calculate_power_cost_js_1 = require("./calculate-power-cost.js");
             effectBases,
             modificationBases,
         });
-        (0, vitest_1.expect)(result.success).toBe(true);
-        (0, vitest_1.expect)(result.result?.custoTotal.pda).toBe(20);
+        expect(result.success).toBe(true);
+        expect(result.result?.custoTotal.pda).toBe(20);
     });
-    (0, vitest_1.it)('should return error if effect base not found', () => {
-        const result = (0, calculate_power_cost_js_1.calculatePowerCost)({
+    it('should return error if effect base not found', () => {
+        const result = calculatePowerCost({
             effects: [
                 {
                     id: 'applied-dano',
@@ -167,11 +165,11 @@ const calculate_power_cost_js_1 = require("./calculate-power-cost.js");
             effectBases,
             modificationBases,
         });
-        (0, vitest_1.expect)(result.success).toBe(false);
-        (0, vitest_1.expect)(result.error).toContain('Efeito base não encontrado');
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Efeito base não encontrado');
     });
-    (0, vitest_1.it)('should return error if modification base not found', () => {
-        const result = (0, calculate_power_cost_js_1.calculatePowerCost)({
+    it('should return error if modification base not found', () => {
+        const result = calculatePowerCost({
             effects: [
                 {
                     id: 'applied-dano',
@@ -189,7 +187,7 @@ const calculate_power_cost_js_1 = require("./calculate-power-cost.js");
             effectBases,
             modificationBases,
         });
-        (0, vitest_1.expect)(result.success).toBe(false);
-        (0, vitest_1.expect)(result.error).toContain('Modificação base não encontrada');
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('Modificação base não encontrada');
     });
 });

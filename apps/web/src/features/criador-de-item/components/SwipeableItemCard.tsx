@@ -1,4 +1,4 @@
-import { Coins, Copy, FlaskConical, FolderOpen, Gem, Globe, HandCoins, Layers, Lock, Package, Shield, Sword, Trash2, Zap } from 'lucide-react';
+import { Coins, Copy, Download, FlaskConical, FolderOpen, Gem, Globe, HandCoins, Layers, Lock, Package, Shield, Sword, Trash2, Zap } from 'lucide-react';
 import { Badge, Button, Card, CardContent, DynamicIcon } from '@/shared/ui';
 import { useIsTouchDevice, useSwipeToDismiss } from '@/shared/hooks';
 import { MarkdownText } from '@/shared/components';
@@ -12,11 +12,13 @@ interface SwipeableItemCardProps {
   onTogglePublic: () => void;
   onVerResumo: () => void;
   onUsarComoTemplate?: () => void;
+  onExportar?: () => void;
   formatarData: (data: string) => string;
   carregandoId: string | null;
   duplicandoId: string | null;
   deletandoId: string | null;
   togglePublicId: string | null;
+  exportandoId?: string | null;
 }
 
 export const TIPO_ITEM_VISUAL: Record<string, { color: string; gradient: string; border: string }> = {
@@ -59,11 +61,13 @@ export function SwipeableItemCard({
   onTogglePublic,
   onVerResumo,
   onUsarComoTemplate,
+  onExportar,
   formatarData,
   carregandoId,
   duplicandoId,
   deletandoId,
   togglePublicId,
+  exportandoId,
 }: SwipeableItemCardProps) {
   const isTouchDevice = useIsTouchDevice();
   const swipeHandlers = useSwipeToDismiss(onDeletar, 80);
@@ -221,6 +225,20 @@ export function SwipeableItemCard({
                   >
                     <Layers className="w-4 h-4" />
                   </Button>
+
+                  {onExportar && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onExportar}
+                      className="text-blue-500 hover:text-blue-700"
+                      title="Exportar como JSON"
+                      loading={exportandoId === item.id}
+                      disabled={exportandoId !== null && exportandoId !== item.id}
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
 

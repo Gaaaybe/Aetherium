@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import {
-  PowerArraysLookupPort,
-  type PowerArrayInfo,
-} from '@/domain/character-manager/application/repositories/power-arrays-lookup-port';
 import { PrismaService } from './prisma/prisma.service';
 
 const DOMAIN_NAME_TO_ID: Record<string, string> = {
@@ -20,11 +16,18 @@ const DOMAIN_NAME_TO_ID: Record<string, string> = {
   ARMA_TECNOLOGICA: 'arma-tecnologica',
 };
 
+export interface PowerArrayInfo {
+  id: string;
+  nome: string;
+  domainId: string;
+  pdaCost: number;
+  peCost: number;
+  slotCost: number;
+}
+
 @Injectable()
-export class PrismaCharacterManagerPowerArraysLookupAdapter extends PowerArraysLookupPort {
-  constructor(private prisma: PrismaService) {
-    super();
-  }
+export class PrismaCharacterManagerPowerArraysLookupAdapter {
+  constructor(private prisma: PrismaService) {}
 
   async findById(id: string): Promise<PowerArrayInfo | null> {
     const raw = await this.prisma.powerArray.findUnique({
@@ -47,7 +50,10 @@ export class PrismaCharacterManagerPowerArraysLookupAdapter extends PowerArraysL
     return {
       id: raw.id,
       nome: raw.nome,
-      domainId: raw.domainName === 'PECULIAR' && raw.domainPeculiarId ? raw.domainPeculiarId : DOMAIN_NAME_TO_ID[raw.domainName],
+      domainId:
+        raw.domainName === 'PECULIAR' && raw.domainPeculiarId
+          ? raw.domainPeculiarId
+          : DOMAIN_NAME_TO_ID[raw.domainName],
       pdaCost: raw.custoTotalPda,
       peCost: raw.custoTotalPe,
       slotCost: raw.custoTotalEspacos,

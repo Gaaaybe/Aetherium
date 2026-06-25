@@ -1,285 +1,15 @@
-import { useState } from 'react';
-import type {
-  CreateItemPayload,
-  DomainName,
-  ItemResponse,
-  ItemType,
-} from '@/services/types';
+import { useItemCreatorStore } from '@/stores/item-creator.store';
+import type { CreateItemPayload } from '@/services/types';
 
-export const UPGRADE_PATAMARES = [
-  { id: 1, nome: 'Fragmento', tier: 1, maxUpgradeLimit: 2, custoBase: 500 },
-  { id: 2, nome: 'Estilhaço', tier: 2, maxUpgradeLimit: 4, custoBase: 5000 },
-  { id: 3, nome: 'Pedaço', tier: 3, maxUpgradeLimit: 6, custoBase: 50000 },
-  { id: 4, nome: 'Placa', tier: 4, maxUpgradeLimit: 9, custoBase: 100000 },
-] as const;
-
-export type UpgradePatamarId = (typeof UPGRADE_PATAMARES)[number]['id'];
-
-interface ItemBuilderState {
-  tipo: ItemType;
-  nome: string;
-  descricao: string;
-  dominio: {
-    name: DomainName;
-    areaConhecimento?: string;
-    peculiarId?: string;
-  };
-  custoBase: number;
-  isPublic: boolean;
-  icone: string;
-  notas: string;
-  powerIds: string[];
-  powerArrayIds: string[];
-  editingItemId: string | null;
-  weapon: {
-    danos: { dado: string; base: string; espiritual: boolean }[];
-    critMargin: number;
-    critMultiplier: number;
-    alcance: 'adjacente' | 'natural' | 'curto' | 'medio' | 'longo';
-    alcanceExtraMetros: number;
-    atributoEscalonamento: string;
-    upgradeLevel: number;
-  };
-  defensive: {
-    tipoEquipamento: 'traje' | 'protecao';
-    baseRD: number;
-    atributoEscalonamento: string;
-    upgradeLevel: number;
-  };
-  consumable: {
-    descritorEfeito: string;
-    qtdDoses: number;
-    isRefeicao: boolean;
-  };
-  upgradeMaterial: {
-    patamarId: UpgradePatamarId;
-    tier: number;
-    maxUpgradeLimit: number;
-  };
-}
-
-const createInitialState = (): ItemBuilderState => ({
-  tipo: 'weapon',
-  nome: '',
-  descricao: '',
-  dominio: { name: 'natural' },
-  custoBase: 1,
-  isPublic: false,
-  icone: '',
-  notas: '',
-  powerIds: [],
-  powerArrayIds: [],
-  editingItemId: null,
-  weapon: {
-    danos: [{ dado: '1d6', base: 'FOR', espiritual: false }],
-    critMargin: 20,
-    critMultiplier: 2,
-    alcance: 'natural',
-    alcanceExtraMetros: 0,
-    atributoEscalonamento: '',
-    upgradeLevel: 0,
-  },
-  defensive: {
-    tipoEquipamento: 'protecao',
-    baseRD: 2,
-    atributoEscalonamento: '',
-    upgradeLevel: 0,
-  },
-  consumable: {
-    descritorEfeito: '',
-    qtdDoses: 1,
-    isRefeicao: false,
-  },
-  upgradeMaterial: {
-    patamarId: 1 as UpgradePatamarId,
-    tier: 1,
-    maxUpgradeLimit: 2,
-  },
-});
+export { UPGRADE_PATAMARES } from '@/stores/item-creator.store';
+export type { UpgradePatamarId } from '@/stores/item-creator.store';
 
 export function useItemBuilder() {
-  const [state, setState] = useState<ItemBuilderState>(createInitialState);
-
-  const hydrateFromItem = (item: ItemResponse, asTemplate = false) => {
-    setState((prev) => {
-      const next = {
-        ...createInitialState(),
-        tipo: item.tipo,
-        nome: asTemplate ? `Cópia de ${item.nome}` : item.nome,
-        descricao: item.descricao,
-        dominio: {
-          name: item.dominio.name,
-          areaConhecimento: item.dominio.areaConhecimento ?? undefined,
-          peculiarId: item.dominio.peculiarId ?? undefined,
-        },
-        custoBase: item.custoBase,
-        isPublic: asTemplate ? false : item.isPublic,
-        icone: item.icone ?? '',
-        notas: item.notas ?? '',
-        powerIds: item.powerIds,
-        powerArrayIds: item.powerArrayIds,
-        editingItemId: asTemplate ? null : item.id,
-        // Preserva seções não relacionadas quando o tipo atual for o mesmo.
-        weapon: prev.tipo === item.tipo ? prev.weapon : createInitialState().weapon,
-        defensive: prev.tipo === item.tipo ? prev.defensive : createInitialState().defensive,
-        consumable: prev.tipo === item.tipo ? prev.consumable : createInitialState().consumable,
-        upgradeMaterial: prev.tipo === item.tipo ? prev.upgradeMaterial : createInitialState().upgradeMaterial,
-      } satisfies ItemBuilderState;
-
-      if (item.tipo === 'weapon') {
-        next.weapon = {
-          danos: item.danos,
-          critMargin: item.critMargin,
-          critMultiplier: item.critMultiplier,
-          alcance: item.alcance,
-          alcanceExtraMetros: item.alcanceExtraMetros,
-          atributoEscalonamento: item.atributoEscalonamento ?? '',
-          upgradeLevel: item.upgradeLevel,
-        };
-      }
-
-      if (item.tipo === 'defensive-equipment') {
-        next.defensive = {
-          tipoEquipamento: item.tipoEquipamento,
-          baseRD: item.baseRD,
-          atributoEscalonamento: item.atributoEscalonamento ?? '',
-          upgradeLevel: item.upgradeLevel,
-        };
-      }
-
-      if (item.tipo === 'consumable') {
-        next.consumable = {
-          descritorEfeito: item.descritorEfeito,
-          qtdDoses: item.qtdDoses,
-          isRefeicao: item.isRefeicao,
-        };
-      }
-
-      if (item.tipo === 'upgrade-material') {
-        const patamar = UPGRADE_PATAMARES.find((p) => p.tier === item.tier) ?? UPGRADE_PATAMARES[0];
-        next.upgradeMaterial = {
-          patamarId: patamar.id,
-          tier: item.tier,
-          maxUpgradeLimit: item.maxUpgradeLimit,
-        };
-      }
-
-      return next;
-    });
-  };
-
-  const updateField = <K extends keyof ItemBuilderState>(key: K, value: ItemBuilderState[K]) => {
-    setState((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const updateDomain = (partial: Partial<ItemBuilderState['dominio']>) => {
-    setState((prev) => ({ ...prev, dominio: { ...prev.dominio, ...partial } }));
-  };
-
-  const setTipo = (tipo: ItemType) => {
-    setState((prev) => ({ ...prev, tipo }));
-  };
-
-  const togglePower = (powerId: string) => {
-    setState((prev) => ({
-      ...prev,
-      powerIds: prev.powerIds.includes(powerId)
-        ? prev.powerIds.filter((id) => id !== powerId)
-        : [...prev.powerIds, powerId],
-    }));
-  };
-
-  const togglePowerArray = (powerArrayId: string) => {
-    setState((prev) => ({
-      ...prev,
-      powerArrayIds: prev.powerArrayIds.includes(powerArrayId)
-        ? prev.powerArrayIds.filter((id) => id !== powerArrayId)
-        : [...prev.powerArrayIds, powerArrayId],
-    }));
-  };
-
-  const updateWeaponDamage = (
-    index: number,
-    key: 'dado' | 'base' | 'espiritual',
-    value: string | boolean,
-  ) => {
-    setState((prev) => ({
-      ...prev,
-      weapon: {
-        ...prev.weapon,
-        danos: prev.weapon.danos.map((dano, i) =>
-          i === index ? { ...dano, [key]: value } : dano,
-        ),
-      },
-    }));
-  };
-
-  const addWeaponDamage = () => {
-    setState((prev) => ({
-      ...prev,
-      weapon: {
-        ...prev.weapon,
-        danos: [...prev.weapon.danos, { dado: '1d6', base: 'FOR', espiritual: false }],
-      },
-    }));
-  };
-
-  const removeWeaponDamage = (index: number) => {
-    setState((prev) => ({
-      ...prev,
-      weapon: {
-        ...prev.weapon,
-        danos:
-          prev.weapon.danos.length === 1
-            ? prev.weapon.danos
-            : prev.weapon.danos.filter((_, i) => i !== index),
-      },
-    }));
-  };
-
-  const updateWeaponField = (
-    key:
-      | 'critMargin'
-      | 'critMultiplier'
-      | 'alcance'
-      | 'alcanceExtraMetros'
-      | 'atributoEscalonamento'
-      | 'upgradeLevel',
-    value: number | string,
-  ) => {
-    setState((prev) => ({ ...prev, weapon: { ...prev.weapon, [key]: value } }));
-  };
-
-  const updateDefensiveField = (
-    key: 'tipoEquipamento' | 'baseRD' | 'atributoEscalonamento' | 'upgradeLevel',
-    value: number | string,
-  ) => {
-    setState((prev) => ({ ...prev, defensive: { ...prev.defensive, [key]: value } }));
-  };
-
-  const updateConsumableField = (
-    key: 'descritorEfeito' | 'qtdDoses' | 'isRefeicao',
-    value: string | number | boolean,
-  ) => {
-    setState((prev) => ({ ...prev, consumable: { ...prev.consumable, [key]: value } }));
-  };
-
-  const setUpgradeMaterialPatamar = (patamarId: UpgradePatamarId) => {
-    const patamar = UPGRADE_PATAMARES.find((p) => p.id === patamarId);
-    if (!patamar) return;
-    setState((prev) => ({
-      ...prev,
-      custoBase: patamar.custoBase,
-      upgradeMaterial: {
-        patamarId,
-        tier: patamar.tier,
-        maxUpgradeLimit: patamar.maxUpgradeLimit,
-      },
-    }));
-  };
+  const store = useItemCreatorStore();
 
   const getValidationErrors = () => {
     const errors: string[] = [];
+    const state = store.state;
 
     if (state.nome.trim().length < 2) {
       errors.push('Nome deve ter pelo menos 2 caracteres.');
@@ -320,6 +50,7 @@ export function useItemBuilder() {
   };
 
   const buildPayload = (): CreateItemPayload => {
+    const state = store.state;
     const common = {
       nome: state.nome.trim(),
       descricao: state.descricao.trim(),
@@ -398,27 +129,23 @@ export function useItemBuilder() {
     };
   };
 
-  const reset = () => {
-    setState(createInitialState());
-  };
-
   return {
-    state,
-    updateField,
-    updateDomain,
-    setTipo,
-    togglePower,
-    togglePowerArray,
-    updateWeaponDamage,
-    addWeaponDamage,
-    removeWeaponDamage,
-    updateWeaponField,
-    updateDefensiveField,
-    updateConsumableField,
-    setUpgradeMaterialPatamar,
-    hydrateFromItem,
+    state: store.state,
+    updateField: store.updateField,
+    updateDomain: store.updateDomain,
+    setTipo: store.setTipo,
+    togglePower: store.togglePower,
+    togglePowerArray: store.togglePowerArray,
+    updateWeaponDamage: store.updateWeaponDamage,
+    addWeaponDamage: store.addWeaponDamage,
+    removeWeaponDamage: store.removeWeaponDamage,
+    updateWeaponField: store.updateWeaponField,
+    updateDefensiveField: store.updateDefensiveField,
+    updateConsumableField: store.updateConsumableField,
+    setUpgradeMaterialPatamar: store.setUpgradeMaterialPatamar,
+    hydrateFromItem: store.hydrateFromItem,
     getValidationErrors,
     buildPayload,
-    reset,
+    reset: store.reset,
   };
 }

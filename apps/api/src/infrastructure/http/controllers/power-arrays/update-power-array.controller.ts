@@ -1,13 +1,13 @@
 import { Body, Controller, Param, Put } from '@nestjs/common';
-import { PowersService } from '@/modules/power-manager/powers.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
-import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
-import {
-  updatePowerArrayBodySchema,
-  formatPowerArrayToHTTP,
-} from '@/modules/power-manager/dto/power.dto';
 import type { UpdatePowerArrayBodySchema } from '@/modules/power-manager/dto/power.dto';
+import {
+  formatPowerArrayToHTTP,
+  updatePowerArrayBodySchema,
+} from '@/modules/power-manager/dto/power.dto';
+import { PowersService } from '@/modules/power-manager/powers.service';
+import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 
 @Controller('/power-arrays/:powerArrayId')
 export class UpdatePowerArrayController {

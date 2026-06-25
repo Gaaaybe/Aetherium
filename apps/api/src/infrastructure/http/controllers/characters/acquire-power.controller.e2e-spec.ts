@@ -59,7 +59,6 @@ describe('AcquirePowerController (e2e)', () => {
 
     await app.init();
 
-    
     await prisma.effectBase.upsert({
       where: { id: 'dano' },
       create: {
@@ -76,7 +75,6 @@ describe('AcquirePowerController (e2e)', () => {
       update: {},
     });
 
-    
     await request(app.getHttpServer()).post('/users').send({
       name: 'Power User',
       email: 'poweruser@example.com',
@@ -90,7 +88,6 @@ describe('AcquirePowerController (e2e)', () => {
 
     accessToken = authResponse.body.access_token;
 
-    
     const characterResponse = await request(app.getHttpServer())
       .post('/characters')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -103,7 +100,6 @@ describe('AcquirePowerController (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ domainId: 'arma-branca', masteryLevel: 'INICIANTE' });
 
-    
     const powerResponse = await request(app.getHttpServer())
       .post('/powers')
       .set('Authorization', `Bearer ${accessToken}`)

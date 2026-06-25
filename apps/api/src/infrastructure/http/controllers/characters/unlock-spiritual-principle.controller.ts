@@ -9,12 +9,16 @@ import {
   Post,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
-import { ResourceNotFoundError, NotAllowedError, DomainValidationError } from '@/modules/character-manager/errors/character-errors';
 
 const unlockSpiritualPrincipleBodySchema = z.object({
   stage: z.enum(['NORMAL', 'DIVINE']).optional().default('NORMAL'),
@@ -30,7 +34,8 @@ export class UnlockSpiritualPrincipleController {
   @HttpCode(200)
   async handle(
     @Param('characterId') characterId: string,
-    @Body(new ZodValidationPipe(unlockSpiritualPrincipleBodySchema)) body: UnlockSpiritualPrincipleBodySchema,
+    @Body(new ZodValidationPipe(unlockSpiritualPrincipleBodySchema))
+    body: UnlockSpiritualPrincipleBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
     try {

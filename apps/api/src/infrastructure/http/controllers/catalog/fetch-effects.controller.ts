@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { PowersService } from '@/modules/power-manager/powers.service';
 import { Public } from '@/infrastructure/auth/public';
 import { formatEffectBaseToHTTP } from '@/modules/power-manager/dto/power.dto';
+import { PowersService } from '@/modules/power-manager/powers.service';
 
 @Controller('/effects')
 export class FetchEffectsController {

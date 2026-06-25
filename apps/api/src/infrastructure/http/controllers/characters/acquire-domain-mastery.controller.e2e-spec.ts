@@ -74,6 +74,8 @@ describe('Acquire Domain Mastery (e2e)', () => {
       .send({ domainId: 'arma-branca', masteryLevel: 'INICIANTE' });
 
     expect(response.statusCode).toBe(201);
-    expect(response.body.domainMasteries).toContainEqual(expect.objectContaining({ domainId: 'arma-branca' }));
+    expect(response.body.domainMasteries).toContainEqual(
+      expect.objectContaining({ domainId: 'arma-branca' }),
+    );
   });
 });

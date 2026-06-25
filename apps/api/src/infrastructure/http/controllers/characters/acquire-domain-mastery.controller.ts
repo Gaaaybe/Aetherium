@@ -1,11 +1,11 @@
 import { BadRequestException, Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
 import { z } from 'zod';
-import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import { PowersService } from '@/modules/power-manager/powers.service';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
-import { PeculiaritiesRepository } from '@/domain/power-manager/application/repositories/peculiarities-repository';
 
 const acquireDomainMasteryBodySchema = z.object({
   domainId: z.string().min(1),
@@ -18,14 +18,15 @@ type AcquireDomainMasteryBodySchema = z.infer<typeof acquireDomainMasteryBodySch
 export class AcquireDomainMasteryController {
   constructor(
     private charactersService: CharactersService,
-    private peculiaritiesRepository: PeculiaritiesRepository,
+    private powersService: PowersService,
   ) {}
 
   @Post()
   @HttpCode(201)
   async handle(
     @Param('characterId') characterId: string,
-    @Body(new ZodValidationPipe(acquireDomainMasteryBodySchema)) body: AcquireDomainMasteryBodySchema,
+    @Body(new ZodValidationPipe(acquireDomainMasteryBodySchema))
+    body: AcquireDomainMasteryBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
     try {
@@ -36,7 +37,10 @@ export class AcquireDomainMasteryController {
         body.masteryLevel as any,
       );
 
-      const peculiarities = await this.peculiaritiesRepository.findByUserId(character.userId.toString(), { page: 1 });
+      const peculiarities = await this.powersService.fetchUserPeculiarities(
+        character.userId.toString(),
+        1,
+      );
 
       return CharacterPresenter.toHTTP(character, peculiarities);
     } catch (err: any) {

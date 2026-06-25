@@ -1,7 +1,7 @@
 import { Controller, Delete, HttpCode, Param } from '@nestjs/common';
-import { PowersService } from '@/modules/power-manager/powers.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { PowersService } from '@/modules/power-manager/powers.service';
 
 @Controller('/power-arrays/:powerArrayId')
 export class DeletePowerArrayController {

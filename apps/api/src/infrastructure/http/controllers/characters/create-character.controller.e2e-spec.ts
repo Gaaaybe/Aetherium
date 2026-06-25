@@ -96,9 +96,7 @@ describe('CreateCharacterController (e2e)', () => {
   });
 
   test('[POST] /characters — should return 401 without token', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/characters')
-      .send(validBody);
+    const response = await request(app.getHttpServer()).post('/characters').send(validBody);
 
     expect(response.statusCode).toBe(401);
   });

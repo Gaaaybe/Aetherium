@@ -1,8 +1,8 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { z } from 'zod';
-import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
 

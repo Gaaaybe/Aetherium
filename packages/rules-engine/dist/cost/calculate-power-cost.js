@@ -1,12 +1,6 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.calculatePowerCost = calculatePowerCost;
-const universal_table_json_1 = __importDefault(require("./tables/universal-table.json"));
-const UNIVERSAL_TABLE = universal_table_json_1.default;
-function calculatePowerCost({ effects, parametros, globalModifications = [], effectBases, modificationBases, }) {
+import universalTable from './tables/universal-table.json' with { type: 'json' };
+export const UNIVERSAL_TABLE = universalTable;
+export function calculatePowerCost({ effects, parametros, globalModifications = [], effectBases, modificationBases, }) {
     const custoPorEfeito = {};
     let totalPdA = 0;
     const espacosPorEfeito = [];

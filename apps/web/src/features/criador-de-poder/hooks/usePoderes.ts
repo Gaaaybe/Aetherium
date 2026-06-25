@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchMyPowers,
   createPower,
@@ -8,86 +8,56 @@ import {
 } from '@/services/powers.service';
 import type { CreatePoderPayload, PoderResponse, UpdatePoderPayload } from '@/services/types';
 
-interface UsePoderesState {
-  poderes: PoderResponse[];
-  loading: boolean;
-  error: string | null;
-}
-
 export function usePoderes() {
-  const [state, setState] = useState<UsePoderesState>({
-    poderes: [],
-    loading: true, // inicia como loading para evitar flash
-    error: null,
+  const queryClient = useQueryClient();
+
+  const { data: poderes = [], isLoading, error } = useQuery({
+    queryKey: ['powers'],
+    queryFn: () => fetchMyPowers(1),
   });
 
-  // Carga inicial via promise chain (evita setState síncrono no corpo do efeito)
-  useEffect(() => {
-    let cancelled = false;
-    fetchMyPowers(1)
-      .then((data) => {
-        if (!cancelled) setState({ poderes: data, loading: false, error: null });
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : 'Erro ao carregar poderes';
-          setState({ poderes: [], loading: false, error: msg });
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Refresh manual — pode ser chamado explicitamente pelo componente
-  const carregar = useCallback(async (page = 1) => {
-    setState((s) => ({ ...s, loading: true, error: null }));
-    try {
-      const data = await fetchMyPowers(page);
-      setState({ poderes: data, loading: false, error: null });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro ao carregar poderes';
-      setState((s) => ({ ...s, loading: false, error: msg }));
-    }
-  }, []);
-
-  const criar = useCallback(async (payload: CreatePoderPayload): Promise<PoderResponse> => {
-    const novo = await createPower(payload);
-    setState((s) => ({ ...s, poderes: [novo, ...s.poderes] }));
-    return novo;
-  }, []);
-
-  const atualizar = useCallback(
-    async (id: string, payload: UpdatePoderPayload): Promise<PoderResponse> => {
-      const atualizado = await updatePower(id, payload);
-      setState((s) => ({
-        ...s,
-        poderes: s.poderes.map((p) => (p.id === id ? atualizado : p)),
-      }));
-      return atualizado;
+  const createMutation = useMutation({
+    mutationFn: createPower,
+    onSuccess: (novo) => {
+      queryClient.setQueryData(['powers'], (old: PoderResponse[] = []) => [novo, ...old]);
     },
-    [],
-  );
+  });
 
-  const deletar = useCallback(async (id: string): Promise<void> => {
-    await deletePower(id);
-    setState((s) => ({ ...s, poderes: s.poderes.filter((p) => p.id !== id) }));
-  }, []);
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdatePoderPayload }) => updatePower(id, payload),
+    onSuccess: (atualizado) => {
+      queryClient.setQueryData(['powers'], (old: PoderResponse[] = []) =>
+        old.map((p) => (p.id === atualizado.id ? atualizado : p))
+      );
+    },
+  });
 
-  const copiar = useCallback(async (powerId: string): Promise<PoderResponse> => {
-    const copia = await copyPublicPower(powerId);
-    setState((s) => ({ ...s, poderes: [copia, ...s.poderes] }));
-    return copia;
-  }, []);
+  const deleteMutation = useMutation({
+    mutationFn: deletePower,
+    onSuccess: (_, id) => {
+      queryClient.setQueryData(['powers'], (old: PoderResponse[] = []) =>
+        old.filter((p) => p.id !== id)
+      );
+    },
+  });
+
+  const copyMutation = useMutation({
+    mutationFn: copyPublicPower,
+    onSuccess: (copia) => {
+      queryClient.setQueryData(['powers'], (old: PoderResponse[] = []) => [copia, ...old]);
+    },
+  });
 
   return {
-    poderes: state.poderes,
-    loading: state.loading,
-    error: state.error,
-    carregar,
-    criar,
-    atualizar,
-    deletar,
-    copiar,
+    poderes,
+    loading: isLoading,
+    error: error instanceof Error ? error.message : error ? String(error) : null,
+    carregar: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['powers'] });
+    },
+    criar: createMutation.mutateAsync,
+    atualizar: (id: string, payload: UpdatePoderPayload) => updateMutation.mutateAsync({ id, payload }),
+    deletar: deleteMutation.mutateAsync,
+    copiar: copyMutation.mutateAsync,
   };
 }

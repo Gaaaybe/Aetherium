@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DomainSchema } from './domain.schemas';
+import { DomainSchema } from './domain.schemas.js';
 
 export enum ItemType {
   WEAPON = 'weapon',

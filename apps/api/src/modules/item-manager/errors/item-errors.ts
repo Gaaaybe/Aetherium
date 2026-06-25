@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
 export class ResourceNotFoundError extends NotFoundException {
   constructor(message = 'Resource not found') {

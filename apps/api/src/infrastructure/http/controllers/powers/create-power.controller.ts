@@ -1,13 +1,10 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { PowersService } from '@/modules/power-manager/powers.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
-import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
-import {
-  createPowerBodySchema,
-  formatPowerToHTTP,
-} from '@/modules/power-manager/dto/power.dto';
 import type { CreatePowerBodySchema } from '@/modules/power-manager/dto/power.dto';
+import { createPowerBodySchema, formatPowerToHTTP } from '@/modules/power-manager/dto/power.dto';
+import { PowersService } from '@/modules/power-manager/powers.service';
+import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 
 @Controller('/powers')
 export class CreatePowerController {

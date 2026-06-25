@@ -105,7 +105,9 @@ describe('Upgrade Item (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ itemId: materialTemplateId, quantity: 1 });
 
-    materialId = materialCloneResponse.body.inventory.bag.find((i: any) => i.itemId !== itemId).itemId;
+    materialId = materialCloneResponse.body.inventory.bag.find(
+      (i: any) => i.itemId !== itemId,
+    ).itemId;
 
     await request(app.getHttpServer())
       .post(`/characters/${characterId}/runics/add`)

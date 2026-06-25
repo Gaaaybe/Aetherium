@@ -59,7 +59,6 @@ describe('EquipPowerController (e2e)', () => {
 
     await app.init();
 
-    
     await prisma.effectBase.upsert({
       where: { id: 'dano' },
       create: {
@@ -76,7 +75,6 @@ describe('EquipPowerController (e2e)', () => {
       update: {},
     });
 
-    
     await request(app.getHttpServer()).post('/users').send({
       name: 'Equip User',
       email: 'equipuser@example.com',
@@ -90,7 +88,6 @@ describe('EquipPowerController (e2e)', () => {
 
     accessToken = authResponse.body.access_token;
 
-    
     const characterResponse = await request(app.getHttpServer())
       .post('/characters')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -103,7 +100,6 @@ describe('EquipPowerController (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ domainId: 'arma-branca', masteryLevel: 'INICIANTE' });
 
-    
     const powerResponse = await request(app.getHttpServer())
       .post('/powers')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -111,13 +107,12 @@ describe('EquipPowerController (e2e)', () => {
 
     powerId = powerResponse.body.id;
 
-    
     const acquireResponse = await request(app.getHttpServer())
       .post(`/characters/${characterId}/powers`)
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ powerId });
 
-    powerId = acquireResponse.body.powers[0].powerId; 
+    powerId = acquireResponse.body.powers[0].powerId;
   });
 
   afterAll(async () => {
@@ -165,19 +160,16 @@ describe('EquipPowerController (e2e)', () => {
   });
 
   test('[PATCH] /characters/:characterId/powers/:powerId/equip — should return 403 for unauthorized user', async () => {
-    
     await request(app.getHttpServer()).post('/users').send({
       name: 'Unauthorized User',
       email: 'unauthorized@example.com',
       password: '123456',
     });
 
-    const unauthorizedAuthResponse = await request(app.getHttpServer())
-      .post('/auth')
-      .send({
-        email: 'unauthorized@example.com',
-        password: '123456',
-      });
+    const unauthorizedAuthResponse = await request(app.getHttpServer()).post('/auth').send({
+      email: 'unauthorized@example.com',
+      password: '123456',
+    });
 
     const response = await request(app.getHttpServer())
       .patch(`/characters/${characterId}/powers/${powerId}/equip`)

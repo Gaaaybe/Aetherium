@@ -96,7 +96,7 @@ describe('Equip Item (e2e)', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.body.equipment.hands).toEqual(
-      expect.arrayContaining([expect.objectContaining({ itemId, quantity: 1 })])
+      expect.arrayContaining([expect.objectContaining({ itemId, quantity: 1 })]),
     );
   });
 });

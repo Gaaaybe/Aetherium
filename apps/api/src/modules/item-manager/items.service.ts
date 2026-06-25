@@ -1,12 +1,13 @@
+import { ItemType, WeaponRange } from '@aetherium/rules-engine';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
+import { PowersService } from '@/modules/power-manager/powers.service';
+import { CreateItemBodySchema, UpdateItemBodySchema, ImportItemBodySchema } from './dto/item.dto';
 import {
-  ResourceNotFoundError,
-  NotAllowedError,
   InvalidItemDomainError,
+  NotAllowedError,
+  ResourceNotFoundError,
 } from './errors/item-errors';
-import { CreateItemBodySchema, UpdateItemBodySchema } from './dto/item.dto';
-import { ItemType, WeaponRange } from '@aetherium/rules-engine';
 
 const INCLUDE = {
   itemDamages: true,
@@ -15,19 +16,46 @@ const INCLUDE = {
   user: { select: { id: true, name: true } },
 } as const;
 
+const EXPORT_INCLUDE = {
+  itemDamages: true,
+  itemPowers: true,
+  itemPowerArrays: {
+    include: {
+      powerArray: {
+        include: {
+          powerArrayPowers: {
+            include: {
+              power: {
+                include: {
+                  appliedEffects: {
+                    include: {
+                      appliedModifications: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+
 const DOMAIN_MAP: Record<string, string> = {
-  'natural': 'NATURAL',
-  'sagrado': 'SAGRADO',
-  'sacrilegio': 'SACRILEGIO',
-  'psiquico': 'PSIQUICO',
-  'cientifico': 'CIENTIFICO',
-  'peculiar': 'PECULIAR',
+  natural: 'NATURAL',
+  sagrado: 'SAGRADO',
+  sacrilegio: 'SACRILEGIO',
+  psiquico: 'PSIQUICO',
+  cientifico: 'CIENTIFICO',
+  peculiar: 'PECULIAR',
   'arma-branca': 'ARMA_BRANCA',
   'arma-fogo': 'ARMA_FOGO',
   'arma-tensao': 'ARMA_TENSAO',
   'arma-explosiva': 'ARMA_EXPLOSIVA',
   'arma-tecnologica': 'ARMA_TECNOLOGICA',
-  'desarmado': 'DESARMADO',
+  desarmado: 'DESARMADO',
 };
 
 const ITEM_TYPE_MAP: Record<string, string> = {
@@ -42,7 +70,10 @@ const ITEM_TYPE_MAP: Record<string, string> = {
 
 @Injectable()
 export class ItemsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private powersService: PowersService,
+  ) {}
 
   private async calculateItemLevel(
     domainName: string,
@@ -150,7 +181,9 @@ export class ItemsService {
       baseData.critMargin = body.critMargin;
       baseData.critMultiplier = body.critMultiplier;
       baseData.alcance = body.alcance.toUpperCase() as any;
-      baseData.alcanceExtraMetrosMetades = body.alcanceExtraMetros ? body.alcanceExtraMetros * 2 : 0;
+      baseData.alcanceExtraMetrosMetades = body.alcanceExtraMetros
+        ? body.alcanceExtraMetros * 2
+        : 0;
       baseData.atributoEscalonamento = body.atributoEscalonamento || null;
       baseData.upgradeLevelValue = body.upgradeLevel ?? 0;
       baseData.upgradeLevelMax = 7;
@@ -219,7 +252,8 @@ export class ItemsService {
       throw new NotAllowedError();
     }
 
-    const targetDomainName = body.dominio?.name ?? existing.domainName.toLowerCase().replace(/_/g, '-');
+    const targetDomainName =
+      body.dominio?.name ?? existing.domainName.toLowerCase().replace(/_/g, '-');
 
     let currentPowerIds = existing.itemPowers.map((ip) => ip.powerId);
     if (body.powerIds !== undefined) {
@@ -259,10 +293,18 @@ export class ItemsService {
 
     if (body.tipo === ItemType.WEAPON) {
       baseData.critMargin = body.critMargin !== undefined ? body.critMargin : existing.critMargin;
-      baseData.critMultiplier = body.critMultiplier !== undefined ? body.critMultiplier : existing.critMultiplier;
-      baseData.alcance = body.alcance !== undefined ? (body.alcance.toUpperCase() as any) : existing.alcance;
-      baseData.alcanceExtraMetrosMetades = body.alcanceExtraMetros !== undefined ? body.alcanceExtraMetros * 2 : existing.alcanceExtraMetrosMetades;
-      baseData.atributoEscalonamento = body.atributoEscalonamento !== undefined ? body.atributoEscalonamento : existing.atributoEscalonamento;
+      baseData.critMultiplier =
+        body.critMultiplier !== undefined ? body.critMultiplier : existing.critMultiplier;
+      baseData.alcance =
+        body.alcance !== undefined ? (body.alcance.toUpperCase() as any) : existing.alcance;
+      baseData.alcanceExtraMetrosMetades =
+        body.alcanceExtraMetros !== undefined
+          ? body.alcanceExtraMetros * 2
+          : existing.alcanceExtraMetrosMetades;
+      baseData.atributoEscalonamento =
+        body.atributoEscalonamento !== undefined
+          ? body.atributoEscalonamento
+          : existing.atributoEscalonamento;
 
       if (body.danos) {
         updates.push(this.prisma.itemDamage.deleteMany({ where: { itemId } }));
@@ -276,15 +318,25 @@ export class ItemsService {
         };
       }
     } else if (body.tipo === ItemType.DEFENSIVE_EQUIPMENT) {
-      baseData.tipoEquipamento = body.tipoEquipamento !== undefined ? (body.tipoEquipamento.toUpperCase() as any) : existing.tipoEquipamento;
+      baseData.tipoEquipamento =
+        body.tipoEquipamento !== undefined
+          ? (body.tipoEquipamento.toUpperCase() as any)
+          : existing.tipoEquipamento;
       baseData.baseRD = body.baseRD !== undefined ? body.baseRD : existing.baseRD;
-      baseData.atributoEscalonamento = body.atributoEscalonamento !== undefined ? body.atributoEscalonamento : existing.atributoEscalonamento;
+      baseData.atributoEscalonamento =
+        body.atributoEscalonamento !== undefined
+          ? body.atributoEscalonamento
+          : existing.atributoEscalonamento;
     } else if (body.tipo === ItemType.CONSUMABLE) {
-      baseData.descritorEfeito = body.descritorEfeito !== undefined ? body.descritorEfeito : existing.descritorEfeito;
+      baseData.descritorEfeito =
+        body.descritorEfeito !== undefined ? body.descritorEfeito : existing.descritorEfeito;
       baseData.qtdDoses = body.qtdDoses !== undefined ? body.qtdDoses : existing.qtdDoses;
     } else if (body.tipo === ItemType.UPGRADE_MATERIAL) {
       baseData.materialTier = body.tier !== undefined ? body.tier : existing.materialTier;
-      baseData.materialMaxUpgradeLimit = body.maxUpgradeLimit !== undefined ? body.maxUpgradeLimit : existing.materialMaxUpgradeLimit;
+      baseData.materialMaxUpgradeLimit =
+        body.maxUpgradeLimit !== undefined
+          ? body.maxUpgradeLimit
+          : existing.materialMaxUpgradeLimit;
     }
 
     if (body.powerIds !== undefined) {
@@ -348,9 +400,31 @@ export class ItemsService {
     const original = await this.prisma.item.findUnique({
       where: { id: itemId },
       include: {
-        itemDamages: true,
-        itemPowers: true,
-        itemPowerArrays: true,
+        itemDamages: { orderBy: { posicao: 'asc' } },
+        itemPowers: { orderBy: { posicao: 'asc' } },
+        itemPowerArrays: {
+          orderBy: { posicao: 'asc' },
+          include: {
+            powerArray: {
+              include: {
+                powerArrayPowers: {
+                  orderBy: { posicao: 'asc' },
+                  include: {
+                    power: {
+                      include: {
+                        appliedEffects: {
+                          include: {
+                            appliedModifications: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -366,70 +440,234 @@ export class ItemsService {
       throw new NotAllowedError();
     }
 
-    const baseData: any = {
-      userId,
-      tipo: original.tipo,
-      nome: original.nome,
-      descricao: original.descricao,
-      isPublic: false,
-      icone: original.icone,
-      notas: original.notas,
-      canStack: original.canStack,
-      maxStack: original.maxStack,
-      domainName: original.domainName,
-      domainAreaConhecimento: original.domainAreaConhecimento,
-      domainPeculiarId: original.domainPeculiarId,
-      custoBase: original.custoBase,
-      nivelItem: original.nivelItem,
-      critMargin: original.critMargin,
-      critMultiplier: original.critMultiplier,
-      alcance: original.alcance,
-      alcanceExtraMetrosMetades: original.alcanceExtraMetrosMetades,
-      atributoEscalonamento: original.atributoEscalonamento,
-      upgradeLevelValue: original.upgradeLevelValue,
-      upgradeLevelMax: original.upgradeLevelMax,
-      tipoEquipamento: original.tipoEquipamento,
-      baseRD: original.baseRD,
-      descritorEfeito: original.descritorEfeito,
-      qtdDoses: original.qtdDoses,
-      isRefeicao: original.isRefeicao,
-      isAttuned: original.isAttuned,
-      materialTier: original.materialTier,
-      materialMaxUpgradeLimit: original.materialMaxUpgradeLimit,
-    };
+    const powerIds = original.itemPowers.map((ip) => ip.powerId);
+    const originalPowers = await this.prisma.power.findMany({
+      where: { id: { in: powerIds } },
+      include: {
+        appliedEffects: {
+          include: {
+            appliedModifications: true,
+          },
+        },
+      },
+    });
+    const originalPowersMap = new Map(originalPowers.map((p) => [p.id, p]));
 
-    if (original.itemDamages.length > 0) {
-      baseData.itemDamages = {
-        create: original.itemDamages.map((d) => ({
-          dado: d.dado,
-          base: d.base,
-          espiritual: d.espiritual,
-          posicao: d.posicao,
-        })),
-      };
-    }
-
-    if (original.itemPowers.length > 0) {
-      baseData.itemPowers = {
-        create: original.itemPowers.map((ip) => ({
-          powerId: ip.powerId,
+    const copy = await this.prisma.$transaction(async (tx) => {
+      // 1. Clone all Item Powers
+      const clonedPowerIdsByPosition: { posicao: number; powerId: string }[] = [];
+      for (const ip of original.itemPowers) {
+        const p = originalPowersMap.get(ip.powerId);
+        if (!p) continue;
+        const clonedPower = await tx.power.create({
+          data: {
+            userId,
+            characterId: null,
+            nome: p.nome,
+            descricao: p.descricao,
+            isPublic: false,
+            icone: p.icone,
+            notas: p.notas,
+            domainName: p.domainName,
+            domainAreaConhecimento: p.domainAreaConhecimento,
+            domainPeculiarId: p.domainPeculiarId,
+            parametrosAcao: p.parametrosAcao,
+            parametrosAlcance: p.parametrosAlcance,
+            parametrosDuracao: p.parametrosDuracao,
+            custoTotalPda: p.custoTotalPda,
+            custoTotalPe: p.custoTotalPe,
+            custoTotalEspacos: p.custoTotalEspacos,
+            custoAlternativoTipo: p.custoAlternativoTipo,
+            custoAlternativoQuantidade: p.custoAlternativoQuantidade,
+            custoAlternativoDescricao: p.custoAlternativoDescricao,
+            custoAlternativoAtributo: p.custoAlternativoAtributo,
+            custoAlternativoItemId: p.custoAlternativoItemId,
+            appliedEffects: {
+              create: p.appliedEffects.map((effect) => ({
+                effectBaseId: effect.effectBaseId,
+                grau: effect.grau,
+                configuracaoId: effect.configuracaoId,
+                inputValue: effect.inputValue,
+                nota: effect.nota,
+                posicao: effect.posicao,
+                custoPda: effect.custoPda,
+                custoPe: effect.custoPe,
+                custoEspacos: effect.custoEspacos,
+                appliedModifications: {
+                  create: effect.appliedModifications.map((modification) => ({
+                    modificationBaseId: modification.modificationBaseId,
+                    scope: modification.scope,
+                    grau: modification.grau,
+                    parametros: (modification.parametros as any) || undefined,
+                    nota: modification.nota,
+                    posicao: modification.posicao,
+                  })),
+                },
+              })),
+            },
+          },
+        });
+        clonedPowerIdsByPosition.push({
           posicao: ip.posicao,
-        })),
-      };
-    }
+          powerId: clonedPower.id,
+        });
+      }
 
-    if (original.itemPowerArrays.length > 0) {
-      baseData.itemPowerArrays = {
-        create: original.itemPowerArrays.map((ipa) => ({
-          powerArrayId: ipa.powerArrayId,
+      // 2. Clone all Item Power Arrays (and their nested powers)
+      const clonedPowerArrayIdsByPosition: { posicao: number; powerArrayId: string }[] = [];
+      for (const ipa of original.itemPowerArrays) {
+        if (!ipa.powerArray) continue;
+        const pa = ipa.powerArray;
+        const nestedPowerIdsByPosition: { posicao: number; powerId: string }[] = [];
+
+        for (const entry of pa.powerArrayPowers) {
+          if (!entry.power) continue;
+          const p = entry.power;
+          const clonedPower = await tx.power.create({
+            data: {
+              userId,
+              characterId: null,
+              nome: p.nome,
+              descricao: p.descricao,
+              isPublic: false,
+              icone: p.icone,
+              notas: p.notas,
+              domainName: p.domainName,
+              domainAreaConhecimento: p.domainAreaConhecimento,
+              domainPeculiarId: p.domainPeculiarId,
+              parametrosAcao: p.parametrosAcao,
+              parametrosAlcance: p.parametrosAlcance,
+              parametrosDuracao: p.parametrosDuracao,
+              custoTotalPda: p.custoTotalPda,
+              custoTotalPe: p.custoTotalPe,
+              custoTotalEspacos: p.custoTotalEspacos,
+              custoAlternativoTipo: p.custoAlternativoTipo,
+              custoAlternativoQuantidade: p.custoAlternativoQuantidade,
+              custoAlternativoDescricao: p.custoAlternativoDescricao,
+              custoAlternativoAtributo: p.custoAlternativoAtributo,
+              custoAlternativoItemId: p.custoAlternativoItemId,
+              appliedEffects: {
+                create: p.appliedEffects.map((effect) => ({
+                  effectBaseId: effect.effectBaseId,
+                  grau: effect.grau,
+                  configuracaoId: effect.configuracaoId,
+                  inputValue: effect.inputValue,
+                  nota: effect.nota,
+                  posicao: effect.posicao,
+                  custoPda: effect.custoPda,
+                  custoPe: effect.custoPe,
+                  custoEspacos: effect.custoEspacos,
+                  appliedModifications: {
+                    create: effect.appliedModifications.map((modification) => ({
+                      modificationBaseId: modification.modificationBaseId,
+                      scope: modification.scope,
+                      grau: modification.grau,
+                      parametros: (modification.parametros as any) || undefined,
+                      nota: modification.nota,
+                      posicao: modification.posicao,
+                    })),
+                  },
+                })),
+              },
+            },
+          });
+          nestedPowerIdsByPosition.push({
+            posicao: entry.posicao,
+            powerId: clonedPower.id,
+          });
+        }
+
+        const clonedPowerArray = await tx.powerArray.create({
+          data: {
+            userId,
+            characterId: null,
+            nome: pa.nome,
+            descricao: pa.descricao,
+            isPublic: false,
+            icone: pa.icone,
+            notas: pa.notas,
+            domainName: pa.domainName,
+            domainAreaConhecimento: pa.domainAreaConhecimento,
+            domainPeculiarId: pa.domainPeculiarId,
+            parametrosBaseAcao: pa.parametrosBaseAcao,
+            parametrosBaseAlcance: pa.parametrosBaseAlcance,
+            parametrosBaseDuracao: pa.parametrosBaseDuracao,
+            custoTotalPda: pa.custoTotalPda,
+            custoTotalPe: pa.custoTotalPe,
+            custoTotalEspacos: pa.custoTotalEspacos,
+            powerArrayPowers: {
+              create: nestedPowerIdsByPosition.map((entry) => ({
+                powerId: entry.powerId,
+                posicao: entry.posicao,
+              })),
+            },
+          },
+        });
+
+        clonedPowerArrayIdsByPosition.push({
           posicao: ipa.posicao,
-        })),
-      };
-    }
+          powerArrayId: clonedPowerArray.id,
+        });
+      }
 
-    const copy = await this.prisma.item.create({
-      data: baseData,
-      include: INCLUDE,
+      // 3. Create the cloned Item referencing the new power/array instances
+      return tx.item.create({
+        data: {
+          userId,
+          characterId: null,
+          tipo: original.tipo,
+          nome: original.nome,
+          descricao: original.descricao,
+          isPublic: false,
+          icone: original.icone,
+          notas: original.notas,
+          durabilidade: original.durabilidade,
+          canStack: original.canStack,
+          maxStack: original.maxStack,
+          domainName: original.domainName,
+          domainAreaConhecimento: original.domainAreaConhecimento,
+          domainPeculiarId: original.domainPeculiarId,
+          custoBase: original.custoBase,
+          nivelItem: original.nivelItem,
+          critMargin: original.critMargin,
+          critMultiplier: original.critMultiplier,
+          alcance: original.alcance,
+          alcanceExtraMetrosMetades: original.alcanceExtraMetrosMetades,
+          atributoEscalonamento: original.atributoEscalonamento,
+          upgradeLevelValue: original.upgradeLevelValue,
+          upgradeLevelMax: original.upgradeLevelMax,
+          tipoEquipamento: original.tipoEquipamento,
+          baseRD: original.baseRD,
+          descritorEfeito: original.descritorEfeito,
+          qtdDoses: original.qtdDoses,
+          isRefeicao: original.isRefeicao,
+          spoilageState: original.spoilageState,
+          isAttuned: original.isAttuned,
+          materialTier: original.materialTier,
+          materialMaxUpgradeLimit: original.materialMaxUpgradeLimit,
+          itemDamages: {
+            create: original.itemDamages.map((entry) => ({
+              dado: entry.dado,
+              base: entry.base,
+              espiritual: entry.espiritual,
+              posicao: entry.posicao,
+            })),
+          },
+          itemPowers: {
+            create: clonedPowerIdsByPosition.map((entry) => ({
+              powerId: entry.powerId,
+              posicao: entry.posicao,
+            })),
+          },
+          itemPowerArrays: {
+            create: clonedPowerArrayIdsByPosition.map((entry) => ({
+              powerArrayId: entry.powerArrayId,
+              posicao: entry.posicao,
+            })),
+          },
+        },
+        include: INCLUDE,
+      });
     });
 
     return copy;
@@ -491,5 +729,275 @@ export class ItemsService {
     });
 
     return items;
+  }
+
+  private sanitizePower(power: any) {
+    const appliedEffects = power.appliedEffects ? power.appliedEffects : [];
+    const globalModifications: any[] = [];
+    const resolvedEffects = appliedEffects.map((ae: any) => {
+      const modifications = (ae.appliedModifications || [])
+        .filter((am: any) => am.scope !== 'GLOBAL')
+        .map((am: any) => ({
+          modificationBaseId: am.modificationBaseId,
+          grau: am.grau,
+          parametros: am.parametros ?? undefined,
+          nota: am.nota ?? undefined,
+        }));
+
+      for (const am of ae.appliedModifications || []) {
+        if (am.scope === 'GLOBAL') {
+          globalModifications.push({
+            modificationBaseId: am.modificationBaseId,
+            grau: am.grau,
+            parametros: am.parametros ?? undefined,
+            nota: am.nota ?? undefined,
+          });
+        }
+      }
+
+      return {
+        effectBaseId: ae.effectBaseId,
+        grau: ae.grau,
+        configuracaoId: ae.configuracaoId ?? undefined,
+        inputValue: ae.inputValue ?? undefined,
+        nota: ae.nota ?? undefined,
+        modifications,
+      };
+    });
+
+    return {
+      nome: power.nome,
+      descricao: power.descricao,
+      dominio: {
+        name: power.domainName.toLowerCase().replace(/_/g, '-'),
+        areaConhecimento: power.domainAreaConhecimento ?? undefined,
+        peculiarId: power.domainPeculiarId ?? undefined,
+      },
+      parametros: {
+        acao: power.parametrosAcao,
+        alcance: power.parametrosAlcance,
+        duracao: power.parametrosDuracao,
+      },
+      effects: resolvedEffects,
+      globalModifications,
+      custoAlternativo: power.custoAlternativoTipo
+        ? {
+            tipo: power.custoAlternativoTipo.toLowerCase(),
+            quantidade: power.custoAlternativoQuantidade,
+            descricao: power.custoAlternativoDescricao ?? undefined,
+            atributo: power.custoAlternativoAtributo ?? undefined,
+            itemId: power.custoAlternativoItemId ?? undefined,
+          }
+        : undefined,
+      isPublic: false,
+      notas: power.notas ?? undefined,
+      icone: power.icone ?? undefined,
+    };
+  }
+
+  private sanitizePowerArray(powerArray: any) {
+    const pb =
+      powerArray.parametrosBaseAcao !== null &&
+      powerArray.parametrosBaseAlcance !== null &&
+      powerArray.parametrosBaseDuracao !== null
+        ? {
+            acao: powerArray.parametrosBaseAcao,
+            alcance: powerArray.parametrosBaseAlcance,
+            duracao: powerArray.parametrosBaseDuracao,
+          }
+        : undefined;
+
+    const powers = powerArray.powerArrayPowers
+      ? powerArray.powerArrayPowers.map((pap: any) => this.sanitizePower(pap.power))
+      : [];
+
+    return {
+      nome: powerArray.nome,
+      descricao: powerArray.descricao,
+      dominio: {
+        name: powerArray.domainName.toLowerCase().replace(/_/g, '-'),
+        areaConhecimento: powerArray.domainAreaConhecimento ?? undefined,
+        peculiarId: powerArray.domainPeculiarId ?? undefined,
+      },
+      parametrosBase: pb,
+      powers,
+      isPublic: false,
+      notas: powerArray.notas ?? undefined,
+      icone: powerArray.icone ?? undefined,
+    };
+  }
+
+  async exportItem(itemId: string, userId: string) {
+    const item = await this.prisma.item.findUnique({
+      where: { id: itemId },
+      include: EXPORT_INCLUDE,
+    });
+
+    if (!item) {
+      throw new ResourceNotFoundError('Item não encontrado');
+    }
+
+    if (item.userId && item.userId !== userId && !item.isPublic) {
+      throw new NotAllowedError();
+    }
+
+    const powerIds = item.itemPowers.map((ip) => ip.powerId);
+    const powers = await this.prisma.power.findMany({
+      where: { id: { in: powerIds } },
+      include: {
+        appliedEffects: {
+          include: {
+            appliedModifications: true,
+          },
+        },
+      },
+    });
+
+    // Keep the ordering of powers matching item.itemPowers
+    const orderedPowers = item.itemPowers
+      .map((ip) => powers.find((p) => p.id === ip.powerId))
+      .filter((p): p is NonNullable<typeof p> => !!p);
+
+    const base: any = {
+      tipo: item.tipo.toLowerCase().replace(/_/g, '-'),
+      nome: item.nome,
+      descricao: item.descricao,
+      isPublic: false,
+      icone: item.icone ?? undefined,
+      notas: item.notas ?? undefined,
+      canStack: item.canStack,
+      maxStack: item.maxStack,
+      dominio: {
+        name: item.domainName.toLowerCase().replace(/_/g, '-'),
+        areaConhecimento: item.domainAreaConhecimento ?? undefined,
+        peculiarId: item.domainPeculiarId ?? undefined,
+      },
+      custoBase: item.custoBase,
+      powers: orderedPowers.map((p) => this.sanitizePower(p)),
+      powerArrays: item.itemPowerArrays.map((ipa: any) =>
+        this.sanitizePowerArray(ipa.powerArray),
+      ),
+    };
+
+    if (item.tipo === 'WEAPON') {
+      base.critMargin = item.critMargin;
+      base.critMultiplier = item.critMultiplier;
+      base.alcance = item.alcance?.toLowerCase() ?? undefined;
+      base.alcanceExtraMetros = item.alcanceExtraMetrosMetades
+        ? item.alcanceExtraMetrosMetades / 2
+        : 0;
+      base.atributoEscalonamento = item.atributoEscalonamento ?? undefined;
+      base.upgradeLevel = item.upgradeLevelValue ?? 0;
+      base.danos = item.itemDamages.map((d: any) => ({
+        dado: d.dado,
+        base: d.base,
+        espiritual: d.espiritual,
+      }));
+    } else if (item.tipo === 'DEFENSIVE_EQUIPMENT') {
+      base.tipoEquipamento = item.tipoEquipamento?.toLowerCase() ?? undefined;
+      base.baseRD = item.baseRD;
+      base.atributoEscalonamento = item.atributoEscalonamento ?? undefined;
+      base.upgradeLevel = item.upgradeLevelValue ?? 0;
+    } else if (item.tipo === 'CONSUMABLE') {
+      base.descritorEfeito = item.descritorEfeito;
+      base.qtdDoses = item.qtdDoses;
+      base.isRefeicao = item.isRefeicao;
+    } else if (item.tipo === 'UPGRADE_MATERIAL') {
+      base.tier = item.materialTier;
+      base.maxUpgradeLimit = item.materialMaxUpgradeLimit;
+    }
+
+    return base;
+  }
+
+  async importItem(userId: string, body: ImportItemBodySchema) {
+    const createdPowerIds: string[] = [];
+    const createdPowerArrayIds: string[] = [];
+
+    // Create powers
+    if (body.powers && body.powers.length > 0) {
+      for (const powerBody of body.powers) {
+        const createdPower = await this.powersService.createPower(userId, powerBody);
+        createdPowerIds.push(createdPower.id);
+      }
+    }
+
+    // Create power arrays
+    if (body.powerArrays && body.powerArrays.length > 0) {
+      for (const arrayBody of body.powerArrays) {
+        const nestedPowerIds: string[] = [];
+        for (const nestedPowerBody of arrayBody.powers) {
+          const createdPower = await this.powersService.createPower(userId, nestedPowerBody);
+          nestedPowerIds.push(createdPower.id);
+        }
+
+        const createdArray = await this.powersService.createPowerArray(userId, {
+          nome: arrayBody.nome,
+          descricao: arrayBody.descricao,
+          dominio: arrayBody.dominio,
+          parametrosBase: arrayBody.parametrosBase,
+          powerIds: nestedPowerIds,
+          isPublic: arrayBody.isPublic,
+          notas: arrayBody.notas,
+          icone: arrayBody.icone,
+        });
+
+        createdPowerArrayIds.push(createdArray.id);
+      }
+    }
+
+    // Prepare item creation payload
+    const createItemBody: CreateItemBodySchema = {
+      tipo: body.tipo,
+      nome: body.nome,
+      descricao: body.descricao,
+      dominio: body.dominio,
+      custoBase: body.custoBase,
+      isPublic: body.isPublic,
+      notas: body.notas,
+      icone: body.icone ?? undefined,
+      canStack: body.canStack,
+      maxStack: body.maxStack,
+      powerIds: createdPowerIds,
+      powerArrayIds: createdPowerArrayIds,
+      // Weapon specific
+      ...(body.tipo === ItemType.WEAPON
+        ? {
+            danos: body.danos,
+            critMargin: body.critMargin,
+            critMultiplier: body.critMultiplier,
+            alcance: body.alcance,
+            alcanceExtraMetros: body.alcanceExtraMetros,
+            atributoEscalonamento: body.atributoEscalonamento,
+            upgradeLevel: body.upgradeLevel,
+          }
+        : {}),
+      // Defensive specific
+      ...(body.tipo === ItemType.DEFENSIVE_EQUIPMENT
+        ? {
+            tipoEquipamento: body.tipoEquipamento,
+            baseRD: body.baseRD,
+            atributoEscalonamento: body.atributoEscalonamento,
+            upgradeLevel: body.upgradeLevel,
+          }
+        : {}),
+      // Consumable specific
+      ...(body.tipo === ItemType.CONSUMABLE
+        ? {
+            descritorEfeito: body.descritorEfeito,
+            qtdDoses: body.qtdDoses,
+            isRefeicao: body.isRefeicao,
+          }
+        : {}),
+      // Upgrade material specific
+      ...(body.tipo === ItemType.UPGRADE_MATERIAL
+        ? {
+            tier: body.tier,
+            maxUpgradeLimit: body.maxUpgradeLimit,
+          }
+        : {}),
+    } as any;
+
+    return this.create(userId, createItemBody);
   }
 }

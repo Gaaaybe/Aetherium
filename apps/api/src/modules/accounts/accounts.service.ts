@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
-import { HashGenerator } from '@/domain/accounts/application/cryptography/hash-generator';
-import { HashComparer } from '@/domain/accounts/application/cryptography/hash-comparer';
-import { Encrypter } from '@/domain/accounts/application/cryptography/encrypter';
-import { AlreadyExistsError, WrongCredentialsError } from './errors/accounts.errors';
-import type { RegisterUserBodySchema, AuthenticateBodySchema } from './dto/accounts.dto';
 import { UserRole } from '@prisma/client';
+import { Encrypter, HashComparer, HashGenerator } from '@/infrastructure/cryptography/cryptography';
+import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
+import type { AuthenticateBodySchema, RegisterUserBodySchema } from './dto/accounts.dto';
+import { AlreadyExistsError, WrongCredentialsError } from './errors/accounts.errors';
 
 @Injectable()
 export class AccountsService {

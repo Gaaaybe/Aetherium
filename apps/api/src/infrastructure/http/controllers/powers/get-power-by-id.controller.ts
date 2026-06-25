@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { PowersService } from '@/modules/power-manager/powers.service';
 import { formatPowerToHTTP } from '@/modules/power-manager/dto/power.dto';
+import { PowersService } from '@/modules/power-manager/powers.service';
 
 @Controller('/powers/:powerId')
 export class GetPowerByIdController {

@@ -1,9 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.DomainSchema = exports.DomainName = void 0;
-exports.isEspiritual = isEspiritual;
-const zod_1 = require("zod");
-var DomainName;
+import { z } from 'zod';
+export var DomainName;
 (function (DomainName) {
     DomainName["NATURAL"] = "natural";
     DomainName["SAGRADO"] = "sagrado";
@@ -17,30 +13,30 @@ var DomainName;
     DomainName["ARMA_EXPLOSIVA"] = "arma-explosiva";
     DomainName["ARMA_TECNOLOGICA"] = "arma-tecnologica";
     DomainName["DESARMADO"] = "desarmado";
-})(DomainName || (exports.DomainName = DomainName = {}));
-exports.DomainSchema = zod_1.z
+})(DomainName || (DomainName = {}));
+export const DomainSchema = z
     .object({
-    name: zod_1.z.nativeEnum(DomainName),
-    areaConhecimento: zod_1.z.string().min(1).optional(),
-    peculiarId: zod_1.z.string().min(1).optional(),
+    name: z.nativeEnum(DomainName),
+    areaConhecimento: z.string().min(1).optional(),
+    peculiarId: z.string().min(1).optional(),
 })
     .superRefine((data, ctx) => {
     if (data.name === DomainName.CIENTIFICO && !data.areaConhecimento) {
         ctx.addIssue({
-            code: zod_1.z.ZodIssueCode.custom,
+            code: z.ZodIssueCode.custom,
             path: ['areaConhecimento'],
             message: 'Domínio Científico requer área de conhecimento',
         });
     }
     if (data.name === DomainName.PECULIAR && !data.peculiarId) {
         ctx.addIssue({
-            code: zod_1.z.ZodIssueCode.custom,
+            code: z.ZodIssueCode.custom,
             path: ['peculiarId'],
             message: 'Domínio Peculiar requer ID da peculiaridade',
         });
     }
 });
-function isEspiritual(domainName) {
+export function isEspiritual(domainName) {
     return [
         DomainName.NATURAL,
         DomainName.SAGRADO,

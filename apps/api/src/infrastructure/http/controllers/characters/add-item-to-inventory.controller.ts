@@ -9,12 +9,16 @@ import {
   Post,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
-import { ResourceNotFoundError, NotAllowedError, DomainValidationError } from '@/modules/character-manager/errors/character-errors';
 
 const addItemToInventoryBodySchema = z.object({
   itemId: z.string().uuid(),
@@ -44,7 +48,10 @@ export class AddItemToInventoryController {
 
       return CharacterPresenter.toHTTP(character);
     } catch (error: any) {
-      if (error instanceof ResourceNotFoundError || error.constructor.name === 'ResourceNotFoundError') {
+      if (
+        error instanceof ResourceNotFoundError ||
+        error.constructor.name === 'ResourceNotFoundError'
+      ) {
         throw new NotFoundException(error.message);
       }
 
@@ -52,7 +59,10 @@ export class AddItemToInventoryController {
         throw new ForbiddenException(error.message);
       }
 
-      if (error instanceof DomainValidationError || error.constructor.name === 'DomainValidationError') {
+      if (
+        error instanceof DomainValidationError ||
+        error.constructor.name === 'DomainValidationError'
+      ) {
         throw new BadRequestException(error.message);
       }
 

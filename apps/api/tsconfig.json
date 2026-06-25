@@ -16,8 +16,7 @@
     "baseUrl": ".", // deprecated in TS 7.0 — required for path aliases; use "ignoreDeprecations": "6.0" once TS 6.0 is released to suppress the warning
     "paths": {
       "@/*": ["src/*"],
-      "@test/*": ["test/*"],
-      "@aetherium/rules-engine": ["../../packages/rules-engine/src/index.ts"]
+      "@test/*": ["test/*"]
     },
     "incremental": true,
     "skipLibCheck": true,

@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
-import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CharacterPresenter } from '../../presenters/character.presenter';
 
 @Controller('/characters/me')

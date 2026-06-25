@@ -50,7 +50,6 @@ describe('FetchUserCharactersController (e2e)', () => {
 
     accessToken = authResponse.body.access_token;
 
-    
     await request(app.getHttpServer())
       .post('/characters')
       .set('Authorization', `Bearer ${accessToken}`)

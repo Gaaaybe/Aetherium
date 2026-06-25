@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { Efeito, Modificacao } from '@/data';
 import efeitosJson from '@/data/efeitos.json';
 import modificacoesJson from '@/data/modificacoes.json';
@@ -9,7 +10,7 @@ const EFEITOS_FALLBACK = efeitosJson as Efeito[];
 const MODIFICACOES_FALLBACK = modificacoesJson as Modificacao[];
 
 /**
- * Provê efeitos e modificações do catálogo para toda a aplicação.
+ * Provê efeitos e modificações do catálogo para toda a aplicação utilizando TanStack Query.
  *
  * Estratégia:
  *  - Semeado com o JSON local (render imediato, sem flash de loading)
@@ -17,30 +18,21 @@ const MODIFICACOES_FALLBACK = modificacoesJson as Modificacao[];
  *  - Em caso de falha na API, mantém os dados do JSON local como fallback
  */
 export function CatalogProvider({ children }: { children: ReactNode }) {
-  const [efeitos, setEfeitos] = useState<Efeito[]>(EFEITOS_FALLBACK);
-  const [modificacoes, setModificacoes] = useState<Modificacao[]>(MODIFICACOES_FALLBACK);
-  const [loading, setLoading] = useState(true);
+  const { data: efeitos = EFEITOS_FALLBACK, isLoading: loadingEffects } = useQuery({
+    queryKey: ['effects'],
+    queryFn: fetchEffects,
+    initialData: EFEITOS_FALLBACK,
+    staleTime: 1000 * 60 * 60 * 24, // cache catalog for 24 hours
+  });
 
-  useEffect(() => {
-    let cancelled = false;
+  const { data: modificacoes = MODIFICACOES_FALLBACK, isLoading: loadingModifications } = useQuery({
+    queryKey: ['modifications'],
+    queryFn: fetchModifications,
+    initialData: MODIFICACOES_FALLBACK,
+    staleTime: 1000 * 60 * 60 * 24, // cache catalog for 24 hours
+  });
 
-    Promise.all([fetchEffects(), fetchModifications()])
-      .then(([efeitosApi, modificacoesApi]) => {
-        if (cancelled) return;
-        if (efeitosApi.length > 0) setEfeitos(efeitosApi);
-        if (modificacoesApi.length > 0) setModificacoes(modificacoesApi);
-      })
-      .catch(() => {
-        // API indisponível: mantém fallback JSON silenciosamente
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const loading = loadingEffects || loadingModifications;
 
   return (
     <CatalogContext.Provider value={{ efeitos, modificacoes, loading }}>

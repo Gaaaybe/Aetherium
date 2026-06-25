@@ -1,16 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Injectable } from '@nestjs/common';
-import { DomainsLookupPort } from '@/domain/character-manager/application/repositories/domains-lookup-port';
-import { PeculiaritiesRepository } from '@/domain/power-manager/application/repositories/peculiarities-repository';
+import { PrismaService } from './prisma/prisma.service';
 
 @Injectable()
-export class CatalogDomainsLookupAdapter extends DomainsLookupPort {
+export class CatalogDomainsLookupAdapter {
   private readonly dataPath = join(process.cwd(), 'data');
 
-  constructor(private peculiaritiesRepository: PeculiaritiesRepository) {
-    super();
-  }
+  constructor(private prisma: PrismaService) {}
 
   async findById(id: string): Promise<any | null> {
     // 1. Check in static dominios.json
@@ -25,12 +22,14 @@ export class CatalogDomainsLookupAdapter extends DomainsLookupPort {
       return found;
     }
 
-    // 2. Check in PeculiaritiesRepository
+    // 2. Check in DB via Prisma
     try {
-      const peculiarity = await this.peculiaritiesRepository.findById(id);
+      const peculiarity = await this.prisma.peculiarity.findUnique({
+        where: { id },
+      });
       if (peculiarity) {
         return {
-          id: peculiarity.id.toString(),
+          id: peculiarity.id,
           nome: peculiarity.nome,
           categoria: 'especial',
           espiritual: peculiarity.espiritual,

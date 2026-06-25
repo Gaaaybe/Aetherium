@@ -1,97 +1,75 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchMyItems,
   createItem,
   updateItem,
   deleteItem,
   copyPublicItem,
+  exportItem,
+  importItem,
 } from '@/services/items.service';
 import type { CreateItemPayload, ItemResponse, UpdateItemPayload, ItemType } from '@/services/types';
-
-interface UseItemsState {
-  items: ItemResponse[];
-  loading: boolean;
-  error: string | null;
-}
 
 interface LoadItemsParams {
   page?: number;
   tipo?: ItemType;
 }
 
-export function useItems() {
-  const [state, setState] = useState<UseItemsState>({
-    items: [],
-    loading: true,
-    error: null,
+export function useItems(params: LoadItemsParams = {}) {
+  const queryClient = useQueryClient();
+
+  const { data: items = [], isLoading, error } = useQuery({
+    queryKey: ['items', params.tipo, params.page ?? 1],
+    queryFn: () => fetchMyItems({ page: params.page ?? 1, tipo: params.tipo }),
   });
 
-  useEffect(() => {
-    let cancelled = false;
-    fetchMyItems({ page: 1 })
-      .then((data) => {
-        if (!cancelled) setState({ items: data, loading: false, error: null });
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : 'Erro ao carregar itens';
-          setState({ items: [], loading: false, error: msg });
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const carregar = useCallback(async (params: LoadItemsParams = {}) => {
-    setState((s) => ({ ...s, loading: true, error: null }));
-    try {
-      const data = await fetchMyItems({ page: params.page ?? 1, tipo: params.tipo });
-      setState({ items: data, loading: false, error: null });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro ao carregar itens';
-      setState((s) => ({ ...s, loading: false, error: msg }));
-    }
-  }, []);
-
-  const criar = useCallback(async (payload: CreateItemPayload): Promise<ItemResponse> => {
-    const novo = await createItem(payload);
-    setState((s) => ({ ...s, items: [novo, ...s.items] }));
-    return novo;
-  }, []);
-
-  const atualizar = useCallback(
-    async (id: string, payload: UpdateItemPayload): Promise<ItemResponse> => {
-      const atualizado = await updateItem(id, payload);
-      setState((s) => ({
-        ...s,
-        items: s.items.map((item) => (item.id === id ? atualizado : item)),
-      }));
-      return atualizado;
+  const createMutation = useMutation({
+    mutationFn: createItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
     },
-    [],
-  );
+  });
 
-  const deletar = useCallback(async (id: string): Promise<void> => {
-    await deleteItem(id);
-    setState((s) => ({ ...s, items: s.items.filter((item) => item.id !== id) }));
-  }, []);
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateItemPayload }) => updateItem(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+    },
+  });
 
-  const copiar = useCallback(async (id: string): Promise<ItemResponse> => {
-    const copia = await copyPublicItem(id);
-    setState((s) => ({ ...s, items: [copia, ...s.items] }));
-    return copia;
-  }, []);
+  const deleteMutation = useMutation({
+    mutationFn: deleteItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+    },
+  });
+
+  const copyMutation = useMutation({
+    mutationFn: copyPublicItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+    },
+  });
+
+  const importMutation = useMutation({
+    mutationFn: importItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+    },
+  });
 
   return {
-    items: state.items,
-    loading: state.loading,
-    error: state.error,
-    carregar,
-    criar,
-    atualizar,
-    deletar,
-    copiar,
+    items,
+    loading: isLoading,
+    error: error instanceof Error ? error.message : error ? String(error) : null,
+    carregar: async (newParams: LoadItemsParams = {}) => {
+      await queryClient.invalidateQueries({ queryKey: ['items'] });
+    },
+    criar: createMutation.mutateAsync,
+    atualizar: (id: string, payload: UpdateItemPayload) => updateMutation.mutateAsync({ id, payload }),
+    deletar: deleteMutation.mutateAsync,
+    copiar: copyMutation.mutateAsync,
+    exportar: exportItem,
+    importar: importMutation.mutateAsync,
   };
 }

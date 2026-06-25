@@ -7,11 +7,15 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
 import { CharacterPresenter } from '../../presenters/character.presenter';
-import { ResourceNotFoundError, NotAllowedError, DomainValidationError } from '@/modules/character-manager/errors/character-errors';
 
 @Controller('/characters/:characterId/spiritual-evolution')
 export class EvolveSpiritualPrincipleController {
@@ -19,10 +23,7 @@ export class EvolveSpiritualPrincipleController {
 
   @Post()
   @HttpCode(200)
-  async handle(
-    @Param('characterId') characterId: string,
-    @CurrentUser() user: UserPayload,
-  ) {
+  async handle(@Param('characterId') characterId: string, @CurrentUser() user: UserPayload) {
     try {
       const character = await this.charactersService.evolveSpiritualPrinciple(
         characterId,

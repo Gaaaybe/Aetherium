@@ -80,8 +80,11 @@ export const InventorySchema = z.object({
 });
 
 export const UnarmedMasterySchema = z.object({
-  rank: z.enum(['INICIANTE', 'PRATICANTE', 'MESTRE']),
-  extraBonus: z.number().int().default(0),
+  degree: z.number().int().min(0).max(9).default(0),
+  marginImprovements: z.number().int().min(0).default(0),
+  multiplierImprovements: z.number().int().min(0).default(0),
+  damageType: z.string().default('Impacto'),
+  customName: z.string().optional().nullable(),
 });
 
 export const CharacterSchema = z.object({
@@ -107,3 +110,36 @@ export const CharacterSchema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
 });
+
+export type Character = z.infer<typeof CharacterSchema> & {
+  powers?: {
+    id: string;
+    powerId: string;
+    isEquipped: boolean;
+    finalPdaCost: number;
+    slotCost: number;
+    posicao?: number;
+  }[];
+  powerArrays?: {
+    id: string;
+    powerArrayId: string;
+    isEquipped: boolean;
+    finalPdaCost: number;
+    slotCost: number;
+    posicao?: number;
+  }[];
+  benefits?: {
+    id: string;
+    name: string;
+    degree: number;
+    pdaCost: number;
+    posicao?: number;
+  }[];
+  domains?: {
+    id: string;
+    characterId: string;
+    domainId: string;
+    masteryLevel: 'INICIANTE' | 'PRATICANTE' | 'MESTRE';
+  }[];
+};
+

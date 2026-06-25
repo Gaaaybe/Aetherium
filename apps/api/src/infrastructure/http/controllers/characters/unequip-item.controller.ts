@@ -9,13 +9,17 @@ import {
   Post,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
+import { ItemsService } from '@/modules/item-manager/items.service';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
-import { ItemsRepository } from '@/domain/item-manager/application/repositories/items-repository';
-import { ResourceNotFoundError, NotAllowedError, DomainValidationError } from '@/modules/character-manager/errors/character-errors';
 
 const unequipItemBodySchema = z.object({
   slot: z.enum(['suit', 'accessory', 'hand', 'quick-access']),
@@ -28,7 +32,7 @@ type UnequipItemBodySchema = z.infer<typeof unequipItemBodySchema>;
 export class UnequipItemController {
   constructor(
     private charactersService: CharactersService,
-    private itemsRepository: ItemsRepository,
+    private itemsService: ItemsService,
   ) {}
 
   @Post()
@@ -48,11 +52,14 @@ export class UnequipItemController {
         body.quantity,
       );
 
-      const items = await this.itemsRepository.findByCharacterId(characterId);
+      const items = await this.itemsService.fetchCharacter(characterId);
 
       return CharacterPresenter.toHTTP(character, [], items);
     } catch (error: any) {
-      if (error instanceof ResourceNotFoundError || error.constructor.name === 'ResourceNotFoundError') {
+      if (
+        error instanceof ResourceNotFoundError ||
+        error.constructor.name === 'ResourceNotFoundError'
+      ) {
         throw new NotFoundException(error.message);
       }
 
@@ -60,7 +67,10 @@ export class UnequipItemController {
         throw new ForbiddenException(error.message);
       }
 
-      if (error instanceof DomainValidationError || error.constructor.name === 'DomainValidationError') {
+      if (
+        error instanceof DomainValidationError ||
+        error.constructor.name === 'DomainValidationError'
+      ) {
         throw new BadRequestException(error.message);
       }
 

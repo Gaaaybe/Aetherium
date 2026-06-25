@@ -1,9 +1,9 @@
 import { Controller, Get, UnauthorizedException } from '@nestjs/common';
-import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
-import { CharacterPresenter } from '../../presenters/character.presenter';
+import { CharactersService } from '@/modules/character-manager/characters.service';
 import { NotAllowedError } from '@/modules/character-manager/errors/character-errors';
+import { CharacterPresenter } from '../../presenters/character.presenter';
 
 @Controller('/admin/characters')
 export class FetchAllCharactersController {

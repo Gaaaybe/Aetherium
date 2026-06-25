@@ -1,10 +1,18 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Injectable } from '@nestjs/common';
-import { BenefitsLookupPort, type BenefitInfo } from '@/domain/character-manager/application/repositories/benefits-lookup-port';
+
+export interface BenefitInfo {
+  nome: string;
+  tipo?: string;
+  graus?: number | string;
+  descricao?: string;
+  regra_custo?: string;
+  custo_base?: number;
+}
 
 @Injectable()
-export class CatalogBenefitsLookupAdapter extends BenefitsLookupPort {
+export class CatalogBenefitsLookupAdapter {
   private readonly dataPath = join(process.cwd(), 'data');
 
   async findByName(name: string): Promise<BenefitInfo | null> {

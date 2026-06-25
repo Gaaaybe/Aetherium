@@ -1,4 +1,4 @@
-import universalTable from './tables/universal-table.json';
+import universalTable from './tables/universal-table.json' with { type: 'json' };
 
 export interface UniversalTableRow {
   grau: number;
@@ -12,7 +12,7 @@ export interface UniversalTableRow {
   deslocamento?: string;
 }
 
-const UNIVERSAL_TABLE = universalTable as UniversalTableRow[];
+export const UNIVERSAL_TABLE = universalTable as UniversalTableRow[];
 
 export interface AppliedModificationInput {
   modificationBaseId: string;

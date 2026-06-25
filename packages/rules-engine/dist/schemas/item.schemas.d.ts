@@ -43,7 +43,7 @@ export declare const commonItemFields: {
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -80,7 +80,7 @@ export declare const WeaponSchema: z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -110,7 +110,7 @@ export declare const DefensiveEquipmentSchema: z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -139,7 +139,7 @@ export declare const ConsumableSchema: z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -165,7 +165,7 @@ export declare const ArtifactSchema: z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -190,7 +190,7 @@ export declare const AccessorySchema: z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -215,7 +215,7 @@ export declare const GeneralItemSchema: z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -242,7 +242,7 @@ export declare const UpgradeMaterialSchema: z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -279,7 +279,7 @@ export declare const ItemSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -308,7 +308,7 @@ export declare const ItemSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -336,7 +336,7 @@ export declare const ItemSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -361,7 +361,7 @@ export declare const ItemSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -385,7 +385,7 @@ export declare const ItemSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -409,7 +409,7 @@ export declare const ItemSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;
@@ -435,7 +435,7 @@ export declare const ItemSchema: z.ZodDiscriminatedUnion<[z.ZodObject<{
     nome: z.ZodString;
     descricao: z.ZodString;
     dominio: z.ZodObject<{
-        name: z.ZodEnum<typeof import("./domain.schemas").DomainName>;
+        name: z.ZodEnum<typeof import("./domain.schemas.js").DomainName>;
         areaConhecimento: z.ZodOptional<z.ZodString>;
         peculiarId: z.ZodOptional<z.ZodString>;
     }, z.core.$strip>;

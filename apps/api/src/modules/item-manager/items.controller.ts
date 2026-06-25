@@ -1,29 +1,12 @@
-import {
-  Controller,
-  Post,
-  Put,
-  Delete,
-  Get,
-  Param,
-  Body,
-  Query,
-  HttpCode,
-} from '@nestjs/common';
-import { ItemsService } from './items.service';
-import {
-  createItemBodySchema,
-  updateItemBodySchema,
-  formatItemToHTTP,
-} from './dto/item.dto';
-import type {
-  CreateItemBodySchema,
-  UpdateItemBodySchema,
-} from './dto/item.dto';
-import { ZodValidationPipe } from '@/infrastructure/http/pipes/zod-validation-pipe';
-import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
-import { Public } from '@/infrastructure/auth/public';
-import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
 import { ItemType } from '@aetherium/rules-engine';
+import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
+import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
+import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { Public } from '@/infrastructure/auth/public';
+import { ZodValidationPipe } from '@/infrastructure/http/pipes/zod-validation-pipe';
+import type { CreateItemBodySchema, UpdateItemBodySchema, ImportItemBodySchema } from './dto/item.dto';
+import { createItemBodySchema, formatItemToHTTP, updateItemBodySchema, importItemBodySchema } from './dto/item.dto';
+import { ItemsService } from './items.service';
 
 const VALID_TYPES = Object.values(ItemType) as string[];
 
@@ -53,29 +36,20 @@ export class ItemsController {
 
   @Delete('/items/:itemId')
   @HttpCode(204)
-  async delete(
-    @Param('itemId') itemId: string,
-    @CurrentUser() user: UserPayload,
-  ) {
+  async delete(@Param('itemId') itemId: string, @CurrentUser() user: UserPayload) {
     await this.itemsService.delete(itemId, user.sub);
   }
 
   @Post('/items/:itemId/copy')
   @HttpCode(201)
-  async copyPublic(
-    @Param('itemId') itemId: string,
-    @CurrentUser() user: UserPayload,
-  ) {
+  async copyPublic(@Param('itemId') itemId: string, @CurrentUser() user: UserPayload) {
     const raw = await this.itemsService.copyPublic(itemId, user.sub);
     return formatItemToHTTP(raw);
   }
 
   @Get('/items')
   @Public()
-  async fetchPublic(
-    @Query('page') page: string,
-    @Query('tipo') tipo: string,
-  ) {
+  async fetchPublic(@Query('page') page: string, @Query('tipo') tipo: string) {
     const pageNum = page ? Number(page) : 1;
     const tipoFilter = VALID_TYPES.includes(tipo) ? (tipo as ItemType) : undefined;
     const raws = await this.itemsService.fetchPublic(pageNum, tipoFilter);
@@ -106,5 +80,20 @@ export class ItemsController {
     return {
       items: raws.map(formatItemToHTTP),
     };
+  }
+
+  @Get('/items/:itemId/export')
+  async exportItem(@Param('itemId') itemId: string, @CurrentUser() user: UserPayload) {
+    return this.itemsService.exportItem(itemId, user.sub);
+  }
+
+  @Post('/items/import')
+  @HttpCode(201)
+  async importItem(
+    @Body(new ZodValidationPipe(importItemBodySchema)) body: ImportItemBodySchema,
+    @CurrentUser() user: UserPayload,
+  ) {
+    const raw = await this.itemsService.importItem(user.sub, body);
+    return formatItemToHTTP(raw);
   }
 }

@@ -1,6 +1,6 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { PowersService } from '@/modules/power-manager/powers.service';
 import { formatPeculiarityToHTTP } from '@/modules/power-manager/dto/power.dto';
+import { PowersService } from '@/modules/power-manager/powers.service';
 
 @Controller('/peculiarities/:peculiarityId')
 export class GetPeculiarityByIdController {

@@ -9,6 +9,7 @@ export interface UniversalTableRow {
     velocidade?: string;
     deslocamento?: string;
 }
+export declare const UNIVERSAL_TABLE: UniversalTableRow[];
 export interface AppliedModificationInput {
     modificationBaseId: string;
     grau: number;

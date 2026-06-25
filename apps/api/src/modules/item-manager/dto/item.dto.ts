@@ -1,5 +1,5 @@
+import { EquipmentType, ItemType, WeaponRange, createPowerBodySchema, DomainSchema } from '@aetherium/rules-engine';
 import { z } from 'zod';
-import { ItemType, WeaponRange, EquipmentType } from '@aetherium/rules-engine';
 
 const dominioSchema = z
   .object({
@@ -199,7 +199,11 @@ export const updateItemBodySchema = z.discriminatedUnion('tipo', [
 
 export type UpdateItemBodySchema = z.infer<typeof updateItemBodySchema>;
 
-import { calculateItemBaseValue, calculateItemSellPrice, scaleWeaponDie } from '@aetherium/rules-engine';
+import {
+  calculateItemBaseValue,
+  calculateItemSellPrice,
+  scaleWeaponDie,
+} from '@aetherium/rules-engine';
 
 export function formatItemToHTTP(raw: any) {
   const base = {
@@ -225,7 +229,9 @@ export function formatItemToHTTP(raw: any) {
     precoVenda: calculateItemSellPrice(raw.custoBase, raw.nivelItem),
     durabilidade: raw.durabilidade,
     powerIds: raw.itemPowers ? raw.itemPowers.map((ip: any) => ip.powerId) : [],
-    powerArrayIds: raw.itemPowerArrays ? raw.itemPowerArrays.map((ipa: any) => ipa.powerArrayId) : [],
+    powerArrayIds: raw.itemPowerArrays
+      ? raw.itemPowerArrays.map((ipa: any) => ipa.powerArrayId)
+      : [],
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt ?? null,
     userName: raw.user?.name ?? null,
@@ -256,7 +262,7 @@ export function formatItemToHTTP(raw: any) {
 
   if (tipo === 'DEFENSIVE_EQUIPMENT') {
     const upgradeLevel = raw.upgradeLevelValue ?? 0;
-    const rdAtual = (raw.baseRD ?? 2) * Math.pow(2, upgradeLevel);
+    const rdAtual = (raw.baseRD ?? 2) * 2 ** upgradeLevel;
 
     return {
       ...base,
@@ -296,4 +302,100 @@ export function formatItemToHTTP(raw: any) {
 
   return base;
 }
+
+export const importPowerArraySchema = z.object({
+  nome: z.string().min(2).max(100),
+  descricao: z.string().min(10).max(1000),
+  dominio: DomainSchema,
+  parametrosBase: z
+    .object({
+      acao: z.number().int().min(0).max(5),
+      alcance: z.number().int().min(0).max(6),
+      duracao: z.number().int().min(0).max(4),
+    })
+    .optional(),
+  powers: z.array(createPowerBodySchema).min(1),
+  isPublic: z.boolean().default(false),
+  notas: z.string().max(2000).optional(),
+  icone: z.string().url('Ícone deve ser um link válido').optional(),
+});
+
+const importCommonFields = {
+  nome: z.string().min(2).max(100),
+  descricao: z.string().min(10).max(1000),
+  dominio: dominioSchema,
+  custoBase: z.number().int().min(0),
+  isPublic: z.boolean().default(false),
+  notas: z.string().max(2000).optional(),
+  icone: z.union([z.url('Ícone deve ser um link válido'), z.null()]).optional(),
+  powers: z.array(createPowerBodySchema).default([]),
+  powerArrays: z.array(importPowerArraySchema).default([]),
+  canStack: z.boolean().optional(),
+  maxStack: z.number().int().min(2).optional(),
+};
+
+export const importItemBodySchema = z.discriminatedUnion('tipo', [
+  z
+    .object({
+      ...importCommonFields,
+      tipo: z.literal(ItemType.WEAPON),
+      danos: z.array(damageDescriptorSchema).min(1),
+      critMargin: z.number().int().min(2).max(20),
+      critMultiplier: z.number().int().min(1).max(7),
+      alcance: z.enum([
+        WeaponRange.ADJACENTE,
+        WeaponRange.NATURAL,
+        WeaponRange.CURTO,
+        WeaponRange.MEDIO,
+        WeaponRange.LONGO,
+      ]),
+      alcanceExtraMetros: z.number().min(0).multipleOf(0.5).default(0),
+      atributoEscalonamento: z.string().min(1).optional(),
+      upgradeLevel: z.number().int().min(0).max(7).optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.alcance !== WeaponRange.NATURAL && data.alcanceExtraMetros > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['alcanceExtraMetros'],
+          message: 'Apenas armas de alcance natural podem ter alcance extra',
+        });
+      }
+    }),
+  z.object({
+    ...importCommonFields,
+    tipo: z.literal(ItemType.DEFENSIVE_EQUIPMENT),
+    tipoEquipamento: z.enum([EquipmentType.TRAJE, EquipmentType.PROTECAO]),
+    baseRD: z.number().int().min(0).optional(),
+    atributoEscalonamento: z.string().min(1).optional(),
+    upgradeLevel: z.number().int().min(0).max(9).optional(),
+  }),
+  z.object({
+    ...importCommonFields,
+    tipo: z.literal(ItemType.CONSUMABLE),
+    descritorEfeito: z.string().min(1).max(500),
+    qtdDoses: z.number().int().min(1),
+    isRefeicao: z.boolean(),
+  }),
+  z.object({
+    ...importCommonFields,
+    tipo: z.literal(ItemType.ARTIFACT),
+  }),
+  z.object({
+    ...importCommonFields,
+    tipo: z.literal(ItemType.ACCESSORY),
+  }),
+  z.object({
+    ...importCommonFields,
+    tipo: z.literal(ItemType.GENERAL),
+  }),
+  z.object({
+    ...importCommonFields,
+    tipo: z.literal(ItemType.UPGRADE_MATERIAL),
+    tier: z.number().int().min(1).max(4),
+    maxUpgradeLimit: z.number().int().min(1),
+  }),
+]);
+
+export type ImportItemBodySchema = z.infer<typeof importItemBodySchema>;
 

@@ -1,12 +1,12 @@
 import { BadRequestException, Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
 import { z } from 'zod';
-import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import { ItemsService } from '@/modules/item-manager/items.service';
+import { PowersService } from '@/modules/power-manager/powers.service';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
-import { PeculiaritiesRepository } from '@/domain/power-manager/application/repositories/peculiarities-repository';
-import { ItemsRepository } from '@/domain/item-manager/application/repositories/items-repository';
 
 const updateUnarmedMasteryBodySchema = z.object({
   customName: z.string().optional(),
@@ -22,15 +22,16 @@ type UpdateUnarmedMasteryBodySchema = z.infer<typeof updateUnarmedMasteryBodySch
 export class UpdateUnarmedMasteryController {
   constructor(
     private charactersService: CharactersService,
-    private peculiaritiesRepository: PeculiaritiesRepository,
-    private itemsRepository: ItemsRepository,
+    private powersService: PowersService,
+    private itemsService: ItemsService,
   ) {}
 
   @Post()
   @HttpCode(200)
   async handle(
     @Param('characterId') characterId: string,
-    @Body(new ZodValidationPipe(updateUnarmedMasteryBodySchema)) body: UpdateUnarmedMasteryBodySchema,
+    @Body(new ZodValidationPipe(updateUnarmedMasteryBodySchema))
+    body: UpdateUnarmedMasteryBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
     try {
@@ -40,8 +41,11 @@ export class UpdateUnarmedMasteryController {
         body,
       );
 
-      const peculiarities = await this.peculiaritiesRepository.findByUserId(character.userId.toString(), { page: 1 });
-      const items = await this.itemsRepository.findByCharacterId(character.id.toString());
+      const peculiarities = await this.powersService.fetchUserPeculiarities(
+        character.userId.toString(),
+        1,
+      );
+      const items = await this.itemsService.fetchCharacter(character.id.toString());
 
       return CharacterPresenter.toHTTP(character, peculiarities, items);
     } catch (err: any) {

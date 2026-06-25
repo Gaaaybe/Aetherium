@@ -1,20 +1,20 @@
+import { calculatePowerCost, DomainName } from '@aetherium/rules-engine';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
 import {
-  ResourceNotFoundError,
+  CreatePeculiarityBodySchema,
+  CreatePowerArrayBodySchema,
+  CreatePowerBodySchema,
+  UpdatePeculiarityBodySchema,
+  UpdatePowerArrayBodySchema,
+  UpdatePowerBodySchema,
+} from './dto/power.dto';
+import {
+  DependencyConflictError,
   InvalidVisibilityError,
   NotAllowedError,
-  DependencyConflictError,
+  ResourceNotFoundError,
 } from './errors/power-errors';
-import {
-  CreatePeculiarityBodySchema,
-  UpdatePeculiarityBodySchema,
-  CreatePowerBodySchema,
-  UpdatePowerBodySchema,
-  CreatePowerArrayBodySchema,
-  UpdatePowerArrayBodySchema,
-} from './dto/power.dto';
-import { calculatePowerCost, DomainName } from '@aetherium/rules-engine';
 
 const POWER_INCLUDE = {
   appliedEffects: {
@@ -72,7 +72,10 @@ function canBeEditedBy(resource: { userId: string | null }, userId: string): boo
   return resource.userId === userId;
 }
 
-function canBeAccessedBy(resource: { userId: string | null; isPublic: boolean }, userId?: string): boolean {
+function canBeAccessedBy(
+  resource: { userId: string | null; isPublic: boolean },
+  userId?: string,
+): boolean {
   if (!resource.userId) return true;
   if (resource.isPublic) return true;
   if (userId && resource.userId === userId) return true;
@@ -105,7 +108,11 @@ export class PowersService {
     });
   }
 
-  async updatePeculiarity(peculiarityId: string, userId: string, body: UpdatePeculiarityBodySchema) {
+  async updatePeculiarity(
+    peculiarityId: string,
+    userId: string,
+    body: UpdatePeculiarityBodySchema,
+  ) {
     const existing = await this.prisma.peculiarity.findUnique({
       where: { id: peculiarityId },
     });
@@ -402,7 +409,11 @@ export class PowersService {
             }))
           : [];
 
-      const effectCost = costResult.custoPorEfeito[`temp-effect-${i}`] || { pda: 0, pe: 0, espacos: 0 };
+      const effectCost = costResult.custoPorEfeito[`temp-effect-${i}`] || {
+        pda: 0,
+        pe: 0,
+        espacos: 0,
+      };
 
       return {
         effectBaseId: e.effectBaseId,
@@ -479,39 +490,40 @@ export class PowersService {
 
     // Check domain dependencies
     if (dominio) {
-      const isLinkedToAnyItem = await this.prisma.itemPower.count({ where: { powerId } });
-      if (isLinkedToAnyItem > 0) {
-        throw new DependencyConflictError(
-          'Não é possível alterar o domínio deste poder enquanto ele estiver vinculado a itens',
-        );
-      }
+      const newDomainUpper = dominio.name.toUpperCase().replace(/-/g, '_') as any;
+      if (existing.domainName !== newDomainUpper) {
+        const isLinkedToAnyItem = await this.prisma.itemPower.count({ where: { powerId } });
+        if (isLinkedToAnyItem > 0) {
+          throw new DependencyConflictError(
+            'Não é possível alterar o domínio deste poder enquanto ele estiver vinculado a itens',
+          );
+        }
 
-      const linkedPowerArrays = await this.prisma.powerArray.findMany({
-        where: {
-          powerArrayPowers: {
-            some: { powerId },
-          },
-        },
-        include: {
-          powerArrayPowers: {
-            include: {
-              power: true,
+        const linkedPowerArrays = await this.prisma.powerArray.findMany({
+          where: {
+            powerArrayPowers: {
+              some: { powerId },
             },
           },
-        },
-      });
+          include: {
+            powerArrayPowers: {
+              include: {
+                power: true,
+              },
+            },
+          },
+        });
 
-      const domainNameUpper = dominio.name.toUpperCase().replace(/-/g, '_');
+        for (const powerArray of linkedPowerArrays) {
+          const breaksArrayDomain = powerArray.powerArrayPowers
+            .filter((pap) => pap.powerId !== powerId)
+            .some((pap) => pap.power.domainName !== newDomainUpper);
 
-      for (const powerArray of linkedPowerArrays) {
-        const breaksArrayDomain = powerArray.powerArrayPowers
-          .filter((pap) => pap.powerId !== powerId)
-          .some((pap) => pap.power.domainName !== domainNameUpper);
-
-        if (breaksArrayDomain) {
-          throw new DependencyConflictError(
-            `Não é possível alterar o domínio deste poder enquanto ele estiver vinculado ao acervo "${powerArray.nome}" com poderes de outro domínio`,
-          );
+          if (breaksArrayDomain) {
+            throw new DependencyConflictError(
+              `Não é possível alterar o domínio deste poder enquanto ele estiver vinculado ao acervo "${powerArray.nome}" com poderes de outro domínio`,
+            );
+          }
         }
       }
     }
@@ -566,7 +578,11 @@ export class PowersService {
             nota: m.nota || undefined,
           }));
 
-      costResult = await this.calculateCostHelper(resolvedEffects, resolvedParams, resolvedGlobalMods);
+      costResult = await this.calculateCostHelper(
+        resolvedEffects,
+        resolvedParams,
+        resolvedGlobalMods,
+      );
       finalPda = costResult.custoTotal.pda;
       finalPe = costResult.custoTotal.pe;
       finalEspacos = costResult.custoTotal.espacos;
@@ -586,7 +602,10 @@ export class PowersService {
             );
           }
           if (!peculiarity.isPublic) {
-            await this.prisma.peculiarity.update({ where: { id: pecId }, data: { isPublic: true } });
+            await this.prisma.peculiarity.update({
+              where: { id: pecId },
+              data: { isPublic: true },
+            });
           }
         }
       }
@@ -659,7 +678,11 @@ export class PowersService {
                 }))
               : [];
 
-          const effectCost = costResult.custoPorEfeito[`temp-effect-${i}`] || { pda: 0, pe: 0, espacos: 0 };
+          const effectCost = costResult.custoPorEfeito[`temp-effect-${i}`] || {
+            pda: 0,
+            pe: 0,
+            espacos: 0,
+          };
 
           return {
             effectBaseId: e.effectBaseId,
@@ -708,8 +731,12 @@ export class PowersService {
           custoTotalEspacos: finalEspacos,
           custoAlternativoTipo: custoAlternativo ? custoAlternativo.tipo.toUpperCase() : undefined,
           custoAlternativoQuantidade: custoAlternativo ? custoAlternativo.quantidade : undefined,
-          custoAlternativoDescricao: custoAlternativo ? (custoAlternativo.descricao ?? null) : undefined,
-          custoAlternativoAtributo: custoAlternativo ? (custoAlternativo.atributo ?? null) : undefined,
+          custoAlternativoDescricao: custoAlternativo
+            ? (custoAlternativo.descricao ?? null)
+            : undefined,
+          custoAlternativoAtributo: custoAlternativo
+            ? (custoAlternativo.atributo ?? null)
+            : undefined,
           custoAlternativoItemId: custoAlternativo ? (custoAlternativo.itemId ?? null) : undefined,
         },
         include: POWER_INCLUDE,
@@ -1058,7 +1085,10 @@ export class PowersService {
             await tx.power.update({ where: { id: p.id }, data: { isPublic: true } });
             // If the power references a peculiarity, make that public too
             if (p.domainPeculiarId) {
-              await tx.peculiarity.update({ where: { id: p.domainPeculiarId }, data: { isPublic: true } });
+              await tx.peculiarity.update({
+                where: { id: p.domainPeculiarId },
+                data: { isPublic: true },
+              });
             }
           }
         }
@@ -1116,12 +1146,14 @@ export class PowersService {
       : undefined;
 
     // Check if linked to any item and we are changing domain
-    if (dominio) {
-      const isLinkedToAnyItem = await this.prisma.itemPowerArray.count({ where: { powerArrayId } });
-      if (isLinkedToAnyItem > 0) {
-        throw new DependencyConflictError(
-          'Não é possível alterar o domínio do acervo porque ele está vinculado a pelo menos um item',
-        );
+    if (dominio && domainNameUpper) {
+      if (existing.domainName !== (domainNameUpper as any)) {
+        const isLinkedToAnyItem = await this.prisma.itemPowerArray.count({ where: { powerArrayId } });
+        if (isLinkedToAnyItem > 0) {
+          throw new DependencyConflictError(
+            'Não é possível alterar o domínio do acervo porque ele está vinculado a pelo menos um item',
+          );
+        }
       }
     }
 
@@ -1162,12 +1194,17 @@ export class PowersService {
         // Make all powers public
         await this.prisma.$transaction(async (tx) => {
           const powerIdsToPublish = resolvedPowerIds;
-          const powersToPublish = await tx.power.findMany({ where: { id: { in: powerIdsToPublish } } });
+          const powersToPublish = await tx.power.findMany({
+            where: { id: { in: powerIdsToPublish } },
+          });
           for (const p of powersToPublish) {
             if (!p.isPublic) {
               await tx.power.update({ where: { id: p.id }, data: { isPublic: true } });
               if (p.domainPeculiarId) {
-                await tx.peculiarity.update({ where: { id: p.domainPeculiarId }, data: { isPublic: true } });
+                await tx.peculiarity.update({
+                  where: { id: p.domainPeculiarId },
+                  data: { isPublic: true },
+                });
               }
             }
           }

@@ -7,11 +7,15 @@ import {
   Param,
   Patch,
 } from '@nestjs/common';
-import { CharactersService } from '@/modules/character-manager/characters.service';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
 import { CharacterPresenter } from '../../presenters/character.presenter';
-import { ResourceNotFoundError, NotAllowedError, DomainValidationError } from '@/modules/character-manager/errors/character-errors';
 
 @Controller('/characters/:characterId/power-arrays/:powerArrayId/unequip')
 export class UnequipPowerArrayController {
@@ -33,7 +37,10 @@ export class UnequipPowerArrayController {
 
       return CharacterPresenter.toHTTP(character);
     } catch (error: any) {
-      if (error instanceof ResourceNotFoundError || error.constructor.name === 'ResourceNotFoundError') {
+      if (
+        error instanceof ResourceNotFoundError ||
+        error.constructor.name === 'ResourceNotFoundError'
+      ) {
         throw new NotFoundException(error.message);
       }
 
@@ -41,7 +48,10 @@ export class UnequipPowerArrayController {
         throw new ForbiddenException(error.message);
       }
 
-      if (error instanceof DomainValidationError || error.constructor.name === 'DomainValidationError') {
+      if (
+        error instanceof DomainValidationError ||
+        error.constructor.name === 'DomainValidationError'
+      ) {
         if (error.message.includes('não encontrado')) {
           throw new NotFoundException(error.message);
         }
