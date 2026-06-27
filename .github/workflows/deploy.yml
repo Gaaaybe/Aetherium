@@ -23,9 +23,6 @@ jobs:
   # Job de build
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,20 +35,26 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
-          cache-dependency-path: apps/web/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build packages
+        run: pnpm --filter @aetherium/rules-engine build
+
       - name: Run tests
+        working-directory: apps/web
         run: pnpm test --run
 
       - name: Build
+        working-directory: apps/web
         run: pnpm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Copy index.html to 404.html
+        working-directory: apps/web
         run: cp dist/index.html dist/404.html
 
       - name: Setup Pages
