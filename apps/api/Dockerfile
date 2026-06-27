@@ -20,6 +20,9 @@ RUN pnpm install --no-frozen-lockfile \
 	&& pnpm store prune \
 	&& rm -rf /root/.local/share/pnpm/store /root/.pnpm-store
 
+# Constroi as bibliotecas locais do monorepo primeiro
+RUN pnpm --filter @aetherium/rules-engine run build
+
 # Gera o client do Prisma (acessando a pasta da API via filtro)
 RUN pnpm --filter aetherium-api exec prisma generate
 
