@@ -21,7 +21,7 @@ RUN pnpm install --no-frozen-lockfile \
 	&& rm -rf /root/.local/share/pnpm/store /root/.pnpm-store
 
 # Gera o client do Prisma (acessando a pasta da API via filtro)
-RUN pnpm --filter aetherium-api prisma generate
+RUN pnpm --filter aetherium-api exec prisma generate
 
 # Faz o build da aplicação NestJS
 RUN pnpm --filter aetherium-api run build
@@ -51,7 +51,7 @@ RUN pnpm install --prod --no-frozen-lockfile \
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 
 # Garante que o Prisma tenha os binários de prod gerados
-RUN pnpm --filter aetherium-api prisma generate
+RUN pnpm --filter aetherium-api exec prisma generate
 
 # Entra definitivamente na pasta da API para rodar o app
 WORKDIR /app/apps/api
