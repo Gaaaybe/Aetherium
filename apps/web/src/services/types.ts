@@ -11,7 +11,8 @@ export type DomainName =
   | 'arma-fogo'
   | 'arma-tensao'
   | 'arma-explosiva'
-  | 'arma-tecnologica';
+  | 'arma-tecnologica'
+  | 'desarmado';
 
 export interface DominioResponse {
   name: DomainName;

@@ -1,19 +1,16 @@
 import { Controller, Get, Param } from '@nestjs/common';
-import { FetchCharacterPowersUseCase } from '@/domain/power-manager/application/use-cases/fetch-character-powers';
-import { PowerPresenter } from '../../presenters/power.presenter';
+import { formatPowerToHTTP } from '@/modules/power-manager/dto/power.dto';
+import { PowersService } from '@/modules/power-manager/powers.service';
 
 @Controller('/characters/:characterId/powers/full')
 export class FetchCharacterPowersController {
-  constructor(private fetchCharacterPowers: FetchCharacterPowersUseCase) {}
+  constructor(private powersService: PowersService) {}
 
   @Get()
   async handle(@Param('characterId') characterId: string) {
-    const result = await this.fetchCharacterPowers.execute({
-      characterId,
-    });
-
+    const raws = await this.powersService.fetchCharacterPowers(characterId);
     return {
-      powers: result.value?.powers.map(PowerPresenter.toHTTP),
+      powers: raws.map(formatPowerToHTTP),
     };
   }
 }

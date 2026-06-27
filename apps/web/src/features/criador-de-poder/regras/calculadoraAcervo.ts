@@ -1,5 +1,6 @@
 import type { Acervo } from '../types/acervo.types';
-import { calcularDetalhesPoder, type EfeitoCatalogo, type ModificacaoCatalogo } from './calculadoraCusto';
+import { calcularDetalhesPoder } from './calculadoraCusto';
+import type { Efeito, Modificacao } from '../../../data';
 
 interface DetalhesAcervoCalculado {
   custoPdaTotal: number;
@@ -14,8 +15,8 @@ interface DetalhesAcervoCalculado {
  */
 export function calcularDetalhesAcervo(
   acervo: Acervo,
-  efeitosCatalogo: EfeitoCatalogo[],
-  modificacoesCatalogo: ModificacaoCatalogo[]
+  efeitosCatalogo: Efeito[],
+  modificacoesCatalogo: Modificacao[]
 ): DetalhesAcervoCalculado {
   if (!acervo.poderes || acervo.poderes.length === 0) {
     return { custoPdaTotal: 0, espacosTotal: 0 };

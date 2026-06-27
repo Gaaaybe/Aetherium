@@ -36,7 +36,7 @@ describe('AcquirePowerController (e2e)', () => {
   const validPowerBody = {
     nome: 'Test Power',
     descricao: 'A test power for acquiring',
-    dominio: { name: 'natural' },
+    dominio: { name: 'arma-branca' },
     parametros: { acao: 1, alcance: 2, duracao: 0 },
     effects: [
       {
@@ -59,7 +59,6 @@ describe('AcquirePowerController (e2e)', () => {
 
     await app.init();
 
-    
     await prisma.effectBase.upsert({
       where: { id: 'dano' },
       create: {
@@ -76,7 +75,6 @@ describe('AcquirePowerController (e2e)', () => {
       update: {},
     });
 
-    
     await request(app.getHttpServer()).post('/users').send({
       name: 'Power User',
       email: 'poweruser@example.com',
@@ -90,7 +88,6 @@ describe('AcquirePowerController (e2e)', () => {
 
     accessToken = authResponse.body.access_token;
 
-    
     const characterResponse = await request(app.getHttpServer())
       .post('/characters')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -98,7 +95,11 @@ describe('AcquirePowerController (e2e)', () => {
 
     characterId = characterResponse.body.id;
 
-    
+    await request(app.getHttpServer())
+      .post(`/characters/${characterId}/domains`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ domainId: 'arma-branca', masteryLevel: 'INICIANTE' });
+
     const powerResponse = await request(app.getHttpServer())
       .post('/powers')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -142,7 +143,7 @@ describe('AcquirePowerController (e2e)', () => {
     expect(response.statusCode).toBe(400);
   });
 
-  test('[POST] /characters/:characterId/powers — should return 400 when power does not exist', async () => {
+  test('[POST] /characters/:characterId/powers — should return 404 when power does not exist', async () => {
     const response = await request(app.getHttpServer())
       .post(`/characters/${characterId}/powers`)
       .set('Authorization', `Bearer ${accessToken}`)
@@ -150,15 +151,15 @@ describe('AcquirePowerController (e2e)', () => {
         powerId: '00000000-0000-0000-0000-000000000000',
       });
 
-    expect(response.statusCode).toBe(400);
+    expect(response.statusCode).toBe(404);
   });
 
-  test('[POST] /characters/:characterId/powers — should return 400 when character does not exist', async () => {
+  test('[POST] /characters/:characterId/powers — should return 404 when character does not exist', async () => {
     const response = await request(app.getHttpServer())
       .post('/characters/00000000-0000-0000-0000-000000000000/powers')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ powerId });
 
-    expect(response.statusCode).toBe(400);
+    expect(response.statusCode).toBe(404);
   });
 });

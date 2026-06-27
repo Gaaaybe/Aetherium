@@ -5,7 +5,6 @@ import { PrismaClient } from '@prisma/client';
 import { config } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll } from 'vitest';
-import { DomainEvents } from '@/core/events/domain-events';
 import { envSchema } from '@/infrastructure/env/env';
 
 config({ path: '.env', override: true });
@@ -34,9 +33,6 @@ const prisma = new PrismaClient({ adapter });
 
 beforeAll(async () => {
   process.env.DATABASE_URL = databaseURL;
-
-  DomainEvents.clearHandlers();
-  DomainEvents.clearMarkedAggregates();
 
   execSync('pnpm prisma migrate deploy');
 });

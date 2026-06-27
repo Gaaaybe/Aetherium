@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import { PowersLookupPort, type PowerInfo } from '@/domain/character-manager/application/repositories/powers-lookup-port';
 import { PrismaService } from './prisma/prisma.service';
 
 const DOMAIN_NAME_TO_ID: Record<string, string> = {
@@ -17,11 +16,18 @@ const DOMAIN_NAME_TO_ID: Record<string, string> = {
   ARMA_TECNOLOGICA: 'arma-tecnologica',
 };
 
+export interface PowerInfo {
+  id: string;
+  nome: string;
+  domainId: string;
+  pdaCost: number;
+  peCost: number;
+  slotCost: number;
+}
+
 @Injectable()
-export class PrismaCharacterManagerPowersLookupAdapter extends PowersLookupPort {
-  constructor(private prisma: PrismaService) {
-    super();
-  }
+export class PrismaCharacterManagerPowersLookupAdapter {
+  constructor(private prisma: PrismaService) {}
 
   async findById(id: string): Promise<PowerInfo | null> {
     const raw = await this.prisma.power.findUnique({
@@ -44,14 +50,21 @@ export class PrismaCharacterManagerPowersLookupAdapter extends PowersLookupPort 
     return {
       id: raw.id,
       nome: raw.nome,
-      domainId: raw.domainName === 'PECULIAR' && raw.domainPeculiarId ? raw.domainPeculiarId : DOMAIN_NAME_TO_ID[raw.domainName],
+      domainId:
+        raw.domainName === 'PECULIAR' && raw.domainPeculiarId
+          ? raw.domainPeculiarId
+          : DOMAIN_NAME_TO_ID[raw.domainName],
       pdaCost: raw.custoTotalPda,
       peCost: raw.custoTotalPe,
       slotCost: raw.custoTotalEspacos,
     };
   }
 
-  async createCharacterInstance(powerId: string, characterId: string, userId: string): Promise<string | null> {
+  async createCharacterInstance(
+    powerId: string,
+    characterId: string,
+    userId: string,
+  ): Promise<string | null> {
     const original = await this.prisma.power.findUnique({
       where: { id: powerId },
       include: {

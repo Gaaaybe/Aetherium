@@ -77,6 +77,11 @@ export const DOMINIO_VISUAL: Record<string, { color: string; gradient: string; b
     gradient: 'from-cyan-500/5 to-transparent',
     borderColor: 'border-cyan-500'
   },
+  desarmado: {
+    color: 'text-zinc-600 dark:text-zinc-400', 
+    gradient: 'from-zinc-500/5 to-transparent',
+    borderColor: 'border-zinc-500'
+  },
 };
 
 export function SwipeablePoderCard({

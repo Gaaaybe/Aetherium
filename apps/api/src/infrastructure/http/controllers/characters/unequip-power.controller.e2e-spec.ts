@@ -36,7 +36,7 @@ describe('UnequipPowerController (e2e)', () => {
   const validPowerBody = {
     nome: 'Tactical Power',
     descricao: 'A tactical power for unequipping',
-    dominio: { name: 'natural' },
+    dominio: { name: 'arma-branca' },
     parametros: { acao: 1, alcance: 2, duracao: 0 },
     effects: [
       {
@@ -59,7 +59,6 @@ describe('UnequipPowerController (e2e)', () => {
 
     await app.init();
 
-    
     await prisma.effectBase.upsert({
       where: { id: 'dano' },
       create: {
@@ -76,7 +75,6 @@ describe('UnequipPowerController (e2e)', () => {
       update: {},
     });
 
-    
     await request(app.getHttpServer()).post('/users').send({
       name: 'Unequip User',
       email: 'unequipuser@example.com',
@@ -90,7 +88,6 @@ describe('UnequipPowerController (e2e)', () => {
 
     accessToken = authResponse.body.access_token;
 
-    
     const characterResponse = await request(app.getHttpServer())
       .post('/characters')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -98,7 +95,11 @@ describe('UnequipPowerController (e2e)', () => {
 
     characterId = characterResponse.body.id;
 
-    
+    await request(app.getHttpServer())
+      .post(`/characters/${characterId}/domains`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ domainId: 'arma-branca', masteryLevel: 'INICIANTE' });
+
     const powerResponse = await request(app.getHttpServer())
       .post('/powers')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -106,7 +107,6 @@ describe('UnequipPowerController (e2e)', () => {
 
     powerId = powerResponse.body.id;
 
-    
     const acquireResponse = await request(app.getHttpServer())
       .post(`/characters/${characterId}/powers`)
       .set('Authorization', `Bearer ${accessToken}`)
@@ -114,7 +114,6 @@ describe('UnequipPowerController (e2e)', () => {
 
     powerId = acquireResponse.body.powers[0].powerId;
 
-    
     await request(app.getHttpServer())
       .patch(`/characters/${characterId}/powers/${powerId}/equip`)
       .set('Authorization', `Bearer ${accessToken}`)
@@ -156,28 +155,23 @@ describe('UnequipPowerController (e2e)', () => {
 
   test('[PATCH] /characters/:characterId/powers/:powerId/unequip — should return 404 for non-existent power', async () => {
     const response = await request(app.getHttpServer())
-      .patch(
-        `/characters/${characterId}/powers/00000000-0000-0000-0000-000000000000/unequip`,
-      )
+      .patch(`/characters/${characterId}/powers/00000000-0000-0000-0000-000000000000/unequip`)
       .set('Authorization', `Bearer ${accessToken}`);
 
     expect(response.statusCode).toBe(404);
   });
 
   test('[PATCH] /characters/:characterId/powers/:powerId/unequip — should return 403 for unauthorized user', async () => {
-    
     await request(app.getHttpServer()).post('/users').send({
       name: 'Unequip Unauthorized User',
       email: 'unequipunauth@example.com',
       password: '123456',
     });
 
-    const unauthorizedAuthResponse = await request(app.getHttpServer())
-      .post('/auth')
-      .send({
-        email: 'unequipunauth@example.com',
-        password: '123456',
-      });
+    const unauthorizedAuthResponse = await request(app.getHttpServer()).post('/auth').send({
+      email: 'unequipunauth@example.com',
+      password: '123456',
+    });
 
     const response = await request(app.getHttpServer())
       .patch(`/characters/${characterId}/powers/${powerId}/unequip`)
@@ -187,11 +181,10 @@ describe('UnequipPowerController (e2e)', () => {
   });
 
   test('[PATCH] /characters/:characterId/powers/:powerId/unequip — should unequip even if power was not equipped', async () => {
-    
     const newPowerBody = {
       nome: 'Unequipped Power',
       descricao: 'A power that was never equipped',
-      dominio: { name: 'natural' },
+      dominio: { name: 'arma-branca' },
       parametros: { acao: 1, alcance: 1, duracao: 0 },
       effects: [
         {
@@ -211,13 +204,11 @@ describe('UnequipPowerController (e2e)', () => {
 
     const newPowerId = newPowerResponse.body.id;
 
-    
     await request(app.getHttpServer())
       .post(`/characters/${characterId}/powers`)
       .set('Authorization', `Bearer ${accessToken}`)
       .send({ powerId: newPowerId });
 
-    
     const response = await request(app.getHttpServer())
       .patch(`/characters/${characterId}/powers/${newPowerId}/unequip`)
       .set('Authorization', `Bearer ${accessToken}`);

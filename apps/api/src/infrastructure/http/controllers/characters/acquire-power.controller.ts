@@ -1,8 +1,22 @@
-import { BadRequestException, Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  HttpCode,
+  NotFoundException,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { z } from 'zod';
-import { AcquirePowerUseCase } from '@/domain/character-manager/application/use-cases/acquire-power';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
 
@@ -14,7 +28,7 @@ type AcquirePowerBodySchema = z.infer<typeof acquirePowerBodySchema>;
 
 @Controller('/characters/:characterId/powers')
 export class AcquirePowerController {
-  constructor(private acquirePower: AcquirePowerUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Post()
   @HttpCode(201)
@@ -23,16 +37,34 @@ export class AcquirePowerController {
     @Body(new ZodValidationPipe(acquirePowerBodySchema)) body: AcquirePowerBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.acquirePower.execute({
-      characterId,
-      userId: user.sub,
-      powerId: body.powerId,
-    });
+    try {
+      const { character } = await this.charactersService.acquirePower(
+        characterId,
+        user.sub,
+        body.powerId,
+      );
 
-    if (result.isLeft()) {
-      throw new BadRequestException(result.value.message);
+      return CharacterPresenter.toHTTP(character);
+    } catch (error: any) {
+      if (
+        error instanceof ResourceNotFoundError ||
+        error.constructor.name === 'ResourceNotFoundError'
+      ) {
+        throw new NotFoundException(error.message);
+      }
+
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
+        throw new ForbiddenException(error.message);
+      }
+
+      if (
+        error instanceof DomainValidationError ||
+        error.constructor.name === 'DomainValidationError'
+      ) {
+        throw new BadRequestException(error.message);
+      }
+
+      throw error;
     }
-
-    return CharacterPresenter.toHTTP(result.value.character);
   }
 }

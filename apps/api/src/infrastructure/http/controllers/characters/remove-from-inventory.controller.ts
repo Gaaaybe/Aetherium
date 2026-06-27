@@ -9,12 +9,14 @@ import {
   Post,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { RemoveFromInventoryUseCase } from '@/domain/character-manager/application/use-cases/remove-from-inventory';
-import { NotAllowedError } from '@/domain/character-manager/application/use-cases/errors/not-allowed-error';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
 
@@ -26,7 +28,7 @@ type RemoveFromInventoryBodySchema = z.infer<typeof removeFromInventoryBodySchem
 
 @Controller('/characters/:characterId/items/:itemId/remove')
 export class RemoveFromInventoryController {
-  constructor(private removeFromInventory: RemoveFromInventoryUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Post()
   @HttpCode(200)
@@ -36,28 +38,35 @@ export class RemoveFromInventoryController {
     @Body(new ZodValidationPipe(removeFromInventoryBodySchema)) body: RemoveFromInventoryBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.removeFromInventory.execute({
-      characterId,
-      userId: user.sub,
-      itemId,
-      quantity: body.quantity,
-    });
+    try {
+      const character = await this.charactersService.removeFromInventory(
+        characterId,
+        user.sub,
+        itemId,
+        body.quantity,
+      );
 
-    if (result.isLeft()) {
-      const error = result.value;
-
-      switch (error.constructor) {
-        case ResourceNotFoundError:
-          throw new NotFoundException(error.message);
-        case NotAllowedError:
-          throw new ForbiddenException(error.message);
-        case DomainValidationError:
-          throw new BadRequestException(error.message);
-        default:
-          throw new BadRequestException(error.message);
+      return CharacterPresenter.toHTTP(character);
+    } catch (error: any) {
+      if (
+        error instanceof ResourceNotFoundError ||
+        error.constructor.name === 'ResourceNotFoundError'
+      ) {
+        throw new NotFoundException(error.message);
       }
-    }
 
-    return CharacterPresenter.toHTTP(result.value.character);
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
+        throw new ForbiddenException(error.message);
+      }
+
+      if (
+        error instanceof DomainValidationError ||
+        error.constructor.name === 'DomainValidationError'
+      ) {
+        throw new BadRequestException(error.message);
+      }
+
+      throw error;
+    }
   }
 }

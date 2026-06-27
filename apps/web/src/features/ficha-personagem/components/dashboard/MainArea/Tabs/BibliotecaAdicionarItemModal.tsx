@@ -1,7 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Search, AlertCircle, Sword, Shield, Droplets, Gem, Sparkles, Package, Hammer, Box, Copy } from 'lucide-react';
 import { Modal, Button, Input, DynamicIcon, Badge, Tooltip, toast } from '@/shared/ui';
-import { fetchMyItems } from '@/services/items.service';
 import type { ItemResponse, ItemType } from '@/services/types';
 import { useItems } from '@/features/criador-de-item/hooks/useItems';
 
@@ -72,21 +71,10 @@ export function BibliotecaAdicionarItemModal({
   onAddItem,
   isProcessing,
 }: BibliotecaAdicionarItemModalProps) {
-  const [items, setItems] = useState<ItemResponse[]>([]);
-  const [loading, setLoading] = useState(false);
   const [busca, setBusca] = useState('');
   const [filtro, setFiltro] = useState<ItemType | 'tudo'>('tudo');
-  const { copiar } = useItems();
+  const { items, loading, copiar } = useItems();
   const [duplicandoId, setDuplicandoId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setLoading(true);
-    fetchMyItems()
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
-  }, [isOpen]);
 
   const itensFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -106,9 +94,6 @@ export function BibliotecaAdicionarItemModal({
     try {
       await copiar(id);
       toast.success('Item duplicado com sucesso!');
-      // Atualiza a lista local
-      const novosItens = await fetchMyItems();
-      setItems(novosItens);
     } catch {
       toast.error('Erro ao duplicar item.');
     } finally {

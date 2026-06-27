@@ -31,6 +31,8 @@ export function BibliotecaPage() {
     deletar: deletarItem,
     copiar: copiarItem,
     carregar: recarregarItens,
+    exportar: exportarItem,
+    importar: importarItem,
   } = useItems();
   const { efeitos, modificacoes } = useCatalog();
   const [poderVisualizando, setPoderVisualizando] = useState<PoderResponse | null>(null);
@@ -79,11 +81,14 @@ export function BibliotecaPage() {
   const [carregandoItemId, setCarregandoItemId] = useState<string | null>(null);
   const [deletandoItemId, setDeletandoItemId] = useState<string | null>(null);
   const [togglePublicItemId, setTogglePublicItemId] = useState<string | null>(null);
+  const [exportandoItemId, setExportandoItemId] = useState<string | null>(null);
+  const [importandoItem, setImportandoItem] = useState(false);
   
   const [confirmarDeletarPoder, setConfirmarDeletarPoder] = useState<PoderResponse | null>(null);
   const [confirmarDeletarItem, setConfirmarDeletarItem] = useState<ItemResponse | null>(null);
 
   const importInputRef = useRef<HTMLInputElement>(null);
+  const importItemInputRef = useRef<HTMLInputElement>(null);
   const [abaAtiva, setAbaAtiva] = useState<'poderes' | 'itens' | 'acervos' | 'peculiaridades'>(() => {
     const saved = localStorage.getItem('biblioteca-aba-ativa');
     return (saved as 'poderes' | 'itens' | 'acervos' | 'peculiaridades') || 'poderes';
@@ -143,6 +148,7 @@ export function BibliotecaPage() {
       'arma-tensao': 'Armas de Tensão',
       'arma-explosiva': 'Armas Explosivas',
       'arma-tecnologica': 'Armas Tecnológicas',
+      desarmado: 'Domínio Desarmado',
     };
 
     poderesFiltrados.forEach(p => {
@@ -366,6 +372,57 @@ export function BibliotecaPage() {
     }
   };
 
+  const handleExportarItem = async (item: ItemResponse) => {
+    setExportandoItemId(item.id);
+    try {
+      const sanitized = await exportarItem(item.id);
+      const blob = new Blob([JSON.stringify(sanitized, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${item.nome.replace(/\s+/g, '_')}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`"${item.nome}" exportado!`);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setExportandoItemId(null);
+    }
+  };
+
+  const handleImportarItem = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImportandoItem(true);
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const lista = Array.isArray(parsed) ? parsed : [parsed];
+      let ok = 0;
+      let falhou = 0;
+      for (const rawItem of lista) {
+        try {
+          await importarItem(rawItem);
+          ok++;
+        } catch (err) {
+          console.error(err);
+          falhou++;
+        }
+      }
+      if (ok > 0) {
+        toast.success(`Sucesso! ${ok} item(ns) importado(s) e salvo(s) na biblioteca.`);
+        recarregarItens();
+      }
+      if (falhou > 0) toast.error(`${falhou} item(ns) falhou na importação devido a erros de validação.`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Arquivo inválido. Certifique-se de usar um JSON exportado pelo Aetherium.');
+    } finally {
+      setImportandoItem(false);
+    }
+  };
+
   const handleExportarTodos = () => {
     if (poderes.length === 0) return;
     setExportandoTodos(true);
@@ -584,7 +641,7 @@ export function BibliotecaPage() {
                       psiquico: 'Psíquico', cientifico: 'Científico', peculiar: 'Peculiar',
                       'arma-branca': 'Arma Branca', 'arma-fogo': 'Arma de Fogo',
                       'arma-tensao': 'Arma de Tensão', 'arma-explosiva': 'Arma Explosiva',
-                      'arma-tecnologica': 'Arma Tecnológica'
+                      'arma-tecnologica': 'Arma Tecnológica', desarmado: 'Domínio Desarmado'
                     };
                     return { value: id, label: nomes[id] || id };
                   })
@@ -681,16 +738,36 @@ export function BibliotecaPage() {
                       : `${items.length} ${items.length === 1 ? 'item salvo' : 'itens salvos'}`}
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => recarregarItens()}
-                  disabled={loadingItens}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loadingItens ? 'animate-spin' : ''}`} />
-                  Atualizar
-                </Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => recarregarItens()}
+                    disabled={loadingItens}
+                    className="flex items-center gap-2"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loadingItens ? 'animate-spin' : ''}`} />
+                    Atualizar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => importItemInputRef.current?.click()}
+                    disabled={importandoItem}
+                    className="flex items-center gap-2"
+                    aria-label="Importar itens de arquivo JSON"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {importandoItem ? 'Importando…' : 'Importar JSON'}
+                  </Button>
+                  <input
+                    ref={importItemInputRef}
+                    type="file"
+                    accept=".json"
+                    className="hidden"
+                    onChange={handleImportarItem}
+                  />
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -715,7 +792,7 @@ export function BibliotecaPage() {
                             psiquico: 'Psíquico', cientifico: 'Científico', peculiar: 'Peculiar',
                             'arma-branca': 'Arma Branca', 'arma-fogo': 'Arma de Fogo',
                             'arma-tensao': 'Arma de Tensão', 'arma-explosiva': 'Arma Explosiva',
-                            'arma-tecnologica': 'Arma Tecnológica'
+                            'arma-tecnologica': 'Arma Tecnológica', desarmado: 'Domínio Desarmado'
                           };
                           return { value: id, label: nomes[id] || id };
                         })
@@ -798,11 +875,13 @@ export function BibliotecaPage() {
                           onTogglePublic={() => handleTogglePublicItem(item)}
                           onVerResumo={() => setItemVisualizando(item)}
                           onUsarComoTemplate={() => handleUsarComoTemplate(item)}
+                          onExportar={() => handleExportarItem(item)}
                           formatarData={formatarData}
                           carregandoId={carregandoItemId}
                           duplicandoId={carregandoItemId}
                           deletandoId={deletandoItemId}
                           togglePublicId={togglePublicItemId}
+                          exportandoId={exportandoItemId}
                         />
                       ))}
                     </div>

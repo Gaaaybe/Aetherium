@@ -1,13 +1,25 @@
-import { BadRequestException, Body, Controller, ForbiddenException, HttpCode, NotFoundException, Param, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ForbiddenException,
+  HttpCode,
+  NotFoundException,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { z } from 'zod';
-import { UpgradeItemUseCase } from '@/domain/character-manager/application/use-cases/upgrade-item';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
+import { ItemsService } from '@/modules/item-manager/items.service';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { NotAllowedError } from '@/domain/character-manager/application/use-cases/errors/not-allowed-error';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
 
 const upgradeItemBodySchema = z.object({
   materialId: z.string().uuid(),
@@ -16,13 +28,11 @@ const upgradeItemBodySchema = z.object({
 
 type UpgradeItemBodySchema = z.infer<typeof upgradeItemBodySchema>;
 
-import { ItemsRepository } from '@/domain/item-manager/application/repositories/items-repository';
-
 @Controller('/characters/:characterId/items/:itemId/upgrade')
 export class UpgradeItemController {
   constructor(
-    private upgradeItem: UpgradeItemUseCase,
-    private itemsRepository: ItemsRepository,
+    private charactersService: CharactersService,
+    private itemsService: ItemsService,
   ) {}
 
   @Post()
@@ -33,34 +43,38 @@ export class UpgradeItemController {
     @Body(new ZodValidationPipe(upgradeItemBodySchema)) body: UpgradeItemBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.upgradeItem.execute({
-      characterId,
-      userId: user.sub,
-      itemId,
-      materialId: body.materialId,
-      runicsCost: body.runicsCost,
-    });
+    try {
+      const character = await this.charactersService.upgradeItem(
+        characterId,
+        user.sub,
+        itemId,
+        body.materialId,
+        body.runicsCost,
+      );
 
-    if (result.isLeft()) {
-      const error = result.value;
+      const items = await this.itemsService.fetchCharacter(characterId);
 
-      if (error instanceof ResourceNotFoundError) {
+      return CharacterPresenter.toHTTP(character, [], items);
+    } catch (error: any) {
+      if (
+        error instanceof ResourceNotFoundError ||
+        error.constructor.name === 'ResourceNotFoundError'
+      ) {
         throw new NotFoundException(error.message);
       }
 
-      if (error instanceof NotAllowedError) {
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
         throw new ForbiddenException(error.message);
       }
 
-      if (error instanceof DomainValidationError) {
+      if (
+        error instanceof DomainValidationError ||
+        error.constructor.name === 'DomainValidationError'
+      ) {
         throw new BadRequestException(error.message);
       }
 
-      throw new BadRequestException('Failed to upgrade item');
+      throw error;
     }
-
-    const items = await this.itemsRepository.findByCharacterId(characterId);
-
-    return CharacterPresenter.toHTTP(result.value.character, [], items);
   }
 }

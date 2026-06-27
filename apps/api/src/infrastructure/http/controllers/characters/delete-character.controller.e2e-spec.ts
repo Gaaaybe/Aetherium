@@ -118,7 +118,6 @@ describe('DeleteCharacterController (e2e)', () => {
   });
 
   test('[DELETE] /characters/:characterId — should return 403 when trying to delete another user character', async () => {
-    
     await request(app.getHttpServer()).post('/users').send({
       name: 'Other User',
       email: 'otheruser@example.com',
@@ -130,7 +129,6 @@ describe('DeleteCharacterController (e2e)', () => {
       password: '123456',
     });
 
-    
     const createResponse = await request(app.getHttpServer())
       .post('/characters')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -144,7 +142,6 @@ describe('DeleteCharacterController (e2e)', () => {
 
     const protectedCharacterId = createResponse.body.id;
 
-    
     const response = await request(app.getHttpServer())
       .delete(`/characters/${protectedCharacterId}`)
       .set('Authorization', `Bearer ${otherUserAuthResponse.body.access_token}`);

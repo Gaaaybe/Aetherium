@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Package, Save, RefreshCw, Link2, Sword, Shield, FlaskConical, FileText, Plus, Eye, Sparkles, BookOpen, Hammer, Box } from 'lucide-react';
 import { DOMINIOS } from '@/data';
 import { usePeculiaridades } from '@/shared/hooks/usePeculiaridades';
@@ -7,6 +7,7 @@ import { usePoderes } from '@/features/criador-de-poder/hooks/usePoderes';
 import { usePowerArrays } from '@/features/criador-de-poder/hooks/usePowerArrays';
 import { useItemBuilder } from '../hooks/useItemBuilder';
 import { useItems } from '../hooks/useItems';
+import { useItemCreatorStore } from '@/stores/item-creator.store';
 import { SeletorVinculosModal } from './SeletorVinculosModal';
 import { ResumoItem } from './ResumoItem';
 import { ResumoVinculoModal } from './ResumoVinculoModal';
@@ -25,11 +26,45 @@ function ItemTypeIcon({ tipo }: { tipo: ItemType }) {
 const BASE_PRESETS = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'] as const;
 const BASE_CUSTOM_VALUE = '__custom__';
 
-export function CriadorDeItem({ itemInicial, onSaved }: { itemInicial?: ItemResponse, onSaved?: (item: ItemResponse) => void }) {
+export function CriadorDeItem({
+  itemInicial,
+  onSaved,
+  poderesAdicionais,
+  acervosAdicionais,
+}: {
+  itemInicial?: ItemResponse;
+  onSaved?: (item: ItemResponse) => void;
+  poderesAdicionais?: any[];
+  acervosAdicionais?: any[];
+}) {
   const { criar, atualizar, loading } = useItems();
   const { poderes } = usePoderes();
   const { acervos } = usePowerArrays();
   const { peculiaridades } = usePeculiaridades();
+
+  const poderesCompletos = useMemo(() => {
+    const list = [...poderes];
+    if (poderesAdicionais) {
+      for (const p of poderesAdicionais) {
+        if (!list.some((existing) => existing.id === p.id)) {
+          list.push(p);
+        }
+      }
+    }
+    return list;
+  }, [poderes, poderesAdicionais]);
+
+  const acervosCompletos = useMemo(() => {
+    const list = [...acervos];
+    if (acervosAdicionais) {
+      for (const a of acervosAdicionais) {
+        if (!list.some((existing) => existing.id === a.id)) {
+          list.push(a);
+        }
+      }
+    }
+    return list;
+  }, [acervos, acervosAdicionais]);
 
   const [salvando, setSalvando] = useState(false);
   const [modalPoderesAberto, setModalPoderesAberto] = useState(false);
@@ -59,19 +94,14 @@ export function CriadorDeItem({ itemInicial, onSaved }: { itemInicial?: ItemResp
     reset,
   } = useItemBuilder();
 
-  const hydratedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (itemInicial) {
-      if (hydratedRef.current === itemInicial.id) return;
-      hydratedRef.current = itemInicial.id;
-      hydrateFromItem(itemInicial);
-      return;
-    }
-
     const rawTemplate = localStorage.getItem('criador-de-item-template');
-    if (rawTemplate) {
-      hydratedRef.current = 'localStorage';
+    const raw = localStorage.getItem('criador-de-item-carregar');
+
+    if (itemInicial) {
+      hydrateFromItem(itemInicial);
+    } else if (rawTemplate) {
       try {
         const item = JSON.parse(rawTemplate) as ItemResponse;
         hydrateFromItem(item, true); // true = asTemplate
@@ -81,62 +111,71 @@ export function CriadorDeItem({ itemInicial, onSaved }: { itemInicial?: ItemResp
       } finally {
         localStorage.removeItem('criador-de-item-template');
       }
-      return;
+    } else if (raw) {
+      try {
+        const item = JSON.parse(raw) as ItemResponse;
+        hydrateFromItem(item);
+        toast.success(`Item "${item.nome}" carregado para edição.`);
+      } catch {
+        toast.error('Não foi possível carregar o item selecionado.');
+      } finally {
+        localStorage.removeItem('criador-de-item-carregar');
+      }
+      // Se não há item inicial nem no localstorage, mas o Zustand tem um editingItemId (UUID)
+      // de uma sessão anterior, reseta para começar limpo
+      const currentEditingId = useItemCreatorStore.getState().state.editingItemId;
+      const isApiId = /^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(currentEditingId || '');
+      if (isApiId) {
+        reset();
+      }
     }
 
-    const raw = localStorage.getItem('criador-de-item-carregar');
-    if (!raw) {
-      return;
-    }
-
-    hydratedRef.current = 'localStorage';
-    try {
-      const item = JSON.parse(raw) as ItemResponse;
-      hydrateFromItem(item);
-      toast.success(`Item "${item.nome}" carregado para edição.`);
-    } catch {
-      toast.error('Não foi possível carregar o item selecionado.');
-    } finally {
-      localStorage.removeItem('criador-de-item-carregar');
-    }
-  });
+    // Cleanup ao desmontar
+    return () => {
+      const currentEditingId = useItemCreatorStore.getState().state.editingItemId;
+      const isApiId = /^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(currentEditingId || '');
+      if (isApiId) {
+        reset();
+      }
+    };
+  }, [itemInicial, hydrateFromItem, reset]);
 
   const dominioAtual = state.dominio.name;
 
   const poderesCompativeis = useMemo(
-    () => poderes.filter((p) => p.dominio.name === dominioAtual),
-    [poderes, dominioAtual],
+    () => poderesCompletos.filter((p) => p.dominio.name === dominioAtual),
+    [poderesCompletos, dominioAtual],
   );
 
   const acervosCompativeis = useMemo(
-    () => acervos.filter((a) => a.dominio.name === dominioAtual),
-    [acervos, dominioAtual],
+    () => acervosCompletos.filter((a) => a.dominio.name === dominioAtual),
+    [acervosCompletos, dominioAtual],
   );
 
   const dominioSelecionado = DOMINIOS.find((d) => d.id === state.dominio.name);
 
   const poderesSelecionados = useMemo(
-    () => poderes.filter((poder) => state.powerIds.includes(poder.id)),
-    [poderes, state.powerIds],
+    () => poderesCompletos.filter((poder) => state.powerIds.includes(poder.id)),
+    [poderesCompletos, state.powerIds],
   );
 
   const acervosSelecionados = useMemo(
-    () => acervos.filter((acervo) => state.powerArrayIds.includes(acervo.id)),
-    [acervos, state.powerArrayIds],
+    () => acervosCompletos.filter((acervo) => state.powerArrayIds.includes(acervo.id)),
+    [acervosCompletos, state.powerArrayIds],
   );
 
   const poderResumoSelecionado = useMemo(
-    () => (poderResumoId ? poderes.find((poder) => poder.id === poderResumoId) : undefined),
-    [poderResumoId, poderes],
+    () => (poderResumoId ? poderesCompletos.find((poder) => poder.id === poderResumoId) : undefined),
+    [poderResumoId, poderesCompletos],
   );
 
   const acervoResumoSelecionado = useMemo(
-    () => (acervoResumoId ? acervos.find((acervo) => acervo.id === acervoResumoId) : undefined),
-    [acervoResumoId, acervos],
+    () => (acervoResumoId ? acervosCompletos.find((acervo) => acervo.id === acervoResumoId) : undefined),
+    [acervoResumoId, acervosCompletos],
   );
 
   const nivelCalculado = useMemo(() => {
-    const somaPoderes = poderes
+    const somaPoderes = poderesCompletos
       .filter((poder) => state.powerIds.includes(poder.id))
       .reduce(
         (total, poder) =>
@@ -144,7 +183,7 @@ export function CriadorDeItem({ itemInicial, onSaved }: { itemInicial?: ItemResp
         0,
       );
 
-    const somaAcervos = acervos
+    const somaAcervos = acervosCompletos
       .filter((acervo) => state.powerArrayIds.includes(acervo.id))
       .reduce(
         (total, acervo) =>
@@ -158,7 +197,7 @@ export function CriadorDeItem({ itemInicial, onSaved }: { itemInicial?: ItemResp
       );
 
     return Math.max(1, somaPoderes + somaAcervos);
-  }, [acervos, poderes, state.powerArrayIds, state.powerIds]);
+  }, [acervosCompletos, poderesCompletos, state.powerArrayIds, state.powerIds]);
 
   const custoRealCalculado = useMemo(
     () => state.custoBase * nivelCalculado,
@@ -221,6 +260,8 @@ export function CriadorDeItem({ itemInicial, onSaved }: { itemInicial?: ItemResp
               value={state.nome}
               onChange={(e) => updateField('nome', e.target.value)}
               placeholder="Ex: Espada Solar"
+              maxLength={100}
+              helperText={`${state.nome.length}/100 caracteres`}
             />
             <Select
               label="Tipo de Item"
@@ -245,6 +286,8 @@ export function CriadorDeItem({ itemInicial, onSaved }: { itemInicial?: ItemResp
             onChange={(e) => updateField('descricao', e.target.value)}
             rows={3}
             placeholder="Descreva o item e sua função..."
+            maxLength={1000}
+            helperText={`${state.descricao.length}/1000 caracteres`}
           />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

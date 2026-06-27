@@ -1,33 +1,17 @@
-import {
-  Body,
-  Controller,
-  ForbiddenException,
-  NotFoundException,
-  Param,
-  Put,
-} from '@nestjs/common';
-import { z } from 'zod';
-import { NotAllowedError } from '@/core/errors/not-allowed-error';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { UpdatePeculiarityUseCase } from '@/domain/power-manager/application/use-cases/update-peculiarity';
+import { Body, Controller, Param, Put } from '@nestjs/common';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import type { UpdatePeculiarityBodySchema } from '@/modules/power-manager/dto/power.dto';
+import {
+  formatPeculiarityToHTTP,
+  updatePeculiarityBodySchema,
+} from '@/modules/power-manager/dto/power.dto';
+import { PowersService } from '@/modules/power-manager/powers.service';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
-import { PeculiarityPresenter } from '../../presenters/peculiarity.presenter';
-
-const updatePeculiarityBodySchema = z.object({
-  nome: z.string().min(3).max(100).optional(),
-  descricao: z.string().min(10).max(10000).optional(),
-  espiritual: z.boolean().optional(),
-  isPublic: z.boolean().optional(),
-  icone: z.union([z.url('Ícone deve ser um link válido'), z.null()]).optional(),
-});
-
-type UpdatePeculiarityBodySchema = z.infer<typeof updatePeculiarityBodySchema>;
 
 @Controller('/peculiarities/:peculiarityId')
 export class UpdatePeculiarityController {
-  constructor(private updatePeculiarity: UpdatePeculiarityUseCase) {}
+  constructor(private powersService: PowersService) {}
 
   @Put()
   async handle(
@@ -35,31 +19,7 @@ export class UpdatePeculiarityController {
     @Body(new ZodValidationPipe(updatePeculiarityBodySchema)) body: UpdatePeculiarityBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const { nome, descricao, espiritual, isPublic, icone } = body;
-
-    const result = await this.updatePeculiarity.execute({
-      peculiarityId,
-      userId: user.sub,
-      nome,
-      descricao,
-      espiritual,
-      isPublic,
-      icone,
-    });
-
-    if (result.isLeft()) {
-      const error = result.value;
-
-      switch (error.constructor) {
-        case ResourceNotFoundError:
-          throw new NotFoundException(error.message);
-        case NotAllowedError:
-          throw new ForbiddenException(error.message);
-        default:
-          throw new NotFoundException(error.message);
-      }
-    }
-
-    return PeculiarityPresenter.toHTTP(result.value.peculiarity);
+    const raw = await this.powersService.updatePeculiarity(peculiarityId, user.sub, body);
+    return formatPeculiarityToHTTP(raw);
   }
 }

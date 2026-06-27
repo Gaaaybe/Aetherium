@@ -1,17 +1,17 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { FetchEffectsUseCase } from '@/domain/power-manager/application/use-cases/fetch-effects';
 import { Public } from '@/infrastructure/auth/public';
-import { EffectBasePresenter } from '../../presenters/effect-base.presenter';
+import { formatEffectBaseToHTTP } from '@/modules/power-manager/dto/power.dto';
+import { PowersService } from '@/modules/power-manager/powers.service';
 
 @Controller('/effects')
 export class FetchEffectsController {
-  constructor(private fetchEffects: FetchEffectsUseCase) {}
+  constructor(private powersService: PowersService) {}
 
   @Public()
   @Get()
   async handle(@Query('category') category?: string) {
-    const result = await this.fetchEffects.execute({ category });
+    const effects = await this.powersService.fetchEffects(category);
 
-    return result.value!.effects.map(EffectBasePresenter.toHTTP);
+    return effects.map(formatEffectBaseToHTTP);
   }
 }

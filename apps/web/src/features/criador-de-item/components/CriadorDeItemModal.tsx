@@ -7,9 +7,18 @@ interface CriadorDeItemModalProps {
   onClose: () => void;
   itemParaEditar: ItemResponse;
   onSave?: (item: ItemResponse) => void;
+  poderesAdicionais?: any[];
+  acervosAdicionais?: any[];
 }
 
-export function CriadorDeItemModal({ isOpen, onClose, itemParaEditar, onSave }: CriadorDeItemModalProps) {
+export function CriadorDeItemModal({
+  isOpen,
+  onClose,
+  itemParaEditar,
+  onSave,
+  poderesAdicionais,
+  acervosAdicionais,
+}: CriadorDeItemModalProps) {
   return (
     <Modal
       isOpen={isOpen}
@@ -18,7 +27,12 @@ export function CriadorDeItemModal({ isOpen, onClose, itemParaEditar, onSave }: 
       size="xl"
     >
       <div className="py-4">
-        <CriadorDeItem itemInicial={itemParaEditar} onSaved={onSave} />
+        <CriadorDeItem
+          itemInicial={itemParaEditar}
+          onSaved={onSave}
+          poderesAdicionais={poderesAdicionais}
+          acervosAdicionais={acervosAdicionais}
+        />
       </div>
     </Modal>
   );

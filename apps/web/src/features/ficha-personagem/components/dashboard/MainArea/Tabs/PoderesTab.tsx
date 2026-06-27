@@ -1,9 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { CharacterResponse, SyncCharacterData } from '@/services/characters.types';
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalFooter, Select, DynamicIcon, Input } from '@/shared/ui';
-import { Zap, Plus, Search, Layers, Shield, Sparkles, Sword, Trash2, ChevronLeft, Package, Edit2, Info, Clock, Ruler, Timer, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { Zap, Plus, Search, Layers, Shield, Sparkles, Sword, Trash2, ChevronLeft, Package, Edit2, Info, Clock, Ruler, Timer, ChevronDown, ChevronUp, Check, Bookmark } from 'lucide-react';
 import { DOMINIOS, ESCALAS } from '@/data';
 import { fetchMyPeculiarities, createPeculiarity } from '@/services/peculiarities.service';
+import { copyPublicPower } from '@/services/powers.service';
+import { copyPowerArray } from '@/services/powerArrays.service';
 import { charactersService } from '@/services/characters.service';
 import type { PeculiaridadeResponse, PoderResponse, AcervoResponse } from '@/services/types';
 import { toast } from '@/shared/ui';
@@ -57,6 +59,7 @@ export function PoderesTab({
   const [viewingArray, setViewingArray] = useState<AcervoResponse | null>(null);
   const [editingArray, setEditingArray] = useState<AcervoResponse | null>(null);
   const [expandedArrays, setExpandedArrays] = useState<Set<string>>(new Set());
+  const [savingToLibraryId, setSavingToLibraryId] = useState<string | null>(null);
   
   // ─── Persistência Local ────────────────────────────────────────────────
   const storageKey = `acervos-ativos-${character.id}`;
@@ -280,6 +283,27 @@ export function PoderesTab({
                 <Button variant="ghost" size="sm" onClick={() => setEditingPower(poderResponseToPoder(detail))} className="h-9 w-9 p-0 text-gray-400 hover:text-emerald-500" title="Editar">
                   <Edit2 className="w-5 h-5" />
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={savingToLibraryId !== null}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    setSavingToLibraryId(detail.id);
+                    try {
+                      await copyPublicPower(detail.id);
+                      toast.success(`Poder "${detail.nome}" salvo na biblioteca!`);
+                    } catch (err) {
+                      toast.error('Erro ao salvar poder na biblioteca.');
+                    } finally {
+                      setSavingToLibraryId(null);
+                    }
+                  }}
+                  className="h-9 w-9 p-0 text-gray-400 hover:text-blue-500"
+                  title="Salvar na Biblioteca"
+                >
+                  <Bookmark className="w-5 h-5" />
+                </Button>
                 {isEquipped ? (
                   <Button variant="ghost" size="sm" onClick={() => onUnequipPower(power.powerId)} className="h-9 w-9 p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
                     <Package className="w-5 h-5" />
@@ -369,6 +393,28 @@ export function PoderesTab({
               </Button>
               <Button variant="ghost" size="sm" onClick={() => detail && setEditingArray(detail)} className="h-9 w-9 p-0 text-gray-400 hover:text-emerald-500" title="Editar">
                 <Edit2 className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={savingToLibraryId !== null}
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (!detail) return;
+                  setSavingToLibraryId(detail.id);
+                  try {
+                    await copyPowerArray(detail.id);
+                    toast.success(`Acervo "${detail.nome}" salvo na biblioteca!`);
+                  } catch (err) {
+                    toast.error('Erro ao salvar acervo na biblioteca.');
+                  } finally {
+                    setSavingToLibraryId(null);
+                  }
+                }}
+                className="h-9 w-9 p-0 text-gray-400 hover:text-blue-500"
+                title="Salvar na Biblioteca"
+              >
+                <Bookmark className="w-5 h-5" />
               </Button>
               {isEquipped ? (
                 <Button variant="ghost" size="sm" onClick={() => onUnequipPowerArray(array.powerArrayId)} className="h-9 w-9 p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">

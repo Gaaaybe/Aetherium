@@ -145,11 +145,92 @@ async function seedModificationBases() {
   console.log(`✓ ${modificacoes.length} modificações processadas`)
 }
 
+// ============================================
+// AUTOMAÇÃO — behaviors e targeting
+// ============================================
+
+/**
+ * Mapeia o campo `behavior` nos EffectBase que têm mecânica estruturada.
+ * Efeitos sem behavior (narrativos ou não mapeados) permanecem com behavior=null.
+ *
+ * Adiciona conforme novos efeitos forem formalizados.
+ */
+async function seedEffectBehaviors() {
+  console.log('Mapeando behaviors de efeitos...')
+
+  const behaviors: Array<{ id: string; behavior: object }> = [
+    {
+      id: 'dano',
+      behavior: {
+        kind: 'DANO',
+        // formula: null → motor usa tabela universal pelo grau
+        tipoDano: 'impacto', // tipo padrão — poderes específicos sobrescrevem via inputValue
+      },
+    },
+    {
+      id: 'recuperacao',
+      behavior: {
+        kind: 'RECUPERACAO',
+        recurso: 'PV',
+        formula: 'tabela', // motor resolve pela tabela universal (grau)
+      },
+    },
+  ]
+
+  for (const { id, behavior } of behaviors) {
+    await prisma.effectBase.update({
+      where: { id },
+      data: { behavior: behavior as Prisma.InputJsonValue },
+    })
+  }
+
+  console.log(`✓ ${behaviors.length} behaviors de efeito mapeados`)
+}
+
+/**
+ * Mapeia os campos de automação (targetingEffect, casterEffect, markerCondition)
+ * nas ModificationBase relevantes.
+ *
+ * A maioria das modificações permanece com os defaults ('NENHUM').
+ */
+async function seedModificationAutomation() {
+  console.log('Mapeando automação de modificações...')
+
+  const automations: Array<{
+    id: string
+    targetingEffect?: string
+    casterEffect?: string
+    markerCondition?: string
+  }> = [
+    // Modificações de targeting
+    { id: 'area',     targetingEffect: 'AREA' },
+    { id: 'seletivo', targetingEffect: 'SELETIVO' },
+    // Limitado é aplicado por poder específico (ex: Laço de Ódio) via markerCondition
+    // Efeito colateral — duas variantes do catálogo
+    { id: 'efeito-colateral', casterEffect: 'EFEITO_COLATERAL_SEMPRE' }, // sobrescrito por configuração ao falhar
+  ]
+
+  for (const { id, targetingEffect, casterEffect, markerCondition } of automations) {
+    await prisma.modificationBase.update({
+      where: { id },
+      data: {
+        ...(targetingEffect  !== undefined && { targetingEffect }),
+        ...(casterEffect     !== undefined && { casterEffect }),
+        ...(markerCondition  !== undefined && { markerCondition }),
+      },
+    })
+  }
+
+  console.log(`✓ ${automations.length} modificações com automação mapeadas`)
+}
+
 async function main() {
   console.log('Iniciando seed...\n')
 
   await seedEffectBases()
   await seedModificationBases()
+  await seedEffectBehaviors()
+  await seedModificationAutomation()
 
   console.log('\nSeed concluído!')
 }

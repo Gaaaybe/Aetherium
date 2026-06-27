@@ -36,7 +36,7 @@ describe('Power Array Character Controllers (e2e)', () => {
   };
 
   const validPowerBody = {
-    dominio: { name: 'natural' },
+    dominio: { name: 'arma-branca' },
     parametros: { acao: 0, alcance: 0, duracao: 0 },
     effects: [
       {
@@ -59,7 +59,6 @@ describe('Power Array Character Controllers (e2e)', () => {
 
     await app.init();
 
-    
     await prisma.effectBase.upsert({
       where: { id: 'dano' },
       create: {
@@ -76,7 +75,6 @@ describe('Power Array Character Controllers (e2e)', () => {
       update: {},
     });
 
-    
     await request(app.getHttpServer()).post('/users').send({
       name: 'Array User',
       email: 'arrayuser@example.com',
@@ -90,7 +88,6 @@ describe('Power Array Character Controllers (e2e)', () => {
 
     accessToken = authResponse.body.access_token;
 
-    
     const characterResponse = await request(app.getHttpServer())
       .post('/characters')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -98,7 +95,11 @@ describe('Power Array Character Controllers (e2e)', () => {
 
     characterId = characterResponse.body.id;
 
-    
+    await request(app.getHttpServer())
+      .post(`/characters/${characterId}/domains`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ domainId: 'arma-branca', masteryLevel: 'INICIANTE' });
+
     const power1Response = await request(app.getHttpServer())
       .post('/powers')
       .set('Authorization', `Bearer ${accessToken}`)
@@ -121,14 +122,13 @@ describe('Power Array Character Controllers (e2e)', () => {
 
     power2Id = power2Response.body.id;
 
-    
     const powerArrayResponse = await request(app.getHttpServer())
       .post('/power-arrays')
       .set('Authorization', `Bearer ${accessToken}`)
       .send({
         nome: 'Test Power Array',
         descricao: 'A test power array for character testing',
-        dominio: { name: 'natural' },
+        dominio: { name: 'arma-branca' },
         powerIds: [power1Id, power2Id],
         isPublic: true,
       });
@@ -188,9 +188,9 @@ describe('Power Array Character Controllers (e2e)', () => {
   });
 
   test('[PATCH] /characters/:characterId/power-arrays/:powerArrayId/equip — should return 401 without token', async () => {
-    const response = await request(app.getHttpServer()).patch(
-      `/characters/${characterId}/power-arrays/${powerArrayId}/equip`,
-    ).send({powerArrayId});
+    const response = await request(app.getHttpServer())
+      .patch(`/characters/${characterId}/power-arrays/${powerArrayId}/equip`)
+      .send({ powerArrayId });
 
     expect(response.statusCode).toBe(401);
   });
@@ -218,9 +218,7 @@ describe('Power Array Character Controllers (e2e)', () => {
 
   test('[PATCH] /characters/:characterId/power-arrays/:powerArrayId/unequip — should return 404 for non-existent power array', async () => {
     const response = await request(app.getHttpServer())
-      .patch(
-        `/characters/${characterId}/power-arrays/00000000-0000-0000-0000-000000000000/unequip`,
-      )
+      .patch(`/characters/${characterId}/power-arrays/00000000-0000-0000-0000-000000000000/unequip`)
       .set('Authorization', `Bearer ${accessToken}`);
 
     expect(response.statusCode).toBe(404);

@@ -8,15 +8,17 @@ import {
   Patch,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { SyncCharacterUseCase } from '@/domain/character-manager/application/use-cases/sync-character';
-import { NotAllowedError } from '@/domain/character-manager/application/use-cases/errors/not-allowed-error';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
+import { PowersService } from '@/modules/power-manager/powers.service';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
-import { PeculiaritiesRepository } from '@/domain/power-manager/application/repositories/peculiarities-repository';
 
 const syncCharacterBodySchema = z.object({
   narrative: z
@@ -38,12 +40,30 @@ const syncCharacterBodySchema = z.object({
   tempPeChange: z.number().int().min(0).optional(),
   attributes: z
     .object({
-      strength: z.object({ baseValue: z.number().int().min(0), extraBonus: z.number().int().min(0).optional() }),
-      dexterity: z.object({ baseValue: z.number().int().min(0), extraBonus: z.number().int().min(0).optional() }),
-      constitution: z.object({ baseValue: z.number().int().min(0), extraBonus: z.number().int().min(0).optional() }),
-      intelligence: z.object({ baseValue: z.number().int().min(0), extraBonus: z.number().int().min(0).optional() }),
-      wisdom: z.object({ baseValue: z.number().int().min(0), extraBonus: z.number().int().min(0).optional() }),
-      charisma: z.object({ baseValue: z.number().int().min(0), extraBonus: z.number().int().min(0).optional() }),
+      strength: z.object({
+        baseValue: z.number().int().min(0),
+        extraBonus: z.number().int().min(0).optional(),
+      }),
+      dexterity: z.object({
+        baseValue: z.number().int().min(0),
+        extraBonus: z.number().int().min(0).optional(),
+      }),
+      constitution: z.object({
+        baseValue: z.number().int().min(0),
+        extraBonus: z.number().int().min(0).optional(),
+      }),
+      intelligence: z.object({
+        baseValue: z.number().int().min(0),
+        extraBonus: z.number().int().min(0).optional(),
+      }),
+      wisdom: z.object({
+        baseValue: z.number().int().min(0),
+        extraBonus: z.number().int().min(0).optional(),
+      }),
+      charisma: z.object({
+        baseValue: z.number().int().min(0),
+        extraBonus: z.number().int().min(0).optional(),
+      }),
       keyPhysical: z.enum(['strength', 'dexterity', 'constitution']),
       keyMental: z.enum(['intelligence', 'wisdom', 'charisma']),
     })
@@ -66,8 +86,8 @@ type SyncCharacterBodySchema = z.infer<typeof syncCharacterBodySchema>;
 @Controller('/characters/:characterId/sync')
 export class SyncCharacterController {
   constructor(
-    private syncCharacter: SyncCharacterUseCase,
-    private peculiaritiesRepository: PeculiaritiesRepository,
+    private charactersService: CharactersService,
+    private powersService: PowersService,
   ) {}
 
   @Patch()
@@ -76,45 +96,35 @@ export class SyncCharacterController {
     @Body(new ZodValidationPipe(syncCharacterBodySchema)) body: SyncCharacterBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.syncCharacter.execute({
-      characterId,
-      userId: user.sub,
-      narrative: body.narrative,
-      symbol: body.symbol,
-      art: body.art,
-      inspiration: body.inspiration,
-      level: body.level,
-      extraPda: body.extraPda,
-      pvChange: body.pvChange,
-      peChange: body.peChange,
-      tempPvChange: body.tempPvChange,
-      tempPeChange: body.tempPeChange,
-      attributes: body.attributes as any,
-      skills: body.skills as any,
-      conditions: body.conditions as any,
-    });
+    try {
+      const character = await this.charactersService.sync(characterId, user.sub, body);
 
-    if (result.isLeft()) {
-      const error = result.value;
+      const peculiarities = await this.powersService.fetchUserPeculiarities(
+        character.userId.toString(),
+        1,
+      );
 
-      if (error instanceof ResourceNotFoundError) {
+      return CharacterPresenter.toHTTP(character, peculiarities);
+    } catch (error: any) {
+      if (
+        error instanceof ResourceNotFoundError ||
+        error.constructor.name === 'ResourceNotFoundError'
+      ) {
         throw new NotFoundException(error.message);
       }
 
-      if (error instanceof NotAllowedError) {
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
         throw new ForbiddenException(error.message);
       }
 
-      if (error instanceof DomainValidationError) {
+      if (
+        error instanceof DomainValidationError ||
+        error.constructor.name === 'DomainValidationError'
+      ) {
         throw new BadRequestException(error.message);
       }
 
-      throw new BadRequestException('Sync failed');
+      throw error;
     }
-
-    const character = result.value.character;
-    const peculiarities = await this.peculiaritiesRepository.findByUserId(character.userId.toString(), { page: 1 });
-
-    return CharacterPresenter.toHTTP(character, peculiarities);
   }
 }

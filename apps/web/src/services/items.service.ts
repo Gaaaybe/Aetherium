@@ -39,3 +39,14 @@ export async function copyPublicItem(id: string): Promise<ItemResponse> {
   const { data } = await api.post<ItemResponse>(`/items/${id}/copy`);
   return data;
 }
+
+export async function exportItem(id: string): Promise<any> {
+  const { data } = await api.get(`/items/${id}/export`);
+  return data;
+}
+
+export async function importItem(payload: any): Promise<ItemResponse> {
+  const { data } = await api.post<ItemResponse>('/items/import', payload);
+  return data;
+}
+

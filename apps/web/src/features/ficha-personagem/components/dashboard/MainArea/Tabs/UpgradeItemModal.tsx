@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Modal, ModalFooter, Button, Input, toast, DynamicIcon } from '@/shared/ui';
 import { Hammer, ArrowRight, Zap, Shield, Sword, Sparkles, AlertCircle, Coins, Info } from 'lucide-react';
 import type { ItemResponse, WeaponItemResponse, DefensiveItemResponse, UpgradeMaterialItemResponse } from '@/services/types';
-import { UPGRADE_PATAMARES } from '@/features/criador-de-item/hooks/useItemBuilder';
+
 
 interface UpgradeItemModalProps {
   isOpen: boolean;

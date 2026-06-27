@@ -131,7 +131,7 @@ describe('SyncCharacterController (e2e)', () => {
     const acrobacia = response.body.skills.find((s: any) => s.name === 'Acrobacia');
     expect(acrobacia.proficiencyState).toBe('EFFICIENT');
     expect(acrobacia.trainingBonus).toBe(2);
-    
+
     const atletismo = response.body.skills.find((s: any) => s.name === 'Atletismo');
     expect(atletismo.proficiencyState).toBe('INEFFICIENT');
   });

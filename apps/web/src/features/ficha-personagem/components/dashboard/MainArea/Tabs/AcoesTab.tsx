@@ -6,21 +6,49 @@ import { ACOES_COMBATE } from '@/data';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { getItemById } from '@/services/items.service';
 import { getPowerById } from '@/services/powers.service';
-import type { ItemResponse, WeaponItemResponse, PoderResponse } from '@/services/types';
+import { getPowerArrayById } from '@/services/powerArrays.service';
+import type { ItemResponse, WeaponItemResponse, PoderResponse, AcervoResponse } from '@/services/types';
 import { UnarmedMasteryModal } from './UnarmedMasteryModal';
+import { useCatalog } from '@/context/useCatalog';
+import { calcularDetalhesPoder, type Poder as PoderCalculo } from '@/features/criador-de-poder/regras/calculadoraCusto';
+import { poderResponseToPoder } from '@/features/criador-de-poder/utils/poderApiConverter';
+import { usePowerUsage } from '@/features/ficha-personagem/hooks/usePowerUsage';
+import { PowerUsageModal } from './PowerUsageModal';
+import { ActivePowersTracker } from './ActivePowersTracker';
+import type { ResolvePowerResponse } from '@/services/powers.service';
 
 interface AcoesTabProps {
   character: CharacterResponse;
   onUpdateUnarmedMastery: (mastery: any) => Promise<void>;
+  onSync: (data: any) => Promise<void>;
 }
 
-export function AcoesTab({ character, onUpdateUnarmedMastery }: AcoesTabProps) {
+export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTabProps) {
   const [detailedItems, setDetailedItems] = useState<Record<string, ItemResponse>>({});
   const [detailedPowers, setDetailedPowers] = useState<Record<string, PoderResponse>>({});
+  const [detailedArrays, setDetailedArrays] = useState<Record<string, AcervoResponse>>({});
+  
+  const { efeitos: catalogEfeitos, modificacoes: catalogModificacoes } = useCatalog();
+  const [usingPower, setUsingPower] = useState<PoderResponse | null>(null);
+  const [resolution, setResolution] = useState<ResolvePowerResponse | null>(null);
+
+  const {
+    activePowers,
+    isResolving,
+    isConfirming,
+    previewPower,
+    confirmUsePower,
+    maintainPower,
+    deactivatePower,
+  } = usePowerUsage({
+    characterId: character.id,
+    onSync,
+  });
 
   // Contadores locais de turno
   const [actions, setActions] = useState(0);
   const [movement, setMovement] = useState(0);
+
 
   // Busca e Filtro de Ações de Combate
   const [searchTerm, setSearchTerm] = useState('');
@@ -108,9 +136,57 @@ export function AcoesTab({ character, onUpdateUnarmedMastery }: AcoesTabProps) {
     fetchPowerDetails();
   }, [character.powers]);
 
+  useEffect(() => {
+    const fetchArrayDetails = async () => {
+      const arrayIds = character.powerArrays.map(a => a.powerArrayId);
+      const uniqueIds = Array.from(new Set(arrayIds));
+
+      const newDetails: Record<string, AcervoResponse> = { ...detailedArrays };
+      let changed = false;
+
+      for (const id of uniqueIds) {
+        if (!newDetails[id]) {
+          try {
+            const detail = await getPowerArrayById(id);
+            newDetails[id] = detail;
+            changed = true;
+          } catch (err) {
+            console.error(`Erro ao buscar acervo ${id}`, err);
+          }
+        }
+      }
+
+      if (changed) {
+        setDetailedArrays(newDetails);
+      }
+    };
+
+    fetchArrayDetails();
+  }, [character.powerArrays]);
+
   // Filtra itens e poderes que seriam exibidos como ações
-  const equippedPowers = character.powers.filter(p => p.isEquipped);
   const equippedItems = character.equipment.hands;
+
+  // 1. Poderes individuais equipados
+  const individualEquipped = character.powers
+    .filter(p => p.isEquipped)
+    .map(p => detailedPowers[p.powerId])
+    .filter((p): p is PoderResponse => !!p);
+
+  // 2. Poderes de acervos equipados
+  const arrayEquipped = character.powerArrays
+    .filter(a => a.isEquipped)
+    .flatMap(a => detailedArrays[a.powerArrayId]?.powers || []);
+
+  // 3. Unifica e remove duplicatas por ID
+  const allUsablePowers = Array.from(
+    new Map([...individualEquipped, ...arrayEquipped].map(p => [p.id, p])).values()
+  );
+
+  // 4. Filtra para exibir apenas poderes ativos (qualquer ação que não seja passiva - valor 5)
+  const activeEquippedPowers = allUsablePowers.filter(
+    p => p.parametros?.acao !== 5
+  );
 
   const filteredCombatActions = ACOES_COMBATE.filter(acao => {
     const matchesSearch = acao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -328,61 +404,73 @@ export function AcoesTab({ character, onUpdateUnarmedMastery }: AcoesTabProps) {
                 Poderes Equipados
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Rastreamento de poderes ativos */}
+              <ActivePowersTracker
+                activePowers={activePowers}
+                onMaintain={maintainPower}
+                onDeactivate={deactivatePower}
+                isDisabled={isConfirming}
+              />
+
               <div className="space-y-2">
-                {equippedPowers.filter(p => {
-                  const detail = detailedPowers[p.powerId];
-                  return (detail?.parametros?.acao || 0) > 0 && (detail?.parametros?.acao !== 5);
-                }).length > 0 ? (
-                  character.powers
-                    .filter(p => {
-                      const detail = detailedPowers[p.powerId];
-                      return p.isEquipped && (detail?.parametros?.acao || 0) > 0 && (detail?.parametros?.acao !== 5);
-                    })
-                    .map((power) => {
-                      const powerDetail = detailedPowers[power.powerId];
-                      return (
-                        <div key={power.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 group hover:border-purple-500/30 transition-all">
-                          <div className="flex items-center gap-3">
-                            <div className="p-1 rounded-lg bg-white dark:bg-gray-900 border-[0.5px] border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-center overflow-hidden">
-                              {powerDetail?.icone ? (
-                                <DynamicIcon name={powerDetail.icone} className="w-7 h-7 text-purple-400" />
-                              ) : (
-                                <Zap className="w-7 h-7 text-purple-400" />
-                              )}
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100">
-                                {powerDetail?.nome || power.powerId}
-                              </h4>
-                              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">Poder Ativo</p>
-                            </div>
+                {activeEquippedPowers.length > 0 ? (
+                  activeEquippedPowers.map((powerDetail) => {
+                    return (
+                      <div key={powerDetail.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 group hover:border-purple-500/30 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className="p-1 rounded-lg bg-white dark:bg-gray-900 border-[0.5px] border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-center overflow-hidden">
+                            {powerDetail.icone ? (
+                              <DynamicIcon name={powerDetail.icone} className="w-7 h-7 text-purple-400" />
+                            ) : (
+                              <Zap className="w-7 h-7 text-purple-400" />
+                            )}
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-[10px] uppercase font-bold bg-white dark:bg-gray-900 border-none shadow-sm">
-                              {powerDetail?.parametros?.acao === 1 ? 'Padrão' : powerDetail?.parametros?.acao === 2 ? 'Livre' : 'Varia'}
-                            </Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 px-2 text-[10px] font-bold border-purple-200 text-purple-600 hover:bg-purple-50 gap-1 active:scale-95"
-                              onClick={() => {
-                                const key = character.attributes.keyMental || 'intelligence';
-                                const attr = character.attributes[key];
-                                const mod = attr.rollModifier;
-                                setRollingAction({
-                                  name: powerDetail?.nome || power.powerId,
-                                  modifier: mod,
-                                  efficiencyBonus: character.efficiencyBonus
-                                });
-                              }}
-                            >
-                              <Zap className="w-4 h-4" /> Usar
-                            </Button>
+                          <div>
+                            <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100">
+                              {powerDetail.nome}
+                            </h4>
+                            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">Poder Ativo</p>
                           </div>
                         </div>
-                      );
-                    })
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-[10px] uppercase font-bold bg-white dark:bg-gray-900 border-none shadow-sm">
+                            {powerDetail.parametros?.acao === 1 ? 'Padrão' : powerDetail.parametros?.acao === 2 ? 'Livre' : 'Varia'}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-2 text-[10px] font-bold border-purple-200 text-purple-600 hover:bg-purple-50 gap-1 active:scale-95"
+                            disabled={isResolving}
+                            onClick={async () => {
+                              setUsingPower(powerDetail);
+                              setResolution(null);
+                              
+                              const peCost = calcularDetalhesPoder(
+                                poderResponseToPoder(powerDetail) as PoderCalculo,
+                                catalogEfeitos,
+                                catalogModificacoes,
+                              ).peTotal;
+
+                              const res = await previewPower({
+                                powerId: powerDetail.id,
+                                nome: powerDetail.nome,
+                                icone: powerDetail.icone,
+                                duracao: powerDetail.parametros.duracao,
+                                peCost,
+                              }, character);
+
+                              if (res) {
+                                setResolution(res.resolution);
+                              }
+                            }}
+                          >
+                            <Zap className="w-4 h-4" /> Usar
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
                 ) : (
                   <p className="text-sm text-gray-500 italic py-2">Nenhum poder ativo equipado.</p>
                 )}
@@ -532,6 +620,39 @@ export function AcoesTab({ character, onUpdateUnarmedMastery }: AcoesTabProps) {
         onUpdate={handleUpdateMastery}
         isProcessing={isProcessingMastery}
       />
+
+      {usingPower && (
+        <PowerUsageModal
+          isOpen={!!usingPower}
+          onClose={() => {
+            setUsingPower(null);
+            setResolution(null);
+          }}
+          power={usingPower}
+          character={character}
+          currentPE={character.energy.currentPE}
+          resolution={resolution}
+          isResolving={isResolving}
+          isConfirming={isConfirming}
+          onConfirm={async () => {
+            const detail = usingPower;
+            const peCost = calcularDetalhesPoder(
+              poderResponseToPoder(detail) as PoderCalculo,
+              catalogEfeitos,
+              catalogModificacoes,
+            ).peTotal;
+            await confirmUsePower({
+              powerId: detail.id,
+              nome: detail.nome,
+              icone: detail.icone,
+              duracao: detail.parametros.duracao,
+              peCost,
+            });
+            setUsingPower(null);
+            setResolution(null);
+          }}
+        />
+      )}
     </div>
   );
 }

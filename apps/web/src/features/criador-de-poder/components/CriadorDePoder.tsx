@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, Sparkles, FileText, Zap, Library } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button, Card, CardHeader, CardTitle, CardContent, Badge, Input, Textarea, Select, toast, HelpIcon, Tooltip, ConfirmDialog, InlineHelp, EmptyState } from '../../../shared/ui';
 import { usePoderCalculator } from '../hooks/usePoderCalculator';
 import { usePoderValidation } from '../hooks/usePoderValidation';
 import { usePoderes } from '../hooks/usePoderes';
+import { usePowerCreatorStore } from '@/stores/power-creator.store';
 import { poderToCreatePayload } from '../utils/poderApiConverter';
 import { useKeyboardShortcuts } from '../../../shared/hooks';
 import { usePeculiaridades } from '../../../shared/hooks/usePeculiaridades';
@@ -27,7 +28,7 @@ interface CriadorDePoderProps {
 export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = {}) {
   const { peculiaridades, criar: criarPeculiaridade } = usePeculiaridades();
   const { modificacoes: todasModificacoes } = useCatalog();
-  
+
   const {
     poder,
     detalhes,
@@ -61,18 +62,51 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
   const [resetando, setResetando] = useState(false);
   const [erroNome, setErroNome] = useState<string>('');
 
-  const loadedPowerId = useRef<string | null>(null);
+
 
   useEffect(() => {
-    if (poderInicial && poderInicial.id !== loadedPowerId.current) {
+    // 1. Verifica se há um poder pendente no localStorage (vindo da biblioteca)
+    const pendente = localStorage.getItem('criador-de-poder-carregar');
+    
+    if (poderInicial) {
+      // Se foi passado poderInicial (ex: modal de edição na ficha)
       carregarPoder(poderInicial);
-      loadedPowerId.current = poderInicial.id;
+    } else if (pendente) {
+      // Se há um poder vindo da biblioteca
+      try {
+        const parsed = JSON.parse(pendente) as Poder;
+        if (parsed.id && Array.isArray(parsed.efeitos)) {
+          carregarPoder(parsed);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar poder pendente:', error);
+      } finally {
+        localStorage.removeItem('criador-de-poder-carregar');
+      }
+    } else {
+      // Se não há poder inicial nem pendente (criando novo poder)
+      const currentPower = usePowerCreatorStore.getState().poder;
+      const isApiId = /^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(currentPower.id);
+      if (isApiId) {
+        resetarPoder();
+      }
     }
-  }, [poderInicial, carregarPoder]);
+
+    // Cleanup ao desmontar o componente
+    return () => {
+      // Sempre reseta o poder ao fechar/desmontar se ele for um poder salvo da API (UUID)
+      // para evitar que seu ID fique persistido no Zustand e contamine a próxima sessão
+      const currentPower = usePowerCreatorStore.getState().poder;
+      const isApiId = /^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(currentPower.id);
+      if (isApiId) {
+        resetarPoder();
+      }
+    };
+  }, [poderInicial, carregarPoder, resetarPoder]);
 
   const handleNomeChange = (novoNome: string) => {
     atualizarInfoPoder(novoNome, undefined);
-    
+
     // Validação em tempo real
     if (novoNome.length > 0) {
       const resultado = validarNome(novoNome);
@@ -233,7 +267,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                   />
                 )}
               </div>
-              
+
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -290,6 +324,11 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                       value: d.id,
                       label: d.nome,
                     })),
+                    { value: '__separator-3__', label: '─────────' },
+                    ...DOMINIOS.filter(d => d.categoria === 'físico').map(d => ({
+                      value: d.id,
+                      label: d.nome,
+                    })),
                   ]}
                 />
                 {poder.dominioId && (
@@ -310,7 +349,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                   </div>
                   <Select
                     value={poder.dominioAreaConhecimento || ''}
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                       atualizarInfoPoder(undefined, undefined, undefined, e.target.value)
                     }
                     options={[
@@ -338,7 +377,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                       <div className="flex-1">
                         <Select
                           value={poder.dominioIdPeculiar || ''}
-                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
+                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                             atualizarInfoPoder(undefined, undefined, undefined, undefined, e.target.value)
                           }
                           options={[
@@ -361,12 +400,12 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                       </Button>
                     </div>
                   </div>
-                  
+
                   {/* Exibe info da peculiaridade selecionada */}
                   {poder.dominioIdPeculiar && (() => {
                     const peculiar = peculiaridades.find(p => p.id === poder.dominioIdPeculiar);
                     if (!peculiar) return null;
-                    
+
                     return (
                       <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
                         <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-1">
@@ -392,15 +431,15 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                     </label>
                     <HelpIcon tooltip="Auto-calculados (pior parâmetro entre todos os efeitos). Modifique para forçar todos os efeitos a usar os mesmos valores." />
                   </div>
-                  
 
-                  
+
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
                       <Select
                         label="Ação"
                         value={poder.acao.toString()}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                           atualizarParametroPoder('acao', Number(e.target.value))
                         }
                         options={ESCALAS.acao.escala.map(esc => ({
@@ -409,12 +448,12 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                         }))}
                       />
                     </div>
-                    
+
                     <div>
                       <Select
                         label="Alcance"
                         value={poder.alcance.toString()}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                           atualizarParametroPoder('alcance', Number(e.target.value))
                         }
                         options={ESCALAS.alcance.escala.map(esc => ({
@@ -423,12 +462,12 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                         }))}
                       />
                     </div>
-                    
+
                     <div>
                       <Select
                         label="Duração"
                         value={poder.duracao.toString()}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                           atualizarParametroPoder('duracao', Number(e.target.value))
                         }
                         options={ESCALAS.duracao.escala.map(esc => ({
@@ -438,7 +477,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                       />
                     </div>
                   </div>
-                  
+
                   <InlineHelp
                     type="info"
                     text="Deixe vazio para cada efeito usar seus próprios parâmetros. Selecione valores para forçar TODOS os efeitos a usarem os mesmos parâmetros (aplicará modificadores)."
@@ -457,7 +496,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                     </label>
                     <HelpIcon tooltip="Padrão: PE (Pontos de Energia). Você pode usar custo alternativo como PV, Atributos, Itens ou Material." />
                   </div>
-                  
+
                   <Select
                     value={poder.custoAlternativo?.tipo || 'pe'}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -560,7 +599,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                 </div>
               )}
             </div>
-            
+
             {/* Stats - Responsivo: stack em mobile, row em desktop */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-2 flex-wrap">
@@ -585,7 +624,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                   </>
                 )}
               </div>
-              
+
               {/* Botões - Grid em mobile, flex em desktop */}
               <div className="grid grid-cols-2 sm:flex gap-2">
                 <Tooltip content="Ver biblioteca de poderes salvos">
@@ -598,9 +637,9 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                 {poder.efeitos.length > 0 && (
                   <>
                     <Tooltip content="Salvar poder na biblioteca local">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={handleSalvar}
                         loading={salvando}
                         loadingText="Salvando..."
@@ -618,9 +657,9 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                   </>
                 )}
                 <Tooltip content="Limpar todos os dados e começar novamente">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={handleResetar}
                     loading={resetando}
                     aria-label="Resetar poder e começar novo"
@@ -650,13 +689,13 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                 const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
                 if (!modBase) return null;
                 const custoTexto = formatarCustoModificacao(mod, modBase);
-                
+
                 const descricaoParam = mod.parametros?.descricao as string | undefined;
                 const opcaoParam = mod.parametros?.opcao as string | undefined;
-                
+
                 return (
-                  <Badge 
-                    key={mod.id} 
+                  <Badge
+                    key={mod.id}
                     variant={modBase.tipo === 'extra' ? 'success' : 'warning'}
                     className="flex items-center gap-2"
                   >
@@ -743,9 +782,9 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                 onAtualizarConfiguracao={atualizarConfiguracaoEfeito}
               />
             ))}
-            
-            <Button 
-              variant="outline" 
+
+            <Button
+              variant="outline"
               fullWidth
               onClick={() => setModalSeletorEfeito(true)}
             >
@@ -757,7 +796,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
 
       {/* Botões de Ação */}
       {poder.efeitos.length > 0 && (
-        <Button 
+        <Button
           variant="secondary"
           fullWidth
           onClick={() => setModalSeletorModificacao(true)}
@@ -768,7 +807,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
       )}
 
       {/* Modals */}
-            <SeletorEfeito
+      <SeletorEfeito
         isOpen={modalSeletorEfeito}
         onClose={() => setModalSeletorEfeito(false)}
         onAdicionar={(efeitoId: string) => {
@@ -777,7 +816,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
         }}
       />
 
-            <SeletorModificacao
+      <SeletorModificacao
         isOpen={modalSeletorModificacao}
         onClose={() => setModalSeletorModificacao(false)}
         onSelecionar={(modId: string, parametros?: Record<string, any>) => {

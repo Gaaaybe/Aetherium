@@ -7,16 +7,19 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { DeletePowerArrayFromCharacterUseCase } from '@/domain/character-manager/application/use-cases/delete-power-array-from-character';
-import { NotAllowedError } from '@/domain/character-manager/application/use-cases/errors/not-allowed-error';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
 import { CharacterPresenter } from '../../presenters/character.presenter';
 
 @Controller('/characters/:characterId/power-arrays/:powerArrayId/remove')
 export class DeletePowerArrayFromCharacterController {
-  constructor(private deletePowerArrayFromCharacter: DeletePowerArrayFromCharacterUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Post()
   @HttpCode(200)
@@ -25,26 +28,34 @@ export class DeletePowerArrayFromCharacterController {
     @Param('powerArrayId') powerArrayId: string,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.deletePowerArrayFromCharacter.execute({
-      characterId,
-      userId: user.sub,
-      powerArrayId,
-    });
+    try {
+      const character = await this.charactersService.deletePowerArrayFromCharacter(
+        characterId,
+        user.sub,
+        powerArrayId,
+      );
 
-    if (result.isLeft()) {
-      const error = result.value;
-
-      if (error instanceof ResourceNotFoundError) {
+      return CharacterPresenter.toHTTP(character);
+    } catch (error: any) {
+      if (
+        error instanceof ResourceNotFoundError ||
+        error.constructor.name === 'ResourceNotFoundError'
+      ) {
         throw new NotFoundException(error.message);
       }
 
-      if (error instanceof NotAllowedError) {
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
         throw new ForbiddenException(error.message);
       }
 
-      throw new BadRequestException('Failed to remove power array');
-    }
+      if (
+        error instanceof DomainValidationError ||
+        error.constructor.name === 'DomainValidationError'
+      ) {
+        throw new BadRequestException(error.message);
+      }
 
-    return CharacterPresenter.toHTTP(result.value.character);
+      throw error;
+    }
   }
 }

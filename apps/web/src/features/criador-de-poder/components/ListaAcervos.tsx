@@ -46,7 +46,7 @@ export function ListaAcervos() {
           psiquico: 'Psíquico', cientifico: 'Científico', peculiar: 'Peculiar',
           'arma-branca': 'Arma Branca', 'arma-fogo': 'Arma de Fogo',
           'arma-tensao': 'Arma de Tensão', 'arma-explosiva': 'Arma Explosiva',
-          'arma-tecnologica': 'Arma Tecnológica'
+          'arma-tecnologica': 'Arma Tecnológica', desarmado: 'Domínio Desarmado'
         };
         map[domId] = { nome: nomes[domId] || domId, items: [] };
       }
@@ -57,7 +57,7 @@ export function ListaAcervos() {
   }, [acervosFiltrados]);
 
   const dominiosOrdenados = useMemo(() => {
-    const ordem = ['natural', 'sagrado', 'sacrilegio', 'psiquico', 'cientifico', 'peculiar', 'arma-branca', 'arma-fogo', 'arma-tensao', 'arma-explosiva', 'arma-tecnologica'];
+    const ordem = ['natural', 'sagrado', 'sacrilegio', 'psiquico', 'cientifico', 'peculiar', 'arma-branca', 'arma-fogo', 'arma-tensao', 'arma-explosiva', 'arma-tecnologica', 'desarmado'];
     return Object.keys(acervosAgrupados).sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b));
   }, [acervosAgrupados]);
 

@@ -1,12 +1,25 @@
-import { BadRequestException, Controller, Delete, HttpCode, Param } from '@nestjs/common';
-import { DiscardBenefitUseCase } from '@/domain/character-manager/application/use-cases/discard-benefit';
+import {
+  BadRequestException,
+  Controller,
+  Delete,
+  ForbiddenException,
+  HttpCode,
+  NotFoundException,
+  Param,
+} from '@nestjs/common';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
 import { CharacterPresenter } from '../../presenters/character.presenter';
 
 @Controller('/characters/:characterId/benefits/:benefitId')
 export class DiscardBenefitController {
-  constructor(private discardBenefit: DiscardBenefitUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Delete()
   @HttpCode(200)
@@ -15,16 +28,34 @@ export class DiscardBenefitController {
     @Param('benefitId') benefitId: string,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.discardBenefit.execute({
-      characterId,
-      userId: user.sub,
-      benefitId,
-    });
+    try {
+      const character = await this.charactersService.discardBenefit(
+        characterId,
+        user.sub,
+        benefitId,
+      );
 
-    if (result.isLeft()) {
-      throw new BadRequestException(result.value.message);
+      return CharacterPresenter.toHTTP(character);
+    } catch (error: any) {
+      if (
+        error instanceof ResourceNotFoundError ||
+        error.constructor.name === 'ResourceNotFoundError'
+      ) {
+        throw new NotFoundException(error.message);
+      }
+
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
+        throw new ForbiddenException(error.message);
+      }
+
+      if (
+        error instanceof DomainValidationError ||
+        error.constructor.name === 'DomainValidationError'
+      ) {
+        throw new BadRequestException(error.message);
+      }
+
+      throw error;
     }
-
-    return CharacterPresenter.toHTTP(result.value.character);
   }
 }

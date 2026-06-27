@@ -7,7 +7,7 @@ import { ResumoPoder } from './ResumoPoder';
 import type { Acervo } from '../types/acervo.types';
 import type { Poder } from '../regras/calculadoraCusto';
 import type { DetalhesPoder } from '../types';
-import { Package, Zap, AlertTriangle, Sparkles, Copy, BookOpen } from 'lucide-react';
+import { Zap, AlertTriangle, Sparkles, Copy, BookOpen } from 'lucide-react';
 import { getThemeByDomain, PatternOverlay } from '../../../shared/utils/summary-themes';
 
 interface ResumoAcervoProps {

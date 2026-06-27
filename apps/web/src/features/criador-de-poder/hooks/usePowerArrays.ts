@@ -1,85 +1,54 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   fetchMyPowerArrays,
   createPowerArray,
   updatePowerArray,
   deletePowerArray,
 } from '@/services/powerArrays.service';
-import type { AcervoResponse, CreateAcervoPayload, UpdateAcervoPayload } from '@/services/types';
-
-interface UsePowerArraysState {
-  acervos: AcervoResponse[];
-  loading: boolean;
-  error: string | null;
-}
+import type { AcervoResponse, UpdateAcervoPayload } from '@/services/types';
 
 export function usePowerArrays() {
-  const [state, setState] = useState<UsePowerArraysState>({
-    acervos: [],
-    loading: true, // inicia como loading para evitar flash
-    error: null,
+  const queryClient = useQueryClient();
+
+  const { data: acervos = [], isLoading, error } = useQuery({
+    queryKey: ['powerArrays'],
+    queryFn: () => fetchMyPowerArrays(1),
   });
 
-  // Carga inicial via promise chain (evita setState síncrono no corpo do efeito)
-  useEffect(() => {
-    let cancelled = false;
-    fetchMyPowerArrays(1)
-      .then((data) => {
-        if (!cancelled) setState({ acervos: data, loading: false, error: null });
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          const msg = err instanceof Error ? err.message : 'Erro ao carregar acervos';
-          setState({ acervos: [], loading: false, error: msg });
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Refresh manual
-  const carregar = useCallback(async (page = 1) => {
-    setState((s) => ({ ...s, loading: true, error: null }));
-    try {
-      const data = await fetchMyPowerArrays(page);
-      setState({ acervos: data, loading: false, error: null });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Erro ao carregar acervos';
-      setState((s) => ({ ...s, loading: false, error: msg }));
-    }
-  }, []);
-
-  const criar = useCallback(async (payload: CreateAcervoPayload): Promise<AcervoResponse> => {
-    const novo = await createPowerArray(payload);
-    setState((s) => ({ ...s, acervos: [novo, ...s.acervos] }));
-    return novo;
-  }, []);
-
-  const atualizar = useCallback(
-    async (id: string, payload: UpdateAcervoPayload): Promise<AcervoResponse> => {
-      const atualizado = await updatePowerArray(id, payload);
-      setState((s) => ({
-        ...s,
-        acervos: s.acervos.map((a) => (a.id === id ? atualizado : a)),
-      }));
-      return atualizado;
+  const createMutation = useMutation({
+    mutationFn: createPowerArray,
+    onSuccess: (novo) => {
+      queryClient.setQueryData(['powerArrays'], (old: AcervoResponse[] = []) => [novo, ...old]);
     },
-    [],
-  );
+  });
 
-  const deletar = useCallback(async (id: string): Promise<void> => {
-    await deletePowerArray(id);
-    setState((s) => ({ ...s, acervos: s.acervos.filter((a) => a.id !== id) }));
-  }, []);
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateAcervoPayload }) => updatePowerArray(id, payload),
+    onSuccess: (atualizado) => {
+      queryClient.setQueryData(['powerArrays'], (old: AcervoResponse[] = []) =>
+        old.map((a) => (a.id === atualizado.id ? atualizado : a))
+      );
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deletePowerArray,
+    onSuccess: (_, id) => {
+      queryClient.setQueryData(['powerArrays'], (old: AcervoResponse[] = []) =>
+        old.filter((a) => a.id !== id)
+      );
+    },
+  });
 
   return {
-    acervos: state.acervos,
-    loading: state.loading,
-    error: state.error,
-    carregar,
-    criar,
-    atualizar,
-    deletar,
+    acervos,
+    loading: isLoading,
+    error: error instanceof Error ? error.message : error ? String(error) : null,
+    carregar: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['powerArrays'] });
+    },
+    criar: createMutation.mutateAsync,
+    atualizar: (id: string, payload: UpdateAcervoPayload) => updateMutation.mutateAsync({ id, payload }),
+    deletar: deleteMutation.mutateAsync,
   };
 }

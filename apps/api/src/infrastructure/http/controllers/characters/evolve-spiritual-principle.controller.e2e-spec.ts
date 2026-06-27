@@ -72,7 +72,7 @@ describe('Evolve Spiritual Principle (e2e)', () => {
           spiritualPrinciple: {
             isUnlocked: true,
             stage: 'NORMAL',
-          }
+          },
         },
       });
     }

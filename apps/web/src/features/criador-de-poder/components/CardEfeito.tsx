@@ -1,5 +1,5 @@
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Button, Slider, Select, Input } from '../../../shared/ui';
-import { buscarGrauNaTabela, TABELA_UNIVERSAL } from '../../../data';
+import { TABELA_UNIVERSAL } from '../../../data';
 import { useCatalog } from '@/context/useCatalog';
 import { useState, useMemo } from 'react';
 import { 
@@ -7,7 +7,6 @@ import {
   Swords, Ruler, Zap, Package, Weight, Clock, Rocket, Move, AlertCircle, X 
 } from 'lucide-react';
 import { SeletorModificacao } from './SeletorModificacao';
-import { formatarCustoModificacao } from '../utils/modificacaoFormatter';
 import type { EfeitoDetalhado } from '../types';
 
 interface CardEfeitoProps {

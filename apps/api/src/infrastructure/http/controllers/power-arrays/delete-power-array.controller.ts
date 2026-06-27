@@ -1,36 +1,15 @@
-import {
-  ConflictException,
-  Controller,
-  Delete,
-  ForbiddenException,
-  HttpCode,
-  NotFoundException,
-  Param,
-} from '@nestjs/common';
-import { NotAllowedError } from '@/core/errors/not-allowed-error';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { DeletePowerArrayUseCase } from '@/domain/power-manager/application/use-cases/delete-power-array';
-import { DependencyConflictError } from '@/domain/power-manager/application/use-cases/errors/dependency-conflict-error';
+import { Controller, Delete, HttpCode, Param } from '@nestjs/common';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { PowersService } from '@/modules/power-manager/powers.service';
 
-@Controller('/power-arrays')
+@Controller('/power-arrays/:powerArrayId')
 export class DeletePowerArrayController {
-  constructor(private deletePowerArray: DeletePowerArrayUseCase) {}
+  constructor(private powersService: PowersService) {}
 
-  @Delete(':powerArrayId')
+  @Delete()
   @HttpCode(204)
-  async handle(@CurrentUser() user: UserPayload, @Param('powerArrayId') powerArrayId: string) {
-    const result = await this.deletePowerArray.execute({
-      powerArrayId,
-      userId: user.sub,
-    });
-
-    if (result.isLeft()) {
-      const error = result.value;
-      if (error instanceof ResourceNotFoundError) throw new NotFoundException(error.message);
-      if (error instanceof NotAllowedError) throw new ForbiddenException(error.message);
-      if (error instanceof DependencyConflictError) throw new ConflictException(error.message);
-    }
+  async handle(@Param('powerArrayId') powerArrayId: string, @CurrentUser() user: UserPayload) {
+    await this.powersService.deletePowerArray(powerArrayId, user.sub);
   }
 }

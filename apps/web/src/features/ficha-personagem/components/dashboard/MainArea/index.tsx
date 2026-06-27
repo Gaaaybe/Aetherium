@@ -109,6 +109,7 @@ export function MainArea({
           <AcoesTab 
             character={character} 
             onUpdateUnarmedMastery={onUpdateUnarmedMastery} 
+            onSync={onSync}
           />
         )}
         {activeTab === 'poderes' && (

@@ -7,17 +7,19 @@ import {
   Param,
   Patch,
 } from '@nestjs/common';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { UnequipPowerArrayUseCase } from '@/domain/character-manager/application/use-cases/unequip-power-array';
-import { NotAllowedError } from '@/domain/character-manager/application/use-cases/errors/not-allowed-error';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
 import { CharacterPresenter } from '../../presenters/character.presenter';
 
 @Controller('/characters/:characterId/power-arrays/:powerArrayId/unequip')
 export class UnequipPowerArrayController {
-  constructor(private unequipPowerArray: UnequipPowerArrayUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Patch()
   @HttpCode(200)
@@ -26,34 +28,37 @@ export class UnequipPowerArrayController {
     @Param('powerArrayId') powerArrayId: string,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.unequipPowerArray.execute({
-      characterId,
-      userId: user.sub,
-      powerArrayId,
-    });
+    try {
+      const character = await this.charactersService.unequipPowerArray(
+        characterId,
+        user.sub,
+        powerArrayId,
+      );
 
-    if (result.isLeft()) {
-      const error = result.value;
-
-      if (error instanceof ResourceNotFoundError) {
+      return CharacterPresenter.toHTTP(character);
+    } catch (error: any) {
+      if (
+        error instanceof ResourceNotFoundError ||
+        error.constructor.name === 'ResourceNotFoundError'
+      ) {
         throw new NotFoundException(error.message);
       }
 
-      if (error instanceof NotAllowedError) {
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
         throw new ForbiddenException(error.message);
       }
 
-      if (error instanceof DomainValidationError && error.message.includes('não encontrado')) {
-        throw new NotFoundException(error.message);
-      }
-
-      if (error instanceof DomainValidationError) {
+      if (
+        error instanceof DomainValidationError ||
+        error.constructor.name === 'DomainValidationError'
+      ) {
+        if (error.message.includes('não encontrado')) {
+          throw new NotFoundException(error.message);
+        }
         throw new BadRequestException(error.message);
       }
 
-      throw new BadRequestException('Failed to unequip power array');
+      throw error;
     }
-
-    return CharacterPresenter.toHTTP(result.value.character);
   }
 }

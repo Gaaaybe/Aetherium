@@ -61,7 +61,7 @@ describe('Rest Character (e2e)', () => {
     await app.close();
   });
 
-  test('[POST] /characters/:id/rest', async () => {
+  test('[POST] /characters/:id/rest - basic rest', async () => {
     const syncResponse = await request(app.getHttpServer())
       .patch(`/characters/${characterId}/sync`)
       .set('Authorization', `Bearer ${accessToken}`)
@@ -77,5 +77,42 @@ describe('Rest Character (e2e)', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.health.currentPV).toBeGreaterThanOrEqual(pvBeforeRest);
     expect(response.body.health.currentPV).toBeLessThanOrEqual(response.body.health.maxPV);
+    expect(response.body.restChange).toBeDefined();
+    expect(response.body.restChange.pvChange).toBeGreaterThanOrEqual(0);
+  });
+
+  test('[POST] /characters/:id/rest - gastronomic rule (not eaten)', async () => {
+    // 1. Dano no personagem
+    await request(app.getHttpServer())
+      .patch(`/characters/${characterId}/sync`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ pvChange: -10, peChange: -5 });
+
+    // 2. Descanso sem comer usando a regra gastronômica
+    const response = await request(app.getHttpServer())
+      .post(`/characters/${characterId}/rest`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ quality: 'CONFORTAVEL', durationHours: 8, useGastronomicRule: true, consumedMeal: false });
+
+    expect(response.statusCode).toBe(200);
+    // Deve ficar com a condição Faminto
+    expect(response.body.conditions).toContain('Faminto');
+    // PV e PE não devem ter recuperado (rolagem retornada deve ser 0)
+    expect(response.body.restChange.pvChange).toBe(0);
+    expect(response.body.restChange.peChange).toBe(0);
+  });
+
+  test('[POST] /characters/:id/rest - gastronomic rule (eating to clear Faminto)', async () => {
+    // 1. Descanso comendo usando a regra gastronômica
+    const response = await request(app.getHttpServer())
+      .post(`/characters/${characterId}/rest`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ quality: 'CONFORTAVEL', durationHours: 8, useGastronomicRule: true, consumedMeal: true });
+
+    expect(response.statusCode).toBe(200);
+    // Deve ter removido a condição Faminto
+    expect(response.body.conditions).not.toContain('Faminto');
+    // Como comeu, deve ter recuperado PV/PE (maior que 0)
+    expect(response.body.restChange.pvChange).toBeGreaterThan(0);
   });
 });

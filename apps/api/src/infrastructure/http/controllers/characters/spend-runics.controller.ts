@@ -9,12 +9,14 @@ import {
   Post,
 } from '@nestjs/common';
 import { z } from 'zod';
-import { ResourceNotFoundError } from '@/core/errors/resource-not-found-error';
-import { SpendRunicsUseCase } from '@/domain/character-manager/application/use-cases/spend-runics';
-import { NotAllowedError } from '@/domain/character-manager/application/use-cases/errors/not-allowed-error';
-import { DomainValidationError } from '@/core/errors/domain-validation-error';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
+import { CharactersService } from '@/modules/character-manager/characters.service';
+import {
+  DomainValidationError,
+  NotAllowedError,
+  ResourceNotFoundError,
+} from '@/modules/character-manager/errors/character-errors';
 import { ZodValidationPipe } from '../../pipes/zod-validation-pipe';
 import { CharacterPresenter } from '../../presenters/character.presenter';
 
@@ -26,7 +28,7 @@ type SpendRunicsBodySchema = z.infer<typeof spendRunicsBodySchema>;
 
 @Controller('/characters/:characterId/runics/spend')
 export class SpendRunicsController {
-  constructor(private spendRunics: SpendRunicsUseCase) {}
+  constructor(private charactersService: CharactersService) {}
 
   @Post()
   @HttpCode(200)
@@ -35,26 +37,34 @@ export class SpendRunicsController {
     @Body(new ZodValidationPipe(spendRunicsBodySchema)) body: SpendRunicsBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const result = await this.spendRunics.execute({
-      characterId,
-      userId: user.sub,
-      amount: body.amount,
-    });
+    try {
+      const character = await this.charactersService.spendRunics(
+        characterId,
+        user.sub,
+        body.amount,
+      );
 
-    if (result.isLeft()) {
-      const error = result.value;
-
-      if (error instanceof ResourceNotFoundError) {
+      return CharacterPresenter.toHTTP(character);
+    } catch (error: any) {
+      if (
+        error instanceof ResourceNotFoundError ||
+        error.constructor.name === 'ResourceNotFoundError'
+      ) {
         throw new NotFoundException(error.message);
       }
 
-      if (error instanceof NotAllowedError) {
+      if (error instanceof NotAllowedError || error.constructor.name === 'NotAllowedError') {
         throw new ForbiddenException(error.message);
       }
 
-      throw new BadRequestException(error.message);
-    }
+      if (
+        error instanceof DomainValidationError ||
+        error.constructor.name === 'DomainValidationError'
+      ) {
+        throw new BadRequestException(error.message);
+      }
 
-    return CharacterPresenter.toHTTP(result.value.character);
+      throw error;
+    }
   }
 }

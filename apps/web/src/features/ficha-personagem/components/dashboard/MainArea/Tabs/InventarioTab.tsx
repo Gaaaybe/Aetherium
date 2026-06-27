@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalFo
 import { Plus, Search, Coins, Shield, Sword, Package, Backpack, Trash2, Info, Hammer, Gem, Sparkles, Box, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, Zap, Layers, Dices } from 'lucide-react';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { toast } from '@/shared/ui';
-import { getItemById } from '@/services/items.service';
+import { getItemById, copyPublicItem } from '@/services/items.service';
 import type { ItemResponse, ItemType, WeaponItemResponse, DefensiveItemResponse, ConsumableItemResponse, AcervoResponse } from '@/services/types';
 import { BibliotecaAdicionarItemModal } from './BibliotecaAdicionarItemModal';
 import { UpgradeItemModal } from './UpgradeItemModal';
@@ -281,6 +281,7 @@ export function InventarioTab({
   const [detailedArrays, setDetailedArrays] = useState<Record<string, any>>({});
   const [isLoadingDetails, setIsLoadingDetails] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [savingToLibraryId, setSavingToLibraryId] = useState<string | null>(null);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isRunicsModalOpen, setIsRunicsModalOpen] = useState(false);
@@ -697,6 +698,27 @@ export function InventarioTab({
                             <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEditingItem(detail); }} className="h-7 px-2 text-[10px] text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
                               Editar
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={savingToLibraryId !== null}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                setSavingToLibraryId(detail.id);
+                                try {
+                                  await copyPublicItem(detail.id);
+                                  toast.success(`Item "${detail.nome}" salvo na biblioteca!`);
+                                } catch (err) {
+                                  toast.error('Erro ao salvar item na biblioteca.');
+                                } finally {
+                                  setSavingToLibraryId(null);
+                                }
+                              }}
+                              className="h-7 px-2 text-[10px] text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                              title="Salvar na Biblioteca"
+                            >
+                              Salvar na Lib
+                            </Button>
                             {(detail.tipo === 'weapon' || detail.tipo === 'defensive-equipment') && (
                               <Button
                                 variant="ghost"
@@ -855,6 +877,8 @@ export function InventarioTab({
           isOpen={!!editingItem}
           onClose={() => setEditingItem(null)}
           itemParaEditar={editingItem}
+          poderesAdicionais={Object.values(detailedPowers)}
+          acervosAdicionais={Object.values(detailedArrays)}
           onSave={() => {
             setEditingItem(null);
             setRefreshKey(k => k + 1);

@@ -1,7 +1,7 @@
 // Importa todos os dados JSON
 import efeitos from './efeitos.json';
 import modificacoes from './modificacoes.json';
-import tabelaUniversal from './tabelaUniversal.json';
+import { UNIVERSAL_TABLE as rulesEngineUniversalTable } from '@aetherium/rules-engine';
 import escalas from './escalas.json';
 import dominios from './dominios.json';
 import acoesCombate from './acoesCombate.json';
@@ -95,7 +95,7 @@ export interface Dominio {
   nome: string;
   descricao: string;
   espiritual: boolean | null; // null para Peculiar (customizável)
-  categoria: 'espiritual' | 'especial' | 'arma';
+  categoria: 'espiritual' | 'especial' | 'arma' | 'físico';
   requerAreaConhecimento?: boolean; // Para Científico
   areasConhecimento?: string[]; // Áreas do Científico
   customizavel?: boolean; // Para Peculiar
@@ -139,7 +139,7 @@ export interface BenefitCatalogEntry {
 // Exporta os dados
 export const EFEITOS: Efeito[] = efeitos as Efeito[];
 export const MODIFICACOES: Modificacao[] = modificacoes as Modificacao[];
-export const TABELA_UNIVERSAL: TabelaUniversalItem[] = tabelaUniversal;
+export const TABELA_UNIVERSAL: TabelaUniversalItem[] = rulesEngineUniversalTable as any;
 export const ESCALAS: Escalas = escalas as Escalas;
 export const DOMINIOS: Dominio[] = dominios as Dominio[];
 export const ACOES_COMBATE: AcaoCombate[] = acoesCombate as AcaoCombate[];

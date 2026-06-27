@@ -11,6 +11,7 @@ describe('Testes de Modificações', () => {
   const criarPoderBase = (): Poder => ({
     id: 'test-poder',
     nome: 'Poder de Teste',
+    dominioId: 'natural',
     efeitos: [{
       id: 'efeito-1',
       efeitoBaseId: 'afligir',

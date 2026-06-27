@@ -75,6 +75,11 @@ describe('Delete Power From Character (e2e)', () => {
     characterId = createCharResponse.body.id;
 
     await request(app.getHttpServer())
+      .post(`/characters/${characterId}/domains`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ domainId: 'arma-branca', masteryLevel: 'INICIANTE' });
+
+    await request(app.getHttpServer())
       .post(`/characters/${characterId}/level-up`)
       .set('Authorization', `Bearer ${accessToken}`)
       .send();
@@ -85,7 +90,7 @@ describe('Delete Power From Character (e2e)', () => {
       .send({
         nome: 'Test Power',
         descricao: 'A power for testing',
-        dominio: { name: 'natural' },
+        dominio: { name: 'arma-branca' },
         parametros: { acao: 1, alcance: 1, duracao: 0 },
         effects: [{ effectBaseId: 'dano', grau: 1 }],
         isPublic: true,

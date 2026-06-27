@@ -1,5 +1,10 @@
-import { Efeito, Modificacao, TABELA_UNIVERSAL } from '../../../data';
+import { Efeito, Modificacao } from '../../../data';
 import { calcularModificadorParametro } from './escalas';
+import {
+  calculatePowerCost,
+  type EffectBaseCatalogItem,
+  type ModificationBaseCatalogItem,
+} from '@aetherium/rules-engine';
 
 /**
  * Representa uma Modificação aplicada (com seus parâmetros customizados)
@@ -559,28 +564,107 @@ export function calcularEspacosTotal(
   return espacosTotal;
 }
 
-/**
- * Calcula informações detalhadas de um Poder (para exibição na UI)
- */
 export function calcularDetalhesPoder(
   poder: Poder,
   todosEfeitos: Efeito[],
   todasModificacoes: Modificacao[]
 ) {
-  // Calcula os parâmetros padrão do poder (pior entre todos os efeitos)
+  // Converte catálogos para o formato do rules-engine
+  const effectBases: Record<string, EffectBaseCatalogItem> = {};
+  for (const base of todosEfeitos) {
+    effectBases[base.id] = {
+      id: base.id,
+      nome: base.nome,
+      custoBase: base.custoBase,
+      parametrosPadraoAcao: base.parametrosPadrao.acao,
+      parametrosPadraoAlcance: base.parametrosPadrao.alcance,
+      parametrosPadraoDuracao: base.parametrosPadrao.duracao,
+      configuracoes: base.configuracoes
+        ? {
+            tipo: base.configuracoes.tipo,
+            label: base.configuracoes.label,
+            opcoes: base.configuracoes.opcoes.map((opt) => ({
+              id: opt.id,
+              nome: opt.nome,
+              modificadorCusto: opt.modificadorCusto,
+              grauMinimo: opt.grauMinimo,
+              descricao: opt.descricao,
+              custoProgressivo: opt.custoProgressivo,
+            })),
+          }
+        : null,
+    };
+  }
+
+  const modificationBases: Record<string, ModificationBaseCatalogItem> = {};
+  for (const base of todasModificacoes) {
+    modificationBases[base.id] = {
+      id: base.id,
+      nome: base.nome,
+      tipo: base.tipo,
+      custoFixo: base.custoFixo,
+      custoPorGrau: base.custoPorGrau,
+      configuracoes: base.configuracoes
+        ? {
+            tipo: base.configuracoes.tipo,
+            label: base.configuracoes.label,
+            opcoes: base.configuracoes.opcoes.map((opt) => ({
+              id: opt.id,
+              nome: opt.nome,
+              modificadorCusto: opt.modificadorCusto,
+              modificadorCustoFixo: opt.modificadorCustoFixo,
+              descricao: opt.descricao,
+            })),
+          }
+        : null,
+    };
+  }
+
+  // Executa o cálculo centralizado
+  const mappedGlobalModifications = (poder.modificacoesGlobais || []).map((m) => ({
+    modificationBaseId: m.modificacaoBaseId,
+    grau: m.grauModificacao ?? 1,
+    parametros: m.parametros,
+  }));
+
+  const calcResult = calculatePowerCost({
+    effects: poder.efeitos.map((e) => ({
+      id: e.id,
+      effectBaseId: e.efeitoBaseId,
+      grau: e.grau,
+      configuracaoId: e.configuracaoSelecionada,
+      modifications: (e.modificacoesLocais || []).map((m) => ({
+        modificationBaseId: m.modificacaoBaseId,
+        grau: m.grauModificacao ?? 1,
+        parametros: m.parametros,
+      })),
+    })),
+    parametros: {
+      acao: poder.acao,
+      alcance: poder.alcance,
+      duracao: poder.duracao,
+    },
+    globalModifications: mappedGlobalModifications,
+    effectBases,
+    modificationBases,
+  });
+
+  if (!calcResult.success) {
+    console.error("calculatePowerCost error:", calcResult.error);
+  }
+
+  const custoTotal = calcResult.result?.custoTotal;
+
   const parametrosPadraoPoder = calcularParametrosPadraoPoder(poder.efeitos, todosEfeitos);
-  
-  // Calcula o modificador GLOBAL de parâmetros (UMA VEZ para o poder inteiro)
-  // Usa função que considera custoEquivalente (ex: Permanente = Ativado)
   const modificadorParametrosGlobal = 
     calcularModificadorParametro(parametrosPadraoPoder.acao, poder.acao, 'acao') +
     calcularModificadorParametro(parametrosPadraoPoder.alcance, poder.alcance, 'alcance') +
     calcularModificadorParametro(parametrosPadraoPoder.duracao, poder.duracao, 'duracao');
-  
+
   const efeitosDetalhados = poder.efeitos.map(efeito => {
     const efeitoBase = todosEfeitos.find(e => e.id === efeito.efeitoBaseId);
     if (!efeitoBase) return null;
-    
+
     const custoPorGrau = calcularCustoPorGrau(
       efeitoBase,
       efeito,
@@ -588,38 +672,29 @@ export function calcularDetalhesPoder(
       todasModificacoes,
       modificadorParametrosGlobal
     );
-    
+
     const custoFixo = calcularCustoFixo(
       efeito,
       poder.modificacoesGlobais,
       todasModificacoes
     );
-    
-    const custoTotal = calcularCustoEfeito(
-      efeitoBase,
-      efeito,
-      poder.modificacoesGlobais,
-      todasModificacoes,
-      modificadorParametrosGlobal
-    );
-    
+
+    const calcEfeito = calcResult.result?.custoPorEfeito[efeito.id];
+    const custoTotalEfeito = calcEfeito?.pda ?? Math.max(1, (custoPorGrau * (efeito.grau < 1 ? 1 : efeito.grau)) + custoFixo);
+
     return {
       efeito,
       efeitoBase,
       custoPorGrau,
       custoFixo,
-      custoTotal,
+      custoTotal: custoTotalEfeito,
     };
   }).filter(Boolean);
-  
-  const custoPdATotal = calcularCustoPoder(poder, todosEfeitos, todasModificacoes);
-  const peTotal = calcularPETotal(poder, todosEfeitos, todasModificacoes, TABELA_UNIVERSAL);
-  const espacosTotal = calcularEspacosTotal(poder, todosEfeitos, TABELA_UNIVERSAL);
-  
+
   return {
-    custoPdATotal,
-    peTotal,
-    espacosTotal,
+    custoPdATotal: custoTotal?.pda ?? 1,
+    peTotal: custoTotal?.pe ?? 0,
+    espacosTotal: custoTotal?.espacos ?? 0,
     efeitosDetalhados,
   };
 }
