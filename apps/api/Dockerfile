@@ -37,9 +37,9 @@ RUN corepack enable && corepack prepare pnpm@8.15.8 --activate
 
 WORKDIR /app
 
-# Em produção, copiamos a estrutura base do Monorepo
+# Em produção, copiamos a estrutura base do Monorepo e os pacotes já compilados do builder!
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages ./packages
+COPY --from=builder /app/packages ./packages
 COPY apps/api/package.json ./apps/api/
 COPY apps/api/prisma ./apps/api/prisma/
 COPY apps/api/data ./apps/api/data/
