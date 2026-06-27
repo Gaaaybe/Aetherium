@@ -20,8 +20,8 @@ services:
 
   api:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../../
+      dockerfile: apps/api/Dockerfile
     container_name: aetherium-api
     restart: always
     ports:
