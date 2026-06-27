@@ -1,5 +1,5 @@
 import { Modal, ModalFooter, Button, Badge, Input, Textarea, Select, Slider, InlineHelp, EmptyState } from '../../../shared/ui';
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useFavoritos } from '../../../shared/hooks';
 import { useCatalog } from '@/context/useCatalog';
 import { useModificacaoFilter, OrdenacaoTipo } from '../hooks/useModificacaoFilter';

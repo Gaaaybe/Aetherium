@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
-  CreateItemPayload,
   DomainName,
   ItemResponse,
   ItemType,
@@ -279,7 +278,7 @@ export const useItemCreatorStore = create<ItemCreatorStore>()(
         if (item.tipo === 'weapon') {
           const weaponItem = item as any;
           next.weapon = {
-            danos: weaponItem.danos ?? [],
+            danos: weaponItem.baseDanos ?? weaponItem.danos ?? [],
             critMargin: weaponItem.critMargin ?? 20,
             critMultiplier: weaponItem.critMultiplier ?? 2,
             alcance: weaponItem.alcance ?? 'natural',

@@ -2,8 +2,14 @@ import { Body, Controller, HttpCode, Post, UsePipes } from '@nestjs/common';
 import { Public } from '@/infrastructure/auth/public';
 import { ZodValidationPipe } from '@/infrastructure/http/pipes/zod-validation-pipe';
 import { AccountsService } from '@/modules/accounts/accounts.service';
-import type { AuthenticateBodySchema, RegisterUserBodySchema } from '@/modules/accounts/dto/accounts.dto';
-import { authenticateBodySchema, registerUserBodySchema } from '@/modules/accounts/dto/accounts.dto';
+import type {
+  AuthenticateBodySchema,
+  RegisterUserBodySchema,
+} from '@/modules/accounts/dto/accounts.dto';
+import {
+  authenticateBodySchema,
+  registerUserBodySchema,
+} from '@/modules/accounts/dto/accounts.dto';
 
 @Controller('/users')
 @Public()

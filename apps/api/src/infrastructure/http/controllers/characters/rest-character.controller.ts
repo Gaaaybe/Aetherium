@@ -24,6 +24,8 @@ const restBodySchema = z.object({
   quality: z.enum(['RUIM', 'NORMAL', 'CONFORTAVEL', 'LUXUOSA']).default('NORMAL'),
   durationHours: z.number().int().min(1).default(8),
   hasCare: z.boolean().default(false),
+  useGastronomicRule: z.boolean().default(false),
+  consumedMeal: z.boolean().default(false),
 });
 
 type RestBodySchema = z.infer<typeof restBodySchema>;
@@ -40,15 +42,24 @@ export class RestCharacterController {
     @CurrentUser() user: UserPayload,
   ) {
     try {
-      const { character } = await this.charactersService.rest(
+      const { character, pvChange, peChange } = await this.charactersService.rest(
         characterId,
         user.sub,
         body.quality,
         body.durationHours,
         body.hasCare,
+        body.useGastronomicRule,
+        body.consumedMeal,
       );
 
-      return CharacterPresenter.toHTTP(character);
+      const httpCharacter = CharacterPresenter.toHTTP(character);
+      return {
+        ...httpCharacter,
+        restChange: {
+          pvChange,
+          peChange,
+        },
+      };
     } catch (error: any) {
       if (
         error instanceof ResourceNotFoundError ||

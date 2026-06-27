@@ -9,13 +9,7 @@ export function MasterDashboardPage() {
   const [characterToDelete, setCharacterToDelete] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const formatDate = (dateString: string | Date | undefined) => {
-    if (!dateString) return 'Desconhecida';
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: 'short',
-    }).format(new Date(dateString));
-  };
+
 
   if (isLoading) {
     return (
@@ -156,19 +150,18 @@ export function MasterDashboardPage() {
 
       <ConfirmDialog
         isOpen={!!characterToDelete}
+        onClose={() => setCharacterToDelete(null)}
         title="Exclusão de Nível Mestre"
         message="Como Mestre, você está prestes a excluir a ficha de um jogador. Esta ação é irreversível e causará a perda total dos dados dessa ficha. Continuar?"
         confirmText="Excluir Definitivamente"
         cancelText="Cancelar"
-        icon={<ShieldAlert className="w-6 h-6 text-red-600" />}
-        confirmStyle="destructive"
+        variant="danger"
         onConfirm={async () => {
           if (characterToDelete) {
             await deleteCharacter(characterToDelete);
             setCharacterToDelete(null);
           }
         }}
-        onCancel={() => setCharacterToDelete(null)}
       />
     </div>
   );

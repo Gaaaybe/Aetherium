@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { CharacterResponse, SyncCharacterData } from '@/services/characters.types';
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalFooter, Select, DynamicIcon, Input } from '@/shared/ui';
 import { Zap, Plus, Search, Layers, Shield, Sparkles, Sword, Trash2, ChevronLeft, Package, Edit2, Info, Clock, Ruler, Timer, ChevronDown, ChevronUp, Check, Bookmark } from 'lucide-react';

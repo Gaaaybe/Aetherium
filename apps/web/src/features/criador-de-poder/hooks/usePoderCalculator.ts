@@ -1,8 +1,7 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useCatalog } from '@/context/useCatalog';
 import { usePowerCreatorStore } from '@/stores/power-creator.store';
 import { 
-  Poder, 
   calcularDetalhesPoder,
 } from '../regras/calculadoraCusto';
 
@@ -29,22 +28,7 @@ export function usePoderCalculator() {
     habilitarAutoAtualizacaoParametros,
   } = usePowerCreatorStore();
 
-  // Carrega poder pendente vindo da biblioteca
-  useEffect(() => {
-    const pendente = localStorage.getItem('criador-de-poder-carregar');
-    if (pendente) {
-      try {
-        const parsed = JSON.parse(pendente) as Poder;
-        if (parsed.id && Array.isArray(parsed.efeitos)) {
-          carregarPoder(parsed);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar poder pendente:', error);
-      } finally {
-        localStorage.removeItem('criador-de-poder-carregar');
-      }
-    }
-  }, [carregarPoder]);
+
 
   // Calcula detalhes do poder (memoizado para performance)
   const detalhes = useMemo(() => {

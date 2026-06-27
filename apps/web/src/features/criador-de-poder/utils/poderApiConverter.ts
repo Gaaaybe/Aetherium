@@ -265,6 +265,7 @@ export function legacyPoderToCreatePayload(raw: unknown): CreatePoderPayload {
   const validDomains: string[] = [
     'natural', 'sagrado', 'sacrilegio', 'psiquico', 'cientifico', 'peculiar',
     'arma-branca', 'arma-fogo', 'arma-tensao', 'arma-explosiva', 'arma-tecnologica',
+    'desarmado',
   ];
   const dominioName = validDomains.includes(dominioFinal) ? dominioFinal : 'natural';
   const areaConhecimento = legacy.dominioAreaConhecimento || (dominioName === 'cientifico' ? 'Geral' : undefined);

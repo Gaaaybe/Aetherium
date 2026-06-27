@@ -45,7 +45,8 @@ export const SKILLS = [
   'Sobrevivência',
   'Investigação',
   'Intimidação',
-  'Iniciativa'
+  'Iniciativa',
+  'Pilotar'
 ] as const;
 
 export type Skill = typeof SKILLS[number];

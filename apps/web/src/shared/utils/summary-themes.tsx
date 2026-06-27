@@ -1,4 +1,3 @@
-import React from 'react';
 import { LucideIcon, Sparkles, Sword, Shield, FlaskConical, Gem, Package, Zap, Globe, Heart, Skull, Brain, Atom } from 'lucide-react';
 
 export interface SummaryTheme {

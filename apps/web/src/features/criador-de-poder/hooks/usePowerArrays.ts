@@ -5,7 +5,7 @@ import {
   updatePowerArray,
   deletePowerArray,
 } from '@/services/powerArrays.service';
-import type { AcervoResponse, CreateAcervoPayload, UpdateAcervoPayload } from '@/services/types';
+import type { AcervoResponse, UpdateAcervoPayload } from '@/services/types';
 
 export function usePowerArrays() {
   const queryClient = useQueryClient();

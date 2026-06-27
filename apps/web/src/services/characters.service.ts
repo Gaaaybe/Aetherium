@@ -59,8 +59,17 @@ export const charactersService = {
     return data;
   },
 
-  async rest(id: string, payload: { quality: 'RUIM' | 'NORMAL' | 'CONFORTAVEL' | 'LUXUOSA'; durationHours: number; hasCare?: boolean }): Promise<CharacterResponse> {
-    const { data } = await api.post<CharacterResponse>(`/characters/${id}/rest`, payload);
+  async rest(
+    id: string,
+    payload: {
+      quality: 'RUIM' | 'NORMAL' | 'CONFORTAVEL' | 'LUXUOSA';
+      durationHours: number;
+      hasCare?: boolean;
+      useGastronomicRule?: boolean;
+      consumedMeal?: boolean;
+    }
+  ): Promise<CharacterResponse & { restChange?: { pvChange: number; peChange: number } }> {
+    const { data } = await api.post<CharacterResponse & { restChange?: { pvChange: number; peChange: number } }>(`/characters/${id}/rest`, payload);
     return data;
   },
 
@@ -155,7 +164,7 @@ export const charactersService = {
     return data;
   },
 
-  async updateCharacterPower(id: string, powerId: string, payload: any): Promise<void> {
+  async updateCharacterPower(_id: string, powerId: string, payload: any): Promise<void> {
     await api.put(`/powers/${powerId}`, payload);
   },
 

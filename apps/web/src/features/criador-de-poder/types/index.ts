@@ -11,12 +11,13 @@ export type {
 
 import type { EfeitoAplicado, Poder } from '../regras/calculadoraCusto';
 
-// Re-exporta tipos de configuração do data/index.ts
 export type {
   ConfiguracaoEfeito as OpcaoConfiguracao,
   Efeito,
   Modificacao
 } from '../../../data';
+
+import type { ConfiguracaoEfeito as OpcaoConfiguracao } from '../../../data';
 
 // ============= TIPOS DE BIBLIOTECA =============
 
@@ -49,7 +50,7 @@ export interface EfeitoBase {
   configuracoes?: {
     tipo: string;
     label: string;
-    opcoes: ConfiguracaoEfeito[];
+    opcoes: OpcaoConfiguracao[];
   };
 }
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { CharacterResponse, EquipSlot } from '@/services/characters.types';
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalFooter, DynamicIcon, Input } from '@/shared/ui';
-import { Plus, Search, Coins, Shield, Sword, Package, Backpack, Trash2, Info, Hammer, Gem, Sparkles, Box, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, Zap, Layers, Dices, Bookmark } from 'lucide-react';
+import { Plus, Search, Coins, Shield, Sword, Package, Backpack, Trash2, Info, Hammer, Gem, Sparkles, Box, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, Zap, Layers, Dices } from 'lucide-react';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { toast } from '@/shared/ui';
 import { getItemById, copyPublicItem } from '@/services/items.service';
@@ -877,6 +877,8 @@ export function InventarioTab({
           isOpen={!!editingItem}
           onClose={() => setEditingItem(null)}
           itemParaEditar={editingItem}
+          poderesAdicionais={Object.values(detailedPowers)}
+          acervosAdicionais={Object.values(detailedArrays)}
           onSave={() => {
             setEditingItem(null);
             setRefreshKey(k => k + 1);

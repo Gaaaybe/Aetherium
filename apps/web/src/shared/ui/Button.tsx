@@ -2,7 +2,7 @@ import React from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'ghost' | 'default' | 'destructive';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   loading?: boolean;
@@ -30,6 +30,8 @@ export function Button({
     danger: "bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white focus:ring-red-500 shadow-lg hover:shadow-xl hover:shadow-red-500/50 dark:from-red-500 dark:to-red-400 dark:hover:from-red-600 dark:hover:to-red-500 dark:hover:shadow-red-400/30",
     outline: "border-2 border-espirito-600 text-espirito-600 hover:bg-espirito-50 hover:border-espirito-700 focus:ring-espirito-500 shadow-sm hover:shadow-md dark:border-espirito-400 dark:text-espirito-400 dark:hover:bg-espirito-950/30 dark:hover:border-espirito-300",
     ghost: "text-gray-700 hover:bg-gray-100/80 focus:ring-gray-400 dark:text-gray-300 dark:hover:bg-gray-800/80",
+    default: "bg-gradient-to-r from-espirito-600 to-espirito-500 hover:from-espirito-700 hover:to-espirito-600 text-white focus:ring-espirito-500 shadow-lg hover:shadow-xl hover:shadow-espirito-500/50 dark:from-espirito-500 dark:to-espirito-400 dark:hover:from-espirito-600 dark:hover:to-espirito-500 dark:hover:shadow-espirito-400/30",
+    destructive: "bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white focus:ring-red-500 shadow-lg hover:shadow-xl hover:shadow-red-500/50 dark:from-red-500 dark:to-red-400 dark:hover:from-red-600 dark:hover:to-red-500 dark:hover:shadow-red-400/30",
   };
   
   const sizes = {

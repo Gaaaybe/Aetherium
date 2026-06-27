@@ -6,6 +6,7 @@ import { StatsColumn } from './dashboard/StatsColumn';
 import { MainArea } from './dashboard/MainArea';
 import { MobileBottomNav } from './dashboard/Mobile/MobileBottomNav';
 import { ConfirmDialog } from '@/shared/ui';
+import { DescansoModal } from './dashboard/DescansoModal';
 
 interface CharacterSheetDashboardProps {
   characterId: string;
@@ -17,6 +18,7 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
     isLoading,
     isSyncing,
     sync,
+    rest,
     levelUp,
     acquireDomainMastery,
     discardDomainMastery,
@@ -42,6 +44,7 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
     pendingAction,
     clearPendingAction,
   } = useCharacterSheet(characterId);
+  const [isRestModalOpen, setIsRestModalOpen] = useState(false);
   const storageKey = `aetherium-tab-${characterId}`;
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem(storageKey) || 'acoes';
@@ -85,7 +88,12 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-20 lg:pb-0">
-      <CharacterHeader character={character} onSync={sync} onLevelUp={levelUp} />
+      <CharacterHeader 
+        character={character} 
+        onSync={sync} 
+        onLevelUp={levelUp} 
+        onOpenRest={() => setIsRestModalOpen(true)} 
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Coluna 1: Sidebar Fixa (Estatísticas vitais) */}
@@ -132,6 +140,14 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
       </div>
 
       <MobileBottomNav activeSection={activeMobileSection} onChange={handleMobileNavChange} />
+
+      <DescansoModal
+        isOpen={isRestModalOpen}
+        onClose={() => setIsRestModalOpen(false)}
+        character={character}
+        onRest={rest}
+        isProcessing={isSyncing}
+      />
 
       <ConfirmDialog
         isOpen={!!pendingAction}

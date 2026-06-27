@@ -2,7 +2,7 @@ import React from 'react';
 
 interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   children: React.ReactNode;
-  variant?: 'default' | 'espirito' | 'caos' | 'success' | 'warning' | 'info' | 'secondary';
+  variant?: 'default' | 'espirito' | 'caos' | 'success' | 'warning' | 'info' | 'secondary' | 'outline';
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -23,6 +23,7 @@ export function Badge({
     warning: "bg-gradient-to-r from-yellow-200 via-yellow-100 to-orange-100 text-yellow-900 dark:from-yellow-900/90 dark:via-yellow-800/90 dark:to-orange-900/90 dark:text-yellow-100 border-yellow-400 dark:border-yellow-600 hover:shadow-lg hover:shadow-yellow-500/30",
     info: "bg-gradient-to-r from-blue-200 via-blue-100 to-cyan-100 text-blue-900 dark:from-blue-900/90 dark:via-blue-800/90 dark:to-cyan-900/90 dark:text-blue-100 border-blue-400 dark:border-blue-600 hover:shadow-lg hover:shadow-blue-500/30",
     secondary: "bg-gradient-to-r from-gray-200 to-gray-100 text-gray-800 dark:from-gray-700/90 dark:to-gray-600/90 dark:text-gray-200 border-gray-400 dark:border-gray-500 hover:shadow-lg",
+    outline: "bg-transparent text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:shadow-lg",
   };
   
   const sizes = {

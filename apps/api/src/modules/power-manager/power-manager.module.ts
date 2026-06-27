@@ -27,10 +27,13 @@ import { FetchPublicPowersController } from '@/infrastructure/http/controllers/p
 import { FetchUserPowersController } from '@/infrastructure/http/controllers/powers/fetch-user-powers.controller';
 import { GetPowerByIdController } from '@/infrastructure/http/controllers/powers/get-power-by-id.controller';
 import { UpdatePowerController } from '@/infrastructure/http/controllers/powers/update-power.controller';
+import { ResolvePowerController } from '@/infrastructure/http/controllers/powers/resolve-power.controller';
 import { PowersService } from './powers.service';
+import { PowerResolutionService } from './power-resolution.service';
 import { OnCharacterPowerArrayDiscarded } from './subscribers/on-character-power-array-discarded';
 import { OnCharacterPowerDiscarded } from './subscribers/on-character-power-discarded';
-
+import { CombatEventListener } from './listeners/combat-event.listener';
+ 
 @Module({
   imports: [DatabaseModule],
   controllers: [
@@ -51,6 +54,7 @@ import { OnCharacterPowerDiscarded } from './subscribers/on-character-power-disc
     GetPowerByIdController,
     CopyPublicPowerController,
     FetchCharacterPowersController,
+    ResolvePowerController,
     // PowerArrays
     CreatePowerArrayController,
     UpdatePowerArrayController,
@@ -61,7 +65,13 @@ import { OnCharacterPowerDiscarded } from './subscribers/on-character-power-disc
     CopyPublicPowerArrayController,
     FetchCharacterPowerArraysController,
   ],
-  providers: [PowersService, OnCharacterPowerDiscarded, OnCharacterPowerArrayDiscarded],
-  exports: [PowersService],
+  providers: [
+    PowersService,
+    PowerResolutionService,
+    OnCharacterPowerDiscarded,
+    OnCharacterPowerArrayDiscarded,
+    CombatEventListener,
+  ],
+  exports: [PowersService, PowerResolutionService],
 })
 export class PowerManagerModule {}

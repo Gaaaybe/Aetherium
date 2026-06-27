@@ -27,8 +27,8 @@ export const NarrativeProfileSchema = z.object({
 });
 
 export const SkillEntrySchema = z.object({
-  attribute: z.enum(['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma']),
-  isTrained: z.boolean(),
+  proficiencyState: z.string().default('NEUTRAL'),
+  trainingBonus: z.number().int().default(0),
   extraBonus: z.number().int().default(0),
 });
 

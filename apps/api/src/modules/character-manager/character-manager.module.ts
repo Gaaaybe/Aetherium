@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '@/infrastructure/database/database.module';
-import { PowerManagerModule } from '@/modules/power-manager/power-manager.module';
-import { ItemManagerModule } from '@/modules/item-manager/item-manager.module';
 import { AcquireBenefitController } from '@/infrastructure/http/controllers/characters/acquire-benefit.controller';
 import { AcquireDomainMasteryController } from '@/infrastructure/http/controllers/characters/acquire-domain-mastery.controller';
 import { AcquirePowerController } from '@/infrastructure/http/controllers/characters/acquire-power.controller';
@@ -35,6 +33,8 @@ import { UnequipPowerArrayController } from '@/infrastructure/http/controllers/c
 import { UnlockSpiritualPrincipleController } from '@/infrastructure/http/controllers/characters/unlock-spiritual-principle.controller';
 import { UpdateUnarmedMasteryController } from '@/infrastructure/http/controllers/characters/update-unarmed-mastery.controller';
 import { UpgradeItemController } from '@/infrastructure/http/controllers/characters/upgrade-item.controller';
+import { ItemManagerModule } from '@/modules/item-manager/item-manager.module';
+import { PowerManagerModule } from '@/modules/power-manager/power-manager.module';
 import { CharactersService } from './characters.service';
 
 @Module({

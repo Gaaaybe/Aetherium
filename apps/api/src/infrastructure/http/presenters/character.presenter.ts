@@ -1,18 +1,18 @@
-import { Character } from '@aetherium/rules-engine';
 import {
+  Character,
+  calculateMaxPE,
+  calculateMaxPV,
+  calculateMaxSlots,
+  calculateTotalPda,
+  calculateUsedSlots,
   getAttributeModifier,
   getAttributeRollModifier,
-  getCombatStats,
   getCalamityRank,
+  getCombatStats,
   getEfficiencyBonus,
-  calculateTotalPda,
-  calculateMaxPV,
-  calculateMaxPE,
-  calculateMaxSlots,
-  calculateUsedSlots,
-  getUnarmedMasteryDamageDie,
   getUnarmedMasteryCriticalMargin,
   getUnarmedMasteryCriticalMultiplier,
+  getUnarmedMasteryDamageDie,
   getUnarmedMasteryTotalPdaCost,
 } from '@aetherium/rules-engine';
 
@@ -215,7 +215,9 @@ export class CharacterPresenter {
             damageType: uMastery.damageType ?? 'Impacto',
             damageDie: getUnarmedMasteryDamageDie(uMastery.degree ?? 0),
             criticalMargin: getUnarmedMasteryCriticalMargin(uMastery.marginImprovements ?? 0),
-            criticalMultiplier: getUnarmedMasteryCriticalMultiplier(uMastery.multiplierImprovements ?? 0),
+            criticalMultiplier: getUnarmedMasteryCriticalMultiplier(
+              uMastery.multiplierImprovements ?? 0,
+            ),
             totalPdaCost: getUnarmedMasteryTotalPdaCost(uMastery),
           }
         : null,

@@ -1,13 +1,13 @@
+import { Character } from '@aetherium/rules-engine';
 import { Injectable } from '@nestjs/common';
-import { DomainMasteryLevel } from '@prisma/client';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { DomainMasteryLevel } from '@prisma/client';
 import { CatalogBenefitsLookupAdapter } from '@/infrastructure/database/catalog-benefits-lookup-adapter';
 import { CatalogDomainsLookupAdapter } from '@/infrastructure/database/catalog-domains-lookup-adapter';
 import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
 import { PrismaCharacterManagerItemsLookupAdapter } from '@/infrastructure/database/prisma-character-manager-items-lookup-adapter';
 import { PrismaCharacterManagerPowerArraysLookupAdapter } from '@/infrastructure/database/prisma-character-manager-power-arrays-lookup-adapter';
 import { PrismaCharacterManagerPowersLookupAdapter } from '@/infrastructure/database/prisma-character-manager-powers-lookup-adapter';
-import { Character } from '@aetherium/rules-engine';
 import {
   DomainValidationError,
   NotAllowedError,
@@ -18,63 +18,63 @@ export type EquipSlot = 'suit' | 'accessory' | 'hand' | 'quick-access';
 
 import {
   AttributesSchema,
+  applyAddRunics,
+  applyAddTemporaryPE,
+  applyAddTemporaryPV,
+  applyAddToInventory,
+  applyChangeLevel,
+  applyCondition,
+  applyConsumeEnergy,
+  applyDamage,
+  applyEquipItem,
+  applyEquipPower,
+  applyEquipPowerArray,
+  applyHeal,
+  applyLevelUp,
+  applyRecoverEnergy,
+  applyRefundPda,
+  applyRemoveBenefit,
+  applyRemoveCondition,
+  applyRemoveFromInventory,
+  applyRemovePower,
+  applyRemovePowerArray,
+  applyRestResult,
+  applySetItemQuantityInInventory,
+  applySpendPda,
+  applySpendRunics,
+  applyTickDeathCounter,
+  applyUnequipItem,
+  applyUnequipPower,
+  applyUnequipPowerArray,
+  applyUpdateConditions,
+  applyUpdateSkill,
+  calculateMaxPE,
+  calculateMaxPV,
+  calculateMaxSlots,
+  calculateTotalPda,
+  calculateUsedSlots,
   EnergyStateSchema,
   EquipmentSlotsSchema,
+  getAttributeModifier,
+  getAttributeRollModifier,
+  getUnarmedMasteryTotalPdaCost,
   HealthStateSchema,
+  hasConditionEffectOf,
   InventorySchema,
   NarrativeProfileSchema,
   PdaStateSchema,
+  RulesValidationError,
   SkillsSchema,
   SpiritualPrincipleSchema,
   UnarmedMasterySchema,
-  RulesValidationError,
-  applyLevelUp,
-  applyChangeLevel,
-  applyDamage,
-  applyHeal,
-  applyTickDeathCounter,
-  applyConsumeEnergy,
-  applyRecoverEnergy,
-  applyAddTemporaryPV,
-  applyAddTemporaryPE,
-  applyUpdateSkill,
-  applyCondition,
-  applyRemoveCondition,
-  applyUpdateConditions,
-  applyAddRunics,
-  applySpendRunics,
-  applyAddToInventory,
-  applyRemoveFromInventory,
-  applySetItemQuantityInInventory,
-  applySpendPda,
-  applyRefundPda,
-  applyEquipPower,
-  applyUnequipPower,
-  applyEquipPowerArray,
-  applyUnequipPowerArray,
-  applyRemovePower,
-  applyRemovePowerArray,
-  applyRemoveBenefit,
-  applyEquipItem,
-  applyUnequipItem,
-  applyRestResult,
-  calculateTotalPda,
-  calculateMaxPV,
-  calculateMaxPE,
-  calculateMaxSlots,
-  calculateUsedSlots,
-  getUnarmedMasteryTotalPdaCost,
-  getAttributeModifier,
-  getAttributeRollModifier,
-  hasConditionEffectOf,
 } from '@aetherium/rules-engine';
 
 import { CharacterCreatedEvent } from './events/character-created-event';
-import { CharacterLeveledUpEvent } from './events/character-leveled-up-event';
 import { CharacterDiedEvent } from './events/character-died-event';
 import { CharacterItemDiscardedEvent } from './events/character-item-discarded-event';
-import { CharacterPowerDiscardedEvent } from './events/character-power-discarded-event';
+import { CharacterLeveledUpEvent } from './events/character-leveled-up-event';
 import { CharacterPowerArrayDiscardedEvent } from './events/character-power-array-discarded-event';
+import { CharacterPowerDiscardedEvent } from './events/character-power-discarded-event';
 
 const INCLUDE = {
   powers: true,
@@ -178,7 +178,9 @@ export class CharactersService {
   private async migrateIfNeeded(raw: any): Promise<void> {
     const { migrated } = this.validateAndMigrateJSONB(raw);
     if (migrated) {
-      const constitutionModifier = Math.ceil(((raw.attributes as any).constitution.baseValue - 10) / 2);
+      const constitutionModifier = Math.ceil(
+        ((raw.attributes as any).constitution.baseValue - 10) / 2,
+      );
       const maxPV = Math.max(4, raw.level * constitutionModifier + 6);
       const extraPda = (raw.spiritualPrinciple as any).isUnlocked ? 0 : 15;
 
@@ -309,31 +311,28 @@ export class CharactersService {
 
     const skillNames = [
       'Acrobacia',
-      'Adestramento',
+      'Adestrar Animais',
       'Atletismo',
-      'Atualidades',
-      'Ciências',
+      'Atuação',
+      'Cavalgar',
+      'Conhecimento',
+      'Cura',
       'Diplomacia',
       'Enganação',
+      'Espiritismo',
+      'Exploração',
       'Fortitude',
       'Furtividade',
       'Iniciativa',
       'Intimidação',
       'Intuição',
       'Investigação',
-      'Luta',
-      'Medicina',
-      'Misticismo',
+      'Ladinagem',
       'Percepção',
       'Pilotar',
-      'Pontaria',
-      'Prestidigitação',
-      'Profissão',
       'Reflexos',
       'Religião',
       'Sobrevivência',
-      'Tática',
-      'Tecnologia',
       'Vontade',
     ];
     const skillsObj: any = {};
@@ -485,12 +484,30 @@ export class CharactersService {
     const character = await this.getCharacterOrThrow(characterId, userId);
 
     character.attributes = {
-      strength: { baseValue: attrProps.strength, extraBonus: character.attributes.strength.extraBonus ?? 0 },
-      dexterity: { baseValue: attrProps.dexterity, extraBonus: character.attributes.dexterity.extraBonus ?? 0 },
-      constitution: { baseValue: attrProps.constitution, extraBonus: character.attributes.constitution.extraBonus ?? 0 },
-      intelligence: { baseValue: attrProps.intelligence, extraBonus: character.attributes.intelligence.extraBonus ?? 0 },
-      wisdom: { baseValue: attrProps.wisdom, extraBonus: character.attributes.wisdom.extraBonus ?? 0 },
-      charisma: { baseValue: attrProps.charisma, extraBonus: character.attributes.charisma.extraBonus ?? 0 },
+      strength: {
+        baseValue: attrProps.strength,
+        extraBonus: character.attributes.strength.extraBonus ?? 0,
+      },
+      dexterity: {
+        baseValue: attrProps.dexterity,
+        extraBonus: character.attributes.dexterity.extraBonus ?? 0,
+      },
+      constitution: {
+        baseValue: attrProps.constitution,
+        extraBonus: character.attributes.constitution.extraBonus ?? 0,
+      },
+      intelligence: {
+        baseValue: attrProps.intelligence,
+        extraBonus: character.attributes.intelligence.extraBonus ?? 0,
+      },
+      wisdom: {
+        baseValue: attrProps.wisdom,
+        extraBonus: character.attributes.wisdom.extraBonus ?? 0,
+      },
+      charisma: {
+        baseValue: attrProps.charisma,
+        extraBonus: character.attributes.charisma.extraBonus ?? 0,
+      },
       keyPhysical: attrProps.keyPhysical,
       keyMental: attrProps.keyMental,
     };
@@ -499,8 +516,12 @@ export class CharactersService {
     const maxPV = calculateMaxPV(character.level, constitutionModifier);
     character.healthState.currentPV = Math.min(character.healthState.currentPV, maxPV);
 
-    const keyPhysicalModifier = getAttributeModifier(character.attributes[character.attributes.keyPhysical].baseValue);
-    const keyMentalModifier = getAttributeModifier(character.attributes[character.attributes.keyMental].baseValue);
+    const keyPhysicalModifier = getAttributeModifier(
+      character.attributes[character.attributes.keyPhysical].baseValue,
+    );
+    const keyMentalModifier = getAttributeModifier(
+      character.attributes[character.attributes.keyMental].baseValue,
+    );
     const maxPE = calculateMaxPE(keyPhysicalModifier, keyMentalModifier);
     character.energyState.currentPE = Math.min(character.energyState.currentPE, maxPE);
 
@@ -518,7 +539,9 @@ export class CharactersService {
   ) {
     const character = await this.getCharacterOrThrow(characterId, userId);
 
-    runRules(() => applyUpdateSkill(character, skillName, proficiencyState, trainingBonusIncrease, 0));
+    runRules(() =>
+      applyUpdateSkill(character, skillName, proficiencyState, trainingBonusIncrease, 0),
+    );
 
     await this.saveCharacter(this.prisma, character);
 
@@ -625,7 +648,11 @@ export class CharactersService {
     return character;
   }
 
-  async unlockSpiritualPrinciple(characterId: string, userId: string, stage: 'NORMAL' | 'DIVINE' = 'NORMAL') {
+  async unlockSpiritualPrinciple(
+    characterId: string,
+    userId: string,
+    stage: 'NORMAL' | 'DIVINE' = 'NORMAL',
+  ) {
     const character = await this.getCharacterOrThrow(characterId, userId);
 
     if (character.spiritualPrinciple?.isUnlocked) {
@@ -697,6 +724,8 @@ export class CharactersService {
     quality: string,
     durationHours: number,
     hasCare: boolean,
+    useGastronomicRule = false,
+    consumedMeal = false,
   ) {
     const character = await this.getCharacterOrThrow(characterId, userId);
 
@@ -768,6 +797,25 @@ export class CharactersService {
       peChange = Math.floor(peRecovered);
     }
 
+    let isCurrentlyFaminto = false;
+    runRules(() => {
+      if (useGastronomicRule) {
+        if (consumedMeal) {
+          applyRemoveCondition(character, 'Faminto');
+        } else {
+          applyCondition(character, 'Faminto');
+        }
+      } else if (consumedMeal) {
+        applyRemoveCondition(character, 'Faminto');
+      }
+      isCurrentlyFaminto = hasConditionEffectOf(character.conditions, 'Faminto');
+    });
+
+    if (isCurrentlyFaminto) {
+      if (pvChange > 0) pvChange = 0;
+      if (peChange > 0) peChange = 0;
+    }
+
     runRules(() => applyRestResult(character, pvChange, peChange));
 
     await this.saveCharacter(this.prisma, character);
@@ -826,7 +874,8 @@ export class CharactersService {
       }
 
       if (data.extraPda !== undefined) {
-        if (data.extraPda < 0) throw new RulesValidationError('PdA Extra não pode ser negativo.', 'extraPda');
+        if (data.extraPda < 0)
+          throw new RulesValidationError('PdA Extra não pode ser negativo.', 'extraPda');
         character.pdaState.extraPda = data.extraPda;
       }
 
@@ -860,12 +909,30 @@ export class CharactersService {
         }
 
         character.attributes = {
-          strength: { baseValue: data.attributes.strength.baseValue, extraBonus: data.attributes.strength.extraBonus ?? 0 },
-          dexterity: { baseValue: data.attributes.dexterity.baseValue, extraBonus: data.attributes.dexterity.extraBonus ?? 0 },
-          constitution: { baseValue: data.attributes.constitution.baseValue, extraBonus: data.attributes.constitution.extraBonus ?? 0 },
-          intelligence: { baseValue: data.attributes.intelligence.baseValue, extraBonus: data.attributes.intelligence.extraBonus ?? 0 },
-          wisdom: { baseValue: data.attributes.wisdom.baseValue, extraBonus: data.attributes.wisdom.extraBonus ?? 0 },
-          charisma: { baseValue: data.attributes.charisma.baseValue, extraBonus: data.attributes.charisma.extraBonus ?? 0 },
+          strength: {
+            baseValue: data.attributes.strength.baseValue,
+            extraBonus: data.attributes.strength.extraBonus ?? 0,
+          },
+          dexterity: {
+            baseValue: data.attributes.dexterity.baseValue,
+            extraBonus: data.attributes.dexterity.extraBonus ?? 0,
+          },
+          constitution: {
+            baseValue: data.attributes.constitution.baseValue,
+            extraBonus: data.attributes.constitution.extraBonus ?? 0,
+          },
+          intelligence: {
+            baseValue: data.attributes.intelligence.baseValue,
+            extraBonus: data.attributes.intelligence.extraBonus ?? 0,
+          },
+          wisdom: {
+            baseValue: data.attributes.wisdom.baseValue,
+            extraBonus: data.attributes.wisdom.extraBonus ?? 0,
+          },
+          charisma: {
+            baseValue: data.attributes.charisma.baseValue,
+            extraBonus: data.attributes.charisma.extraBonus ?? 0,
+          },
           keyPhysical: data.attributes.keyPhysical,
           keyMental: data.attributes.keyMental,
         };
@@ -949,7 +1016,9 @@ export class CharactersService {
       throw new ResourceNotFoundError('Item não encontrado no inventário');
     }
 
-    const { discarded } = runRules(() => applySetItemQuantityInInventory(character, itemId, quantity));
+    const { discarded } = runRules(() =>
+      applySetItemQuantityInInventory(character, itemId, quantity),
+    );
 
     await this.saveCharacter(this.prisma, character);
 
@@ -1058,7 +1127,9 @@ export class CharactersService {
       throw new DomainValidationError('Este item não suporta aprimoramentos', 'itemId');
     }
 
-    const materialInInventory = (character.inventory.bag || []).find((i: any) => i.itemId === materialId);
+    const materialInInventory = (character.inventory.bag || []).find(
+      (i: any) => i.itemId === materialId,
+    );
 
     if (!materialInInventory || materialInInventory.quantity < 1) {
       throw new DomainValidationError(
@@ -1222,7 +1293,9 @@ export class CharactersService {
       throw new ResourceNotFoundError('Falha ao criar instância do array de poder');
     }
 
-    const alreadyHasArray = (character.powerArrays || []).some((a: any) => a.powerArrayId === newInstanceId);
+    const alreadyHasArray = (character.powerArrays || []).some(
+      (a: any) => a.powerArrayId === newInstanceId,
+    );
     if (alreadyHasArray) {
       throw new DomainValidationError('O personagem já possui este acervo.', 'powerArrayId');
     }

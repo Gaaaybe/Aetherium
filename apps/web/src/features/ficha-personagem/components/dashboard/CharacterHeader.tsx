@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { CharacterResponse, SyncCharacterData } from '@/services/characters.types';
 import { Badge, Button, DynamicIcon, Modal, Input, ModalFooter } from '@/shared/ui';
-import { User, Settings, Shield, MoreHorizontal, Camera, Sparkles, Save, X, Edit2, ArrowUpCircle, Dices } from 'lucide-react';
+import { User, Settings, Shield, MoreHorizontal, Camera, Sparkles, Save, X, Edit2, ArrowUpCircle, Dices, Moon } from 'lucide-react';
 import { FreeDiceRollerModal } from '@/shared/components/FreeDiceRollerModal';
 
 interface CharacterHeaderProps {
   character: CharacterResponse;
   onSync: (data: SyncCharacterData) => Promise<void>;
   onLevelUp: () => void;
+  onOpenRest: () => void;
 }
 
-export function CharacterHeader({ character, onSync, onLevelUp }: CharacterHeaderProps) {
+export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: CharacterHeaderProps) {
   // Estados para Modais
   const [isArtModalOpen, setIsArtModalOpen] = useState(false);
   const [isSymbolModalOpen, setIsSymbolModalOpen] = useState(false);
@@ -197,6 +198,16 @@ export function CharacterHeader({ character, onSync, onLevelUp }: CharacterHeade
           >
             <Dices className="w-4 h-4" />
             <span className="text-sm font-bold">Dados</span>
+          </Button>
+
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onOpenRest}
+            className="flex items-center gap-2 h-9 md:h-10 px-3 md:px-4 rounded-lg shrink-0 border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-900/10 text-purple-700 dark:text-purple-400 hover:bg-purple-100 transition-all"
+          >
+            <Moon className="w-4 h-4" />
+            <span className="text-sm font-bold">Descansar</span>
           </Button>
 
           <Button variant="outline" size="sm" className="flex items-center gap-2 h-9 md:h-10 px-3 md:px-4 rounded-lg shrink-0">

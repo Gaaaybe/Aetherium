@@ -2,7 +2,7 @@ import { ItemType, WeaponRange } from '@aetherium/rules-engine';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
 import { PowersService } from '@/modules/power-manager/powers.service';
-import { CreateItemBodySchema, UpdateItemBodySchema, ImportItemBodySchema } from './dto/item.dto';
+import { CreateItemBodySchema, ImportItemBodySchema, UpdateItemBodySchema } from './dto/item.dto';
 import {
   InvalidItemDomainError,
   NotAllowedError,
@@ -41,7 +41,6 @@ const EXPORT_INCLUDE = {
     },
   },
 } as const;
-
 
 const DOMAIN_MAP: Record<string, string> = {
   natural: 'NATURAL',
@@ -874,9 +873,7 @@ export class ItemsService {
       },
       custoBase: item.custoBase,
       powers: orderedPowers.map((p) => this.sanitizePower(p)),
-      powerArrays: item.itemPowerArrays.map((ipa: any) =>
-        this.sanitizePowerArray(ipa.powerArray),
-      ),
+      powerArrays: item.itemPowerArrays.map((ipa: any) => this.sanitizePowerArray(ipa.powerArray)),
     };
 
     if (item.tipo === 'WEAPON') {

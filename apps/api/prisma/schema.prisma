@@ -527,6 +527,10 @@ model EffectBase {
   // Contém: tipo, label, opcoes[] {id, nome, modificadorCusto, grauMinimo, descricao, custoProgressivo}
   configuracoes Json?
 
+  // Automação: EfeitoBehavior serializado, validado por Zod na leitura.
+  // null = ainda não mapeado (legado ou narrativo sem definição estruturada).
+  behavior Json?
+
   custom Boolean @default(false)
 
   appliedEffects AppliedEffect[]
@@ -556,6 +560,14 @@ model ModificationBase {
   // Contém: tipo, label, opcoes[] {id, nome, modificadorCusto, modificadorCustoFixo, descricao}
   configuracoes Json?
 
+  // Automação: como esta modificação afeta targeting e o conjurador.
+  // 'AREA' | 'SELETIVO' | 'LIMITADO' | 'NENHUM'
+  targetingEffect String @default("NENHUM")
+  // 'EFEITO_COLATERAL_SEMPRE' | 'EFEITO_COLATERAL_AO_FALHAR' | 'NENHUM'
+  casterEffect    String @default("NENHUM")
+  // markerId checado pelo targeting LIMITADO (ex: 'laco-de-odio')
+  markerCondition String?
+
   custom Boolean @default(false)
 
   appliedModifications AppliedModification[]
@@ -563,5 +575,26 @@ model ModificationBase {
   @@index([tipo])
   @@index([categoria])
   @@index([custom])
+  @@index([targetingEffect])
   @@map("modification_bases")
+}
+
+// Estado efêmero de cena — marcadores e gatilhos com ciclo de vida por cena.
+// Não polui o Character (persistente) com dados temporários de combate.
+model SceneEffectInstance {
+  id                String    @id @default(uuid())
+  sceneId           String
+  kind              String    // 'MARCADOR' | 'GATILHO'
+  sourceCharacterId String
+  targetCharacterId String?
+  sourcePowerId     String
+  // Payload validado por Zod específico do kind (ver parseBehavior)
+  payload           Json
+  expiresAt         DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@index([sceneId])
+  @@index([sceneId, targetCharacterId])
+  @@index([sceneId, kind])
+  @@map("scene_effect_instances")
 }

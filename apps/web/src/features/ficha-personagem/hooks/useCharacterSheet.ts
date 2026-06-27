@@ -420,11 +420,35 @@ export function useCharacterSheet(characterId: string) {
     });
   };
 
+  const rest = async (payload: {
+    quality: 'RUIM' | 'NORMAL' | 'CONFORTAVEL' | 'LUXUOSA';
+    durationHours: number;
+    hasCare?: boolean;
+    useGastronomicRule?: boolean;
+    consumedMeal?: boolean;
+  }) => {
+    if (!character) return null;
+    setIsSyncing(true);
+    try {
+      const updated = await charactersService.rest(characterId, payload);
+      setCharacter(updated);
+      toast.success('Descanso concluído com sucesso!');
+      return updated;
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erro ao realizar descanso');
+      console.error(err);
+      throw err;
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return {
     character,
     isLoading,
     isSyncing,
     sync,
+    rest,
     levelUp,
     acquireDomainMastery,
     discardDomainMastery,

@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, Sparkles, FileText, Zap, Library } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button, Card, CardHeader, CardTitle, CardContent, Badge, Input, Textarea, Select, toast, HelpIcon, Tooltip, ConfirmDialog, InlineHelp, EmptyState } from '../../../shared/ui';
 import { usePoderCalculator } from '../hooks/usePoderCalculator';
 import { usePoderValidation } from '../hooks/usePoderValidation';
 import { usePoderes } from '../hooks/usePoderes';
+import { usePowerCreatorStore } from '@/stores/power-creator.store';
 import { poderToCreatePayload } from '../utils/poderApiConverter';
 import { useKeyboardShortcuts } from '../../../shared/hooks';
 import { usePeculiaridades } from '../../../shared/hooks/usePeculiaridades';
@@ -61,14 +62,47 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
   const [resetando, setResetando] = useState(false);
   const [erroNome, setErroNome] = useState<string>('');
 
-  const loadedPowerId = useRef<string | null>(null);
+
 
   useEffect(() => {
-    if (poderInicial && poderInicial.id !== loadedPowerId.current) {
+    // 1. Verifica se há um poder pendente no localStorage (vindo da biblioteca)
+    const pendente = localStorage.getItem('criador-de-poder-carregar');
+    
+    if (poderInicial) {
+      // Se foi passado poderInicial (ex: modal de edição na ficha)
       carregarPoder(poderInicial);
-      loadedPowerId.current = poderInicial.id;
+    } else if (pendente) {
+      // Se há um poder vindo da biblioteca
+      try {
+        const parsed = JSON.parse(pendente) as Poder;
+        if (parsed.id && Array.isArray(parsed.efeitos)) {
+          carregarPoder(parsed);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar poder pendente:', error);
+      } finally {
+        localStorage.removeItem('criador-de-poder-carregar');
+      }
+    } else {
+      // Se não há poder inicial nem pendente (criando novo poder)
+      const currentPower = usePowerCreatorStore.getState().poder;
+      const isApiId = /^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(currentPower.id);
+      if (isApiId) {
+        resetarPoder();
+      }
     }
-  }, [poderInicial, carregarPoder]);
+
+    // Cleanup ao desmontar o componente
+    return () => {
+      // Sempre reseta o poder ao fechar/desmontar se ele for um poder salvo da API (UUID)
+      // para evitar que seu ID fique persistido no Zustand e contamine a próxima sessão
+      const currentPower = usePowerCreatorStore.getState().poder;
+      const isApiId = /^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(currentPower.id);
+      if (isApiId) {
+        resetarPoder();
+      }
+    };
+  }, [poderInicial, carregarPoder, resetarPoder]);
 
   const handleNomeChange = (novoNome: string) => {
     atualizarInfoPoder(novoNome, undefined);
@@ -287,6 +321,11 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                     })),
                     { value: '__separator-2__', label: '─────────' },
                     ...DOMINIOS.filter(d => d.categoria === 'arma').map(d => ({
+                      value: d.id,
+                      label: d.nome,
+                    })),
+                    { value: '__separator-3__', label: '─────────' },
+                    ...DOMINIOS.filter(d => d.categoria === 'físico').map(d => ({
                       value: d.id,
                       label: d.nome,
                     })),

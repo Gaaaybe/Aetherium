@@ -1,4 +1,10 @@
-import { EquipmentType, ItemType, WeaponRange, createPowerBodySchema, DomainSchema } from '@aetherium/rules-engine';
+import {
+  createPowerBodySchema,
+  DomainSchema,
+  EquipmentType,
+  ItemType,
+  WeaponRange,
+} from '@aetherium/rules-engine';
 import { z } from 'zod';
 
 const dominioSchema = z
@@ -35,18 +41,24 @@ const damageDescriptorSchema = z.object({
 });
 
 const commonFields = {
-  nome: z.string().min(2).max(100),
-  descricao: z.string().min(10).max(1000),
+  nome: z
+    .string()
+    .min(2, 'O nome do item deve ter pelo menos 2 caracteres')
+    .max(100, 'O nome do item não pode exceder 100 caracteres'),
+  descricao: z
+    .string()
+    .min(10, 'A descrição do item deve ter pelo menos 10 caracteres')
+    .max(1000, 'A descrição do item não pode exceder 1000 caracteres'),
   dominio: dominioSchema,
-  custoBase: z.number().int().min(0),
-  nivelItem: z.number().int().min(1).optional(),
+  custoBase: z.number().int().min(0, 'O custo base não pode ser menor que zero'),
+  nivelItem: z.number().int().min(1, 'O nível do item deve ser pelo menos 1').optional(),
   isPublic: z.boolean().default(false),
-  notas: z.string().max(2000).optional(),
-  powerIds: z.array(z.string().min(1)).default([]),
+  notas: z.string().max(2000, 'As notas não podem exceder 2000 caracteres').optional(),
+  powerIds: z.array(z.string().min(1, 'ID do poder inválido')).default([]),
   icone: z.union([z.url('Ícone deve ser um link válido'), z.null()]).optional(),
-  powerArrayIds: z.array(z.string().min(1)).default([]),
+  powerArrayIds: z.array(z.string().min(1, 'ID do acervo inválido')).default([]),
   canStack: z.boolean().optional(),
-  maxStack: z.number().int().min(2).optional(),
+  maxStack: z.number().int().min(2, 'O empilhamento máximo deve ser de pelo menos 2').optional(),
 };
 
 export const createItemBodySchema = z.discriminatedUnion('tipo', [
@@ -115,18 +127,26 @@ export const createItemBodySchema = z.discriminatedUnion('tipo', [
 export type CreateItemBodySchema = z.infer<typeof createItemBodySchema>;
 
 const commonOptional = {
-  nome: z.string().min(2).max(100).optional(),
-  descricao: z.string().min(10).max(1000).optional(),
+  nome: z
+    .string()
+    .min(2, 'O nome do item deve ter pelo menos 2 caracteres')
+    .max(100, 'O nome do item não pode exceder 100 caracteres')
+    .optional(),
+  descricao: z
+    .string()
+    .min(10, 'A descrição do item deve ter pelo menos 10 caracteres')
+    .max(1000, 'A descrição do item não pode exceder 1000 caracteres')
+    .optional(),
   dominio: dominioSchema.optional(),
-  custoBase: z.number().int().min(0).optional(),
-  nivelItem: z.number().int().min(1).optional(),
+  custoBase: z.number().int().min(0, 'O custo base não pode ser menor que zero').optional(),
+  nivelItem: z.number().int().min(1, 'O nível do item deve ser pelo menos 1').optional(),
   isPublic: z.boolean().optional(),
-  notas: z.string().max(2000).optional(),
-  powerIds: z.array(z.string().min(1)).optional(),
+  notas: z.string().max(2000, 'As notas não podem exceder 2000 caracteres').optional(),
+  powerIds: z.array(z.string().min(1, 'ID do poder inválido')).optional(),
   icone: z.union([z.url('Ícone deve ser um link válido'), z.null()]).optional(),
-  powerArrayIds: z.array(z.string().min(1)).optional(),
+  powerArrayIds: z.array(z.string().min(1, 'ID do acervo inválido')).optional(),
   canStack: z.boolean().optional(),
-  maxStack: z.number().int().min(2).optional(),
+  maxStack: z.number().int().min(2, 'O empilhamento máximo deve ser de pelo menos 2').optional(),
 };
 
 export const updateItemBodySchema = z.discriminatedUnion('tipo', [
@@ -246,10 +266,16 @@ export function formatItemToHTTP(raw: any) {
       base: d.base,
       espiritual: d.espiritual,
     }));
+    const baseDanos = raw.itemDamages.map((d: any) => ({
+      dado: d.dado,
+      base: d.base,
+      espiritual: d.espiritual,
+    }));
 
     return {
       ...base,
       danos: danosAtuais,
+      baseDanos,
       upgradeLevel,
       upgradeLevelMax: raw.upgradeLevelMax ?? 7,
       critMargin: raw.critMargin,
@@ -304,8 +330,14 @@ export function formatItemToHTTP(raw: any) {
 }
 
 export const importPowerArraySchema = z.object({
-  nome: z.string().min(2).max(100),
-  descricao: z.string().min(10).max(1000),
+  nome: z
+    .string()
+    .min(2, 'O nome do acervo deve ter pelo menos 2 caracteres')
+    .max(100, 'O nome do acervo não pode exceder 100 caracteres'),
+  descricao: z
+    .string()
+    .min(10, 'A descrição do acervo deve ter pelo menos 10 caracteres')
+    .max(1000, 'A descrição do acervo não pode exceder 1000 caracteres'),
   dominio: DomainSchema,
   parametrosBase: z
     .object({
@@ -314,24 +346,30 @@ export const importPowerArraySchema = z.object({
       duracao: z.number().int().min(0).max(4),
     })
     .optional(),
-  powers: z.array(createPowerBodySchema).min(1),
+  powers: z.array(createPowerBodySchema).min(1, 'O acervo deve ter pelo menos 1 poder'),
   isPublic: z.boolean().default(false),
-  notas: z.string().max(2000).optional(),
+  notas: z.string().max(2000, 'As notas não podem exceder 2000 caracteres').optional(),
   icone: z.string().url('Ícone deve ser um link válido').optional(),
 });
 
 const importCommonFields = {
-  nome: z.string().min(2).max(100),
-  descricao: z.string().min(10).max(1000),
+  nome: z
+    .string()
+    .min(2, 'O nome do item deve ter pelo menos 2 caracteres')
+    .max(100, 'O nome do item não pode exceder 100 caracteres'),
+  descricao: z
+    .string()
+    .min(10, 'A descrição do item deve ter pelo menos 10 caracteres')
+    .max(1000, 'A descrição do item não pode exceder 1000 caracteres'),
   dominio: dominioSchema,
-  custoBase: z.number().int().min(0),
+  custoBase: z.number().int().min(0, 'O custo base não pode ser menor que zero'),
   isPublic: z.boolean().default(false),
-  notas: z.string().max(2000).optional(),
+  notas: z.string().max(2000, 'As notas não podem exceder 2000 caracteres').optional(),
   icone: z.union([z.url('Ícone deve ser um link válido'), z.null()]).optional(),
   powers: z.array(createPowerBodySchema).default([]),
   powerArrays: z.array(importPowerArraySchema).default([]),
   canStack: z.boolean().optional(),
-  maxStack: z.number().int().min(2).optional(),
+  maxStack: z.number().int().min(2, 'O empilhamento máximo deve ser de pelo menos 2').optional(),
 };
 
 export const importItemBodySchema = z.discriminatedUnion('tipo', [
@@ -398,4 +436,3 @@ export const importItemBodySchema = z.discriminatedUnion('tipo', [
 ]);
 
 export type ImportItemBodySchema = z.infer<typeof importItemBodySchema>;
-

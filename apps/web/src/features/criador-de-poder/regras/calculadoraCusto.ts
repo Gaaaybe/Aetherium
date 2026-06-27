@@ -1,4 +1,4 @@
-import { Efeito, Modificacao, TABELA_UNIVERSAL } from '../../../data';
+import { Efeito, Modificacao } from '../../../data';
 import { calcularModificadorParametro } from './escalas';
 import {
   calculatePowerCost,

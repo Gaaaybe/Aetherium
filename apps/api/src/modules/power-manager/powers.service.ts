@@ -167,7 +167,7 @@ export class PowersService {
       throw new ResourceNotFoundError('Peculiaridade não encontrada');
     }
 
-    if (!canBeAccessedBy(original)) {
+    if (!canBeAccessedBy(original, userId)) {
       throw new NotAllowedError('Acesso negado à peculiaridade');
     }
 
@@ -923,7 +923,7 @@ export class PowersService {
       throw new ResourceNotFoundError('Poder não encontrado');
     }
 
-    if (!canBeAccessedBy(original)) {
+    if (!canBeAccessedBy(original, userId)) {
       throw new NotAllowedError('Acesso negado ao poder');
     }
 
@@ -1148,7 +1148,9 @@ export class PowersService {
     // Check if linked to any item and we are changing domain
     if (dominio && domainNameUpper) {
       if (existing.domainName !== (domainNameUpper as any)) {
-        const isLinkedToAnyItem = await this.prisma.itemPowerArray.count({ where: { powerArrayId } });
+        const isLinkedToAnyItem = await this.prisma.itemPowerArray.count({
+          where: { powerArrayId },
+        });
         if (isLinkedToAnyItem > 0) {
           throw new DependencyConflictError(
             'Não é possível alterar o domínio do acervo porque ele está vinculado a pelo menos um item',
@@ -1347,7 +1349,7 @@ export class PowersService {
       throw new ResourceNotFoundError('Acervo não encontrado');
     }
 
-    if (!canBeAccessedBy(original)) {
+    if (!canBeAccessedBy(original, userId)) {
       throw new NotAllowedError('Acesso negado ao acervo');
     }
 

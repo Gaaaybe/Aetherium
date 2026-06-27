@@ -8,7 +8,7 @@ import {
   exportItem,
   importItem,
 } from '@/services/items.service';
-import type { CreateItemPayload, ItemResponse, UpdateItemPayload, ItemType } from '@/services/types';
+import type { UpdateItemPayload, ItemType } from '@/services/types';
 
 interface LoadItemsParams {
   page?: number;
@@ -62,7 +62,7 @@ export function useItems(params: LoadItemsParams = {}) {
     items,
     loading: isLoading,
     error: error instanceof Error ? error.message : error ? String(error) : null,
-    carregar: async (newParams: LoadItemsParams = {}) => {
+    carregar: async (_newParams: LoadItemsParams = {}) => {
       await queryClient.invalidateQueries({ queryKey: ['items'] });
     },
     criar: createMutation.mutateAsync,

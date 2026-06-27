@@ -14,9 +14,15 @@ export function useItemBuilder() {
     if (state.nome.trim().length < 2) {
       errors.push('Nome deve ter pelo menos 2 caracteres.');
     }
+    if (state.nome.trim().length > 100) {
+      errors.push('Nome não pode exceder 100 caracteres.');
+    }
 
     if (state.descricao.trim().length < 10) {
       errors.push('Descrição deve ter pelo menos 10 caracteres.');
+    }
+    if (state.descricao.trim().length > 1000) {
+      errors.push('Descrição não pode exceder 1000 caracteres.');
     }
 
     if (state.dominio.name === 'cientifico' && !state.dominio.areaConhecimento) {

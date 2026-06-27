@@ -148,6 +148,7 @@ export function BibliotecaPage() {
       'arma-tensao': 'Armas de Tensão',
       'arma-explosiva': 'Armas Explosivas',
       'arma-tecnologica': 'Armas Tecnológicas',
+      desarmado: 'Domínio Desarmado',
     };
 
     poderesFiltrados.forEach(p => {
@@ -640,7 +641,7 @@ export function BibliotecaPage() {
                       psiquico: 'Psíquico', cientifico: 'Científico', peculiar: 'Peculiar',
                       'arma-branca': 'Arma Branca', 'arma-fogo': 'Arma de Fogo',
                       'arma-tensao': 'Arma de Tensão', 'arma-explosiva': 'Arma Explosiva',
-                      'arma-tecnologica': 'Arma Tecnológica'
+                      'arma-tecnologica': 'Arma Tecnológica', desarmado: 'Domínio Desarmado'
                     };
                     return { value: id, label: nomes[id] || id };
                   })
@@ -791,7 +792,7 @@ export function BibliotecaPage() {
                             psiquico: 'Psíquico', cientifico: 'Científico', peculiar: 'Peculiar',
                             'arma-branca': 'Arma Branca', 'arma-fogo': 'Arma de Fogo',
                             'arma-tensao': 'Arma de Tensão', 'arma-explosiva': 'Arma Explosiva',
-                            'arma-tecnologica': 'Arma Tecnológica'
+                            'arma-tecnologica': 'Arma Tecnológica', desarmado: 'Domínio Desarmado'
                           };
                           return { value: id, label: nomes[id] || id };
                         })

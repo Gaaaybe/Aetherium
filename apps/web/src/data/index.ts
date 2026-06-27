@@ -95,7 +95,7 @@ export interface Dominio {
   nome: string;
   descricao: string;
   espiritual: boolean | null; // null para Peculiar (customizável)
-  categoria: 'espiritual' | 'especial' | 'arma';
+  categoria: 'espiritual' | 'especial' | 'arma' | 'físico';
   requerAreaConhecimento?: boolean; // Para Científico
   areasConhecimento?: string[]; // Áreas do Científico
   customizavel?: boolean; // Para Peculiar

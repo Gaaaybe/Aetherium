@@ -6,7 +6,7 @@ import {
   deletePower,
   copyPublicPower,
 } from '@/services/powers.service';
-import type { CreatePoderPayload, PoderResponse, UpdatePoderPayload } from '@/services/types';
+import type { PoderResponse, UpdatePoderPayload } from '@/services/types';
 
 export function usePoderes() {
   const queryClient = useQueryClient();

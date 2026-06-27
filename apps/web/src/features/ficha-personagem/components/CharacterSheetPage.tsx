@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, User, Trash2, Edit3, ShieldAlert, Sparkles } from 'lucide-react';
+import { Plus, User, Trash2, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, EmptyState, Badge, ConfirmDialog } from '@/shared/ui';
 import { useCharacters } from '../hooks/useCharacters';
@@ -145,19 +145,18 @@ export function CharacterSheetPage() {
 
       <ConfirmDialog
         isOpen={!!characterToDelete}
+        onClose={() => setCharacterToDelete(null)}
         title="Excluir Personagem"
         message="Tem certeza que deseja excluir esta ficha permanentemente? Esta ação não pode ser desfeita e todos os itens clonados e histórico de campanha serão perdidos."
         confirmText="Excluir Personagem"
         cancelText="Cancelar"
-        icon={<ShieldAlert className="w-6 h-6 text-red-600" />}
-        confirmStyle="destructive"
+        variant="danger"
         onConfirm={async () => {
           if (characterToDelete) {
             await deleteCharacter(characterToDelete);
             setCharacterToDelete(null);
           }
         }}
-        onCancel={() => setCharacterToDelete(null)}
       />
 
       <Charactermancer
