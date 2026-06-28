@@ -31,6 +31,7 @@ const POWER_INCLUDE = {
       name: true,
     },
   },
+  peculiarity: true,
 };
 
 const POWER_ARRAY_INCLUDE = {
@@ -52,6 +53,7 @@ const POWER_ARRAY_INCLUDE = {
               name: true,
             },
           },
+          peculiarity: true,
         },
       },
     },

@@ -103,6 +103,7 @@ export function formatPowerToHTTP(raw: any) {
       name: raw.domainName.toLowerCase().replace(/_/g, '-'),
       areaConhecimento: raw.domainAreaConhecimento ?? null,
       peculiarId: raw.domainPeculiarId ?? null,
+      espiritual: raw.peculiarity?.espiritual ?? null,
     },
     parametros: {
       acao: raw.parametrosAcao,
