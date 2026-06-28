@@ -9,9 +9,6 @@ import { getPowerById } from '@/services/powers.service';
 import { getPowerArrayById } from '@/services/powerArrays.service';
 import type { ItemResponse, WeaponItemResponse, PoderResponse, AcervoResponse } from '@/services/types';
 import { UnarmedMasteryModal } from './UnarmedMasteryModal';
-import { useCatalog } from '@/context/useCatalog';
-import { calcularDetalhesPoder, type Poder as PoderCalculo } from '@/features/criador-de-poder/regras/calculadoraCusto';
-import { poderResponseToPoder } from '@/features/criador-de-poder/utils/poderApiConverter';
 import { usePowerUsage } from '@/features/ficha-personagem/hooks/usePowerUsage';
 import { PowerUsageModal } from './PowerUsageModal';
 import { ActivePowersTracker } from './ActivePowersTracker';
@@ -28,7 +25,6 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
   const [detailedPowers, setDetailedPowers] = useState<Record<string, PoderResponse>>({});
   const [detailedArrays, setDetailedArrays] = useState<Record<string, AcervoResponse>>({});
   
-  const { efeitos: catalogEfeitos, modificacoes: catalogModificacoes } = useCatalog();
   const [usingPower, setUsingPower] = useState<PoderResponse | null>(null);
   const [resolution, setResolution] = useState<ResolvePowerResponse | null>(null);
 
@@ -446,11 +442,7 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                               setUsingPower(powerDetail);
                               setResolution(null);
                               
-                              const peCost = calcularDetalhesPoder(
-                                poderResponseToPoder(powerDetail) as PoderCalculo,
-                                catalogEfeitos,
-                                catalogModificacoes,
-                              ).peTotal;
+                              const peCost = powerDetail.custoTotal?.pe ?? 0;
 
                               const res = await previewPower({
                                 powerId: powerDetail.id,
@@ -636,11 +628,7 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
           isConfirming={isConfirming}
           onConfirm={async () => {
             const detail = usingPower;
-            const peCost = calcularDetalhesPoder(
-              poderResponseToPoder(detail) as PoderCalculo,
-              catalogEfeitos,
-              catalogModificacoes,
-            ).peTotal;
+            const peCost = detail.custoTotal?.pe ?? 0;
             await confirmUsePower({
               powerId: detail.id,
               nome: detail.nome,

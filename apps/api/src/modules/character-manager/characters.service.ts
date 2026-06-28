@@ -516,12 +516,12 @@ export class CharactersService {
     const maxPV = calculateMaxPV(character.level, constitutionModifier);
     character.healthState.currentPV = Math.min(character.healthState.currentPV, maxPV);
 
-    const keyPhysicalModifier = getAttributeModifier(
-      character.attributes[character.attributes.keyPhysical].baseValue,
-    );
-    const keyMentalModifier = getAttributeModifier(
-      character.attributes[character.attributes.keyMental].baseValue,
-    );
+    const keyPhysicalName = character.attributes.keyPhysical || 'strength';
+    const keyMentalName = character.attributes.keyMental || 'intelligence';
+    const keyPhysicalAttr = character.attributes[keyPhysicalName] || character.attributes.strength;
+    const keyMentalAttr = character.attributes[keyMentalName] || character.attributes.intelligence;
+    const keyPhysicalModifier = getAttributeRollModifier(keyPhysicalAttr);
+    const keyMentalModifier = getAttributeRollModifier(keyMentalAttr);
     const maxPE = calculateMaxPE(keyPhysicalModifier, keyMentalModifier);
     character.energyState.currentPE = Math.min(character.energyState.currentPE, maxPE);
 
@@ -743,12 +743,16 @@ export class CharactersService {
     let pvChange = 0;
     let peChange = 0;
 
-    const strengthMod = getAttributeRollModifier(character.attributes.strength);
-    const intelligenceMod = getAttributeRollModifier(character.attributes.intelligence);
+    const keyPhysicalName = character.attributes.keyPhysical || 'strength';
+    const keyMentalName = character.attributes.keyMental || 'intelligence';
+    const keyPhysicalAttr = character.attributes[keyPhysicalName] || character.attributes.strength;
+    const keyMentalAttr = character.attributes[keyMentalName] || character.attributes.intelligence;
+    const keyPhysicalMod = getAttributeRollModifier(keyPhysicalAttr);
+    const keyMentalMod = getAttributeRollModifier(keyMentalAttr);
     const constMod = getAttributeModifier(character.attributes.constitution.baseValue);
 
     const maxPV = calculateMaxPV(character.level, constMod);
-    const maxPE = calculateMaxPE(strengthMod, intelligenceMod);
+    const maxPE = calculateMaxPE(keyPhysicalMod, keyMentalMod);
 
     const roll = (sides: number) => Math.floor(Math.random() * sides) + 1;
     const rolls = {
