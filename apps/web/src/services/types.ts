@@ -18,6 +18,7 @@ export interface DominioResponse {
   name: DomainName;
   areaConhecimento: string | null;
   peculiarId: string | null;
+  espiritual?: boolean | null;
 }
 
 // ─── Custo ────────────────────────────────────────────────────────────────────

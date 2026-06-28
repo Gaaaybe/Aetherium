@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal, ModalFooter, Button, Badge } from '@/shared/ui';
 import { Zap, Clock, Ruler, Timer, Play, Dices, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { ESCALAS, buscarGrauNaTabela, buscarDominio } from '@/data';
@@ -21,6 +21,32 @@ const DURACAO_LABELS: Record<number, string> = {
   3: 'Ativado (Cena)',
   4: 'Permanente',
 };
+
+function obterModulacoesDeDados(formulaOriginal: string): Array<{ label: string; formula: string; dados: number; faces: number }> {
+  if (!formulaOriginal) return [];
+  const match = formulaOriginal.match(/^(\d+)d(\d+)$/i);
+  if (!match) return [];
+  const numDadosOriginal = parseInt(match[1], 10);
+  const facesOriginal = parseInt(match[2], 10);
+  const totalFaces = numDadosOriginal * facesOriginal;
+  
+  const opcoes: Array<{ label: string; formula: string; dados: number; faces: number }> = [];
+  
+  for (let Y = 1; Y <= 10; Y++) {
+    if (totalFaces % Y === 0) {
+      const Z = totalFaces / Y;
+      if (Z >= 2) {
+        opcoes.push({
+          label: `${Y}d${Z}`,
+          formula: `${Y}d${Z}`,
+          dados: Y,
+          faces: Z
+        });
+      }
+    }
+  }
+  return opcoes;
+}
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -53,6 +79,7 @@ export function PowerUsageModal({
   const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
   const [diceRollerConfig, setDiceRollerConfig] = useState<any>({});
   const [showMutations, setShowMutations] = useState(true);
+  const [danoModularizado, setDanoModularizado] = useState('');
 
   const peCost = power.custoTotal?.pe ?? 0;
   const duracao = power.parametros.duracao;
@@ -60,7 +87,9 @@ export function PowerUsageModal({
 
   // Dados do caster para o assistente de rolagem
   const dominioInfo = buscarDominio(power.dominio.name);
-  const isMental = dominioInfo ? dominioInfo.espiritual : false;
+  const isMental = typeof power.dominio.espiritual === 'boolean'
+    ? power.dominio.espiritual
+    : (dominioInfo ? dominioInfo.espiritual : false);
   const keyFisico = character?.attributes?.keyPhysical || 'strength';
   const modFisico = character?.attributes?.[keyFisico]?.rollModifier || 0;
   const keyMental = character?.attributes?.keyMental || 'intelligence';
@@ -75,6 +104,12 @@ export function PowerUsageModal({
   );
   const danoInfo = efeitoComDados ? buscarGrauNaTabela(efeitoComDados.grau) : null;
   const baseDanoFormula = danoInfo ? danoInfo.dano : '';
+
+  const modulacoes = obterModulacoesDeDados(baseDanoFormula);
+
+  useEffect(() => {
+    setDanoModularizado(baseDanoFormula);
+  }, [baseDanoFormula]);
 
   // Descrições das mutações vindas do motor
   const mutationDescriptions =
@@ -179,22 +214,39 @@ export function PowerUsageModal({
             </Button>
 
             {baseDanoFormula && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-[10px] gap-1 px-2 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-500"
-                onClick={() => {
-                  setDiceRollerConfig({
-                    label: 'Dado Universal (Base)',
-                    modifier: effTeste,
-                    damageFormula: baseDanoFormula,
-                  });
-                  setIsDiceRollerOpen(true);
-                }}
-              >
-                <Dices className="w-3 h-3 text-amber-500" />
-                Dado: {baseDanoFormula}
-              </Button>
+              <div className="flex items-center gap-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={`h-7 text-[10px] gap-1 px-2 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 active:scale-95 transition-all ${
+                    modulacoes.length > 1 ? 'rounded-r-none border-r-0' : ''
+                  }`}
+                  onClick={() => {
+                    setDiceRollerConfig({
+                      label: 'Dado Universal (Base)',
+                      modifier: effTeste,
+                      damageFormula: danoModularizado || baseDanoFormula,
+                    });
+                    setIsDiceRollerOpen(true);
+                  }}
+                >
+                  <Dices className="w-3 h-3 text-amber-500" />
+                  Dado: {danoModularizado || baseDanoFormula}
+                </Button>
+                {modulacoes.length > 1 && (
+                  <select
+                    className="h-7 text-[10px] bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-500 rounded-l-none px-1 py-0 focus:outline-none cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-all font-bold"
+                    value={danoModularizado}
+                    onChange={(e) => setDanoModularizado(e.target.value)}
+                  >
+                    {modulacoes.map((opt) => (
+                      <option key={opt.formula} value={opt.formula}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
             )}
           </div>
           <p className="text-[10px] font-bold text-gray-400">
