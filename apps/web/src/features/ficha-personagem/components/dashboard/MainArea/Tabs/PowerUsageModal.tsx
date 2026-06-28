@@ -67,7 +67,7 @@ export function PowerUsageModal({
   const modMental = character?.attributes?.[keyMental]?.rollModifier || 0;
   const effTeste = isMental ? modMental : modFisico;
   const eficiencia = character?.efficiencyBonus || 0;
-  const cdInfo = 10 + effTeste + Math.floor((character?.level || 1) / 2);
+  const cdInfo = 10 + effTeste;
 
   // Fórmula de dano para rolagem rápida
   const efeitoComDados = power.effects.find(
