@@ -347,9 +347,13 @@ export function applyRecoverEnergy(character: any, amount: number): void {
   if (hasConditionEffectOf(character.conditions, 'Faminto')) {
     return;
   }
-  const strengthMod = getAttributeRollModifier(character.attributes.strength);
-  const intelligenceMod = getAttributeRollModifier(character.attributes.intelligence);
-  const maxPE = calculateMaxPE(strengthMod, intelligenceMod);
+  const keyPhysicalName = character.attributes.keyPhysical || 'strength';
+  const keyMentalName = character.attributes.keyMental || 'intelligence';
+  const keyPhysicalAttr = character.attributes[keyPhysicalName] || character.attributes.strength;
+  const keyMentalAttr = character.attributes[keyMentalName] || character.attributes.intelligence;
+  const keyPhysicalMod = getAttributeRollModifier(keyPhysicalAttr);
+  const keyMentalMod = getAttributeRollModifier(keyMentalAttr);
+  const maxPE = calculateMaxPE(keyPhysicalMod, keyMentalMod);
   character.energyState.currentPE = Math.min(maxPE, character.energyState.currentPE + amount);
 }
 
@@ -521,7 +525,7 @@ export function applyEquipPower(character: any, powerId: string): void {
   if (power.isEquipped) {
     return;
   }
-  const intelligenceMod = getAttributeModifier(character.attributes.intelligence.baseValue);
+  const intelligenceMod = getAttributeRollModifier(character.attributes.intelligence);
   const maxSlots = calculateMaxSlots(intelligenceMod);
   const usedSlots = calculateUsedSlots(character.powers, character.powerArrays);
   const availableSlots = maxSlots - usedSlots;
@@ -558,7 +562,7 @@ export function applyEquipPowerArray(character: any, arrayId: string): void {
   if (array.isEquipped) {
     return;
   }
-  const intelligenceMod = getAttributeModifier(character.attributes.intelligence.baseValue);
+  const intelligenceMod = getAttributeRollModifier(character.attributes.intelligence);
   const maxSlots = calculateMaxSlots(intelligenceMod);
   const usedSlots = calculateUsedSlots(character.powers, character.powerArrays);
   const availableSlots = maxSlots - usedSlots;

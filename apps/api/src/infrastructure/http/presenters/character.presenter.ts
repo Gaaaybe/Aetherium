@@ -61,13 +61,17 @@ export class CharacterPresenter {
 
     const stats = getCombatStats(character, suitRD, suitBlockRD, handsBlockRD);
 
-    const intMod = getAttributeModifier(character.attributes.intelligence.baseValue);
+    const intMod = getAttributeRollModifier(character.attributes.intelligence);
     const maxSlots = calculateMaxSlots(intMod);
     const usedSlots = calculateUsedSlots(character.powers ?? [], character.powerArrays ?? []);
     const availableSlots = maxSlots - usedSlots;
 
-    const strengthMod = getAttributeRollModifier(character.attributes.strength);
-    const intelligenceMod = getAttributeRollModifier(character.attributes.intelligence);
+    const keyPhysicalName = character.attributes.keyPhysical || 'strength';
+    const keyMentalName = character.attributes.keyMental || 'intelligence';
+    const keyPhysicalAttr = character.attributes[keyPhysicalName] || character.attributes.strength;
+    const keyMentalAttr = character.attributes[keyMentalName] || character.attributes.intelligence;
+    const keyPhysicalMod = getAttributeRollModifier(keyPhysicalAttr);
+    const keyMentalMod = getAttributeRollModifier(keyMentalAttr);
     const constMod = getAttributeModifier(character.attributes.constitution.baseValue);
 
     const totalPda = calculateTotalPda(character.level, character.pdaState.extraPda ?? 0);
@@ -160,7 +164,7 @@ export class CharacterPresenter {
         temporaryPV: character.healthState.temporaryPV ?? 0,
       },
       energy: {
-        maxPE: calculateMaxPE(strengthMod, intelligenceMod),
+        maxPE: calculateMaxPE(keyPhysicalMod, keyMentalMod),
         currentPE: character.energyState.currentPE,
         temporaryPE: character.energyState.temporaryPE ?? 0,
       },

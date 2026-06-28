@@ -5,9 +5,6 @@ import { ESCALAS, buscarGrauNaTabela, buscarDominio } from '@/data';
 import type { PoderResponse } from '@/services/types';
 import type { ResolvePowerResponse } from '@/services/powers.service';
 import { describeMutations } from '@/features/ficha-personagem/hooks/usePowerUsage';
-import { useCatalog } from '@/context/useCatalog';
-import { calcularDetalhesPoder, type Poder as PoderCalculo } from '@/features/criador-de-poder/regras/calculadoraCusto';
-import { poderResponseToPoder } from '@/features/criador-de-poder/utils/poderApiConverter';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -53,14 +50,11 @@ export function PowerUsageModal({
   isConfirming,
   onConfirm,
 }: PowerUsageModalProps) {
-  const { efeitos: catalogEfeitos, modificacoes: catalogModificacoes } = useCatalog();
   const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
   const [diceRollerConfig, setDiceRollerConfig] = useState<any>({});
   const [showMutations, setShowMutations] = useState(true);
 
-  const poderCalculo = poderResponseToPoder(power) as PoderCalculo;
-  const detalhes = calcularDetalhesPoder(poderCalculo, catalogEfeitos, catalogModificacoes);
-  const peCost = detalhes.peTotal;
+  const peCost = power.custoTotal?.pe ?? 0;
   const duracao = power.parametros.duracao;
   const hasEnoughPE = currentPE >= peCost;
 
