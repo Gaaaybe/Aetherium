@@ -17,6 +17,33 @@ interface CardEfeitoProps {
   onRemoverModificacao: (efeitoId: string, modId: string) => void;
   onAtualizarInputCustomizado?: (id: string, valor: string) => void;
   onAtualizarConfiguracao?: (id: string, configuracaoId: string) => void;
+  onAtualizarDadoModularizado?: (id: string, dado: string) => void;
+}
+
+function obterModulacoesDeDados(formulaOriginal: string): Array<{ label: string; formula: string; dados: number; faces: number }> {
+  if (!formulaOriginal) return [];
+  const match = formulaOriginal.match(/^(\d+)d(\d+)$/i);
+  if (!match) return [];
+  const numDadosOriginal = parseInt(match[1], 10);
+  const facesOriginal = parseInt(match[2], 10);
+  const totalFaces = numDadosOriginal * facesOriginal;
+  
+  const opcoes: Array<{ label: string; formula: string; dados: number; faces: number }> = [];
+  
+  for (let Y = 1; Y <= 10; Y++) {
+    if (totalFaces % Y === 0) {
+      const Z = totalFaces / Y;
+      if (Z >= 2) {
+        opcoes.push({
+          label: `${Y}d${Z}`,
+          formula: `${Y}d${Z}`,
+          dados: Y,
+          faces: Z
+        });
+      }
+    }
+  }
+  return opcoes;
 }
 
 export function CardEfeito({
@@ -27,6 +54,7 @@ export function CardEfeito({
   onRemoverModificacao,
   onAtualizarInputCustomizado,
   onAtualizarConfiguracao,
+  onAtualizarDadoModularizado,
 }: CardEfeitoProps) {
   const { modificacoes: todasModificacoes } = useCatalog();
   
@@ -94,6 +122,11 @@ export function CardEfeito({
   const dadosGrau = useMemo(() => {
     return TABELA_UNIVERSAL.find(t => t.grau === efeito.grau);
   }, [efeito.grau]);
+
+  const formulaBase = dadosGrau?.dano || '1d6';
+  const opcoesDados = useMemo(() => {
+    return obterModulacoesDeDados(formulaBase);
+  }, [formulaBase]);
 
   return (
     <>
@@ -310,6 +343,30 @@ export function CardEfeito({
               )}
               <p className="text-xs text-purple-700 dark:text-purple-300 mt-1 flex items-center gap-1">
                 <Settings className="w-3 h-3" /> Configuração que altera o custo base
+              </p>
+            </div>
+          )}
+
+          {/* Modularização de Dados (apenas para efeito Dano) */}
+          {efeitoBase.id === 'dano' && opcoesDados.length > 0 && onAtualizarDadoModularizado && (
+            <div className="p-3 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 border border-purple-200 dark:border-purple-800 rounded-lg shadow-sm">
+              <Select
+                label="Modularização dos Dados de Dano"
+                value={efeito.dadoModularizado || formulaBase}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                  const valor = e.target.value;
+                  onAtualizarDadoModularizado(efeito.id, valor === formulaBase ? '' : valor);
+                }}
+                options={[
+                  { value: formulaBase, label: `${formulaBase} (Padrão)` },
+                  ...opcoesDados.filter(opt => opt.formula !== formulaBase).map(opt => ({
+                    value: opt.formula,
+                    label: `${opt.formula} (Modularizado)`
+                  }))
+                ]}
+              />
+              <p className="text-xs text-purple-700 dark:text-purple-300 mt-1.5 flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-purple-500 animate-pulse" /> Modula a distribuição de dados sem alterar a soma total máxima de faces ({formulaBase.match(/^(\d+)d(\d+)$/i) ? parseInt(formulaBase.match(/^(\d+)d(\d+)$/i)![1], 10) * parseInt(formulaBase.match(/^(\d+)d(\d+)$/i)![2], 10) : 0}).
               </p>
             </div>
           )}

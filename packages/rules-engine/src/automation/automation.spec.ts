@@ -126,6 +126,14 @@ describe('resolvePowerUse — DANO', () => {
     // Valor real da tabela universal para grau 5
     expect(mut).toMatchObject({ formula: '1d128' });
   });
+
+  it('prioriza dadoModularizado sobre a formula do behavior e tabela universal', () => {
+    const power = makePower({
+      effects: [makeEffect({ grau: 5, dadoModularizado: '8d16', behavior: { kind: 'DANO', tipoDano: 'fogo' } })],
+    });
+    const [mut] = resolvePowerUse({ power, context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] } });
+    expect(mut).toMatchObject({ formula: '8d16' });
+  });
 });
 
 describe('resolvePowerUse — RECUPERACAO', () => {

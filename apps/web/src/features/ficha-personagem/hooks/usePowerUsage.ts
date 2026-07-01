@@ -118,13 +118,16 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
    * o endpoint /apply-mutations estiver disponível. Por ora, sincroniza só o PE.
    */
   const confirmUsePower = useCallback(
-    async (power: {
-      powerId: string;
-      nome: string;
-      icone?: string | null;
-      duracao: number;
-      peCost: number;
-    }) => {
+    async (
+      power: {
+        powerId: string;
+        nome: string;
+        icone?: string | null;
+        duracao: number;
+        peCost: number;
+      },
+      options?: { skipActivation?: boolean }
+    ) => {
       setIsConfirming(true);
       try {
         // Debita o custo de PE via onSync
@@ -135,9 +138,9 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
         }
 
         // Registra poder ativo se tiver duração (Concentração, Sustentado, Ativado)
-        if (power.duracao >= 1 && power.duracao <= 3) {
+        if (!options?.skipActivation && power.duracao >= 1 && power.duracao <= 3) {
           const entry: ActivePower = {
-            id: `${power.powerId}-${Date.now()}`,
+            id: `${power.powerId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             powerId: power.powerId,
             nome: power.nome,
             icone: power.icone,
@@ -146,13 +149,13 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
             peCostPerRound: power.duracao <= 2 ? Math.floor(power.peCost / 2) : 0,
             activatedAt: Date.now(),
           };
-          updateActive(prev => [entry, ...prev.filter(p => p.powerId !== power.powerId)]);
+          updateActive(prev => [entry, ...prev]);
         }
 
         if (power.peCost > 0) {
           toast.success(`${power.nome} usado! −${power.peCost} PE`);
         } else {
-          toast.success(`${power.nome} ativado!`);
+          toast.success(options?.skipActivation ? `${power.nome} usado!` : `${power.nome} ativado!`);
         }
       } catch (err: any) {
         const msg = err?.response?.data?.message ?? 'Erro ao usar poder';

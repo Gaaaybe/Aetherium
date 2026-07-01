@@ -30,6 +30,8 @@ export interface EfeitoAplicado {
   inputCustomizado?: string;
   // Configuração selecionada (para efeitos com patamares/variantes)
   configuracaoSelecionada?: string; // ID da ConfiguracaoEfeito escolhida
+  // Dado modularizado escolhido na criação/edição do poder
+  dadoModularizado?: string;
 }
 
 /**

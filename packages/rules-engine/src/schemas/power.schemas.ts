@@ -14,6 +14,7 @@ export const appliedEffectSchema = z.object({
   grau: z.number().int().min(-5).max(20),
   configuracaoId: z.string().min(1).optional(),
   inputValue: z.union([z.string(), z.number()]).optional(),
+  dadoModularizado: z.string().optional(),
   modifications: z.array(appliedModificationSchema).default([]),
   nota: z.string().max(500).optional(),
 });

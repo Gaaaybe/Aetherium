@@ -130,6 +130,7 @@ export interface ResolvedEffect {
   id: string;
   effectBaseId: string;
   grau: number;
+  dadoModularizado?: string;
   behavior: EfeitoBehavior | null;
   modifications: ResolvedModification[];
 }

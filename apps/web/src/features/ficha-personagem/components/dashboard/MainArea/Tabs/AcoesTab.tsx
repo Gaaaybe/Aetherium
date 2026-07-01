@@ -9,7 +9,7 @@ import { getPowerById } from '@/services/powers.service';
 import { getPowerArrayById } from '@/services/powerArrays.service';
 import type { ItemResponse, WeaponItemResponse, PoderResponse, AcervoResponse } from '@/services/types';
 import { UnarmedMasteryModal } from './UnarmedMasteryModal';
-import { usePowerUsage } from '@/features/ficha-personagem/hooks/usePowerUsage';
+import { usePowerUsage, type ActivePower } from '@/features/ficha-personagem/hooks/usePowerUsage';
 import { PowerUsageModal } from './PowerUsageModal';
 import { ActivePowersTracker } from './ActivePowersTracker';
 import type { ResolvePowerResponse } from '@/services/powers.service';
@@ -26,7 +26,32 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
   const [detailedArrays, setDetailedArrays] = useState<Record<string, AcervoResponse>>({});
   
   const [usingPower, setUsingPower] = useState<PoderResponse | null>(null);
+  const [usingPowerFromActive, setUsingPowerFromActive] = useState<boolean>(false);
   const [resolution, setResolution] = useState<ResolvePowerResponse | null>(null);
+
+  const handleUsePowerFromActive = async (activePower: ActivePower) => {
+    const powerDetail = detailedPowers[activePower.powerId];
+    if (!powerDetail) {
+      toast.error('Detalhes do poder não encontrados.');
+      return;
+    }
+    setUsingPower(powerDetail);
+    setUsingPowerFromActive(true);
+    setResolution(null);
+
+    const peCost = powerDetail.custoTotal?.pe ?? 0;
+    const res = await previewPower({
+      powerId: powerDetail.id,
+      nome: powerDetail.nome,
+      icone: powerDetail.icone,
+      duracao: powerDetail.parametros.duracao,
+      peCost,
+    }, character);
+
+    if (res) {
+      setResolution(res.resolution);
+    }
+  };
 
   const {
     activePowers,
@@ -42,8 +67,35 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
   });
 
   // Contadores locais de turno
-  const [actions, setActions] = useState(0);
-  const [movement, setMovement] = useState(0);
+  const [actions, setActions] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(`character_${character.id}_actions`);
+      return stored ? parseInt(stored) : 0;
+    }
+    return 0;
+  });
+  const [movement, setMovement] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(`character_${character.id}_movement`);
+      return stored ? parseInt(stored) : 0;
+    }
+    return 0;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`character_${character.id}_actions`, actions.toString());
+  }, [actions, character.id]);
+
+  useEffect(() => {
+    localStorage.setItem(`character_${character.id}_movement`, movement.toString());
+  }, [movement, character.id]);
+
+  useEffect(() => {
+    const storedActions = localStorage.getItem(`character_${character.id}_actions`);
+    const storedMovement = localStorage.getItem(`character_${character.id}_movement`);
+    setActions(storedActions ? parseInt(storedActions) : 0);
+    setMovement(storedMovement ? parseInt(storedMovement) : 0);
+  }, [character.id]);
 
 
   // Busca e Filtro de Ações de Combate
@@ -179,9 +231,9 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
     new Map([...individualEquipped, ...arrayEquipped].map(p => [p.id, p])).values()
   );
 
-  // 4. Filtra para exibir apenas poderes ativos (qualquer ação que não seja passiva - valor 5)
+  // 4. Filtra para exibir apenas poderes ativos (qualquer ação que não seja passiva - valor 5 e não permanente - valor 4)
   const activeEquippedPowers = allUsablePowers.filter(
-    p => p.parametros?.acao !== 5
+    p => p.parametros?.acao !== 5 && p.parametros?.duracao !== 4
   );
 
   const filteredCombatActions = ACOES_COMBATE.filter(acao => {
@@ -203,8 +255,8 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                 <Sword className="w-4 h-4 text-red-500" />
                 Ações de Turno
               </div>
-              <Button variant="ghost" size="sm" className="h-7 w-7 rounded-full hover:bg-red-50 p-0 flex items-center justify-center transition-transform hover:rotate-180 duration-500" onClick={() => { setActions(1); setMovement(1); }} title="Reiniciar Turno">
-                <RotateCcw className="w-10 h-10 text-red-500" />
+              <Button variant="ghost" size="sm" className="h-7 w-7 rounded-full hover:bg-red-50 !p-0 flex items-center justify-center transition-transform hover:rotate-180 duration-500" onClick={() => { setActions(1); setMovement(1); }} title="Reiniciar Turno">
+                <RotateCcw className="w-4 h-4 text-red-500" />
               </Button>
             </CardTitle>
           </CardHeader>
@@ -212,11 +264,11 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
             <div className="flex flex-col items-center gap-1">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Ação Padrão</span>
               <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" className="h-8 w-8 rounded-lg border-red-100 p-0 flex items-center justify-center" onClick={() => setActions(Math.max(0, actions - 1))}>
+                <Button variant="outline" size="sm" className="h-8 w-8 rounded-lg border-red-100 !p-0 flex items-center justify-center" onClick={() => setActions(Math.max(0, actions - 1))}>
                   <Minus className="w-4 h-4 text-red-500" />
                 </Button>
                 <span className="text-3xl font-black text-red-600 w-8 text-center">{actions}</span>
-                <Button variant="outline" size="sm" className="h-8 w-8 rounded-lg border-red-100 p-0 flex items-center justify-center" onClick={() => setActions(actions + 1)}>
+                <Button variant="outline" size="sm" className="h-8 w-8 rounded-lg border-red-100 !p-0 flex items-center justify-center" onClick={() => setActions(actions + 1)}>
                   <Plus className="w-4 h-4 text-red-500" />
                 </Button>
               </div>
@@ -225,11 +277,11 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
             <div className="flex flex-col items-center gap-1">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Movimento</span>
               <div className="flex items-center gap-3">
-                <Button variant="outline" size="sm" className="h-8 w-8 rounded-lg border-emerald-100 p-0 flex items-center justify-center" onClick={() => setMovement(Math.max(0, movement - 1))}>
+                <Button variant="outline" size="sm" className="h-8 w-8 rounded-lg border-emerald-100 !p-0 flex items-center justify-center" onClick={() => setMovement(Math.max(0, movement - 1))}>
                   <Minus className="w-4 h-4 text-emerald-500" />
                 </Button>
                 <span className="text-3xl font-black text-emerald-600 w-8 text-center">{movement}</span>
-                <Button variant="outline" size="sm" className="h-8 w-8 rounded-lg border-emerald-100 p-0 flex items-center justify-center" onClick={() => setMovement(movement + 1)}>
+                <Button variant="outline" size="sm" className="h-8 w-8 rounded-lg border-emerald-100 !p-0 flex items-center justify-center" onClick={() => setMovement(movement + 1)}>
                   <Plus className="w-4 h-4 text-emerald-500" />
                 </Button>
               </div>
@@ -323,11 +375,11 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 w-7 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-90"
+                        className="h-7 w-7 !p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-90"
                         onClick={() => setIsUnarmedModalOpen(true)}
                         title="Evoluir Domínio Desarmado"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-4 h-4" />
                       </Button>
                     )}
                   </div>
@@ -401,11 +453,21 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Rastreamento de poderes ativos */}
               <ActivePowersTracker
                 activePowers={activePowers}
-                onMaintain={maintainPower}
+                onMaintain={async (activeId) => {
+                  const ap = activePowers.find(p => p.id === activeId);
+                  if (ap && ap.duracao === 1) { // Concentração
+                    if (actions < 1) {
+                      toast.error('Você não tem Ação Padrão restante neste turno para manter este poder!');
+                      return;
+                    }
+                    setActions(prev => Math.max(0, prev - 1));
+                  }
+                  await maintainPower(activeId);
+                }}
                 onDeactivate={deactivatePower}
+                onUse={handleUsePowerFromActive}
                 isDisabled={isConfirming}
               />
 
@@ -440,6 +502,7 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                             disabled={isResolving}
                             onClick={async () => {
                               setUsingPower(powerDetail);
+                              setUsingPowerFromActive(false);
                               setResolution(null);
                               
                               const peCost = powerDetail.custoTotal?.pe ?? 0;
@@ -482,27 +545,75 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {/* Poderes Passivos */}
-                {character.powers
+                {/* Poderes Passivos e Ativados Ligados */}
+                {[
+                  ...character.powers.map(p => ({ powerId: p.powerId, isEquipped: p.isEquipped, id: p.id })),
+                  ...character.powerArrays
+                    .filter(a => a.isEquipped)
+                    .flatMap(a => {
+                      const arrayDetail = detailedArrays[a.powerArrayId];
+                      return (arrayDetail?.powers || []).map(p => ({
+                        powerId: p.id,
+                        isEquipped: true,
+                        id: p.id,
+                      }));
+                    })
+                ]
+                  .filter((p, index, self) => self.findIndex(t => t.powerId === p.powerId) === index)
                   .filter(p => {
                     const detail = detailedPowers[p.powerId];
-                    return p.isEquipped && (detail?.parametros?.acao === 5 || detail?.parametros?.duracao === 4);
+                    if (!p.isEquipped || !detail) return false;
+                    
+                    // Passivo puro (acao = 5) ou Permanente (duracao = 4)
+                    if (detail.parametros?.acao === 5 || detail.parametros?.duracao === 4) {
+                      return true;
+                    }
+                    
+                    // Ativado (3) e atualmente ligado (presente em activePowers)
+                    if (detail.parametros?.duracao === 3) {
+                      return activePowers.some(ap => ap.powerId === p.powerId);
+                    }
+                    
+                    return false;
                   })
                   .map(p => {
                     const detail = detailedPowers[p.powerId];
+                    const isAtivado = detail?.parametros?.duracao === 3;
                     return (
-                      <div key={p.id} className="p-3 rounded-lg bg-emerald-50/30 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 group">
+                      <div 
+                        key={p.id} 
+                        className={`p-3 rounded-lg border group transition-colors ${
+                          isAtivado 
+                            ? 'bg-purple-50/30 dark:bg-purple-900/10 border-purple-100 dark:border-purple-900/20' 
+                            : 'bg-emerald-50/30 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/20'
+                        }`}
+                      >
                         <div className="flex items-center gap-3">
                           <div className="p-1 rounded-lg bg-white dark:bg-gray-900 border-[0.5px] border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-center overflow-hidden">
                             {detail?.icone ? (
-                              <DynamicIcon name={detail.icone} className="w-7 h-7 text-emerald-500" />
+                              <DynamicIcon name={detail.icone} className={`w-7 h-7 ${isAtivado ? 'text-purple-500' : 'text-emerald-500'}`} />
                             ) : (
-                              <Shield className="w-7 h-7 text-emerald-500" />
+                              isAtivado ? (
+                                <Zap className="w-7 h-7 text-purple-500" />
+                              ) : (
+                                <Shield className="w-7 h-7 text-emerald-500" />
+                              )
                             )}
                           </div>
-                          <h4 className="font-black text-sm text-emerald-900 dark:text-emerald-100">{detail?.nome || p.powerId}</h4>
+                          <div>
+                            <h4 className={`font-black text-sm ${isAtivado ? 'text-purple-900 dark:text-purple-100' : 'text-emerald-900 dark:text-emerald-100'}`}>
+                              {detail?.nome || p.powerId}
+                            </h4>
+                            {isAtivado && (
+                              <span className="text-[9px] uppercase font-black tracking-widest text-purple-500">
+                                Ativado (Ligado)
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-[11px] text-emerald-700/80 dark:text-emerald-400/80 mt-1 pl-7 italic line-clamp-2">{detail?.descricao}</p>
+                        <p className={`text-[11px] mt-1 pl-7 italic line-clamp-2 ${isAtivado ? 'text-purple-700/80 dark:text-purple-400/80' : 'text-emerald-700/80 dark:text-emerald-400/80'}`}>
+                          {detail?.descricao}
+                        </p>
                       </div>
                     );
                   })
@@ -618,6 +729,7 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
           isOpen={!!usingPower}
           onClose={() => {
             setUsingPower(null);
+            setUsingPowerFromActive(false);
             setResolution(null);
           }}
           power={usingPower}
@@ -626,17 +738,22 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
           resolution={resolution}
           isResolving={isResolving}
           isConfirming={isConfirming}
-          onConfirm={async () => {
+          showOptionalPE={usingPowerFromActive}
+          onConfirm={async ({ spendPE }) => {
             const detail = usingPower;
-            const peCost = detail.custoTotal?.pe ?? 0;
-            await confirmUsePower({
-              powerId: detail.id,
-              nome: detail.nome,
-              icone: detail.icone,
-              duracao: detail.parametros.duracao,
-              peCost,
-            });
+            const peCost = spendPE ? (detail.custoTotal?.pe ?? 0) : 0;
+            await confirmUsePower(
+              {
+                powerId: detail.id,
+                nome: detail.nome,
+                icone: detail.icone,
+                duracao: detail.parametros.duracao,
+                peCost,
+              },
+              { skipActivation: usingPowerFromActive }
+            );
             setUsingPower(null);
+            setUsingPowerFromActive(false);
             setResolution(null);
           }}
         />

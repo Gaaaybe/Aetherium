@@ -135,9 +135,9 @@ export function UnarmedMasteryModal({
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <Button variant="outline" size="sm" onClick={() => setDegree(Math.max(0, degree - 1))} className="h-8 w-8 p-0">-</Button>
+                <Button variant="outline" size="sm" onClick={() => setDegree(Math.max(0, degree - 1))} className="h-8 w-8 !p-0">-</Button>
                 <span className="text-xl font-black text-gray-900 dark:text-gray-100 w-6 text-center">{degree}</span>
-                <Button variant="outline" size="sm" onClick={() => setDegree(Math.min(9, degree + 1))} className="h-8 w-8 p-0" disabled={degree >= 9}>+</Button>
+                <Button variant="outline" size="sm" onClick={() => setDegree(Math.min(9, degree + 1))} className="h-8 w-8 !p-0" disabled={degree >= 9}>+</Button>
               </div>
             </div>
           </div>
@@ -155,13 +155,13 @@ export function UnarmedMasteryModal({
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <Button variant="outline" size="sm" onClick={() => setMarginImprovements(Math.max(0, marginImprovements - 1))} className="h-8 w-8 p-0">-</Button>
+                <Button variant="outline" size="sm" onClick={() => setMarginImprovements(Math.max(0, marginImprovements - 1))} className="h-8 w-8 !p-0">-</Button>
                 <span className="text-xl font-black text-gray-900 dark:text-gray-100 w-6 text-center">{marginImprovements}</span>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => setMarginImprovements(Math.min(10, marginImprovements + 1))} 
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 !p-0"
                   disabled={marginImprovements >= maxMargin || marginImprovements >= 10}
                 >+</Button>
               </div>
@@ -184,13 +184,13 @@ export function UnarmedMasteryModal({
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <Button variant="outline" size="sm" onClick={() => setMultiplierImprovements(Math.max(0, multiplierImprovements - 1))} className="h-8 w-8 p-0" disabled={degree < 3}>-</Button>
+                <Button variant="outline" size="sm" onClick={() => setMultiplierImprovements(Math.max(0, multiplierImprovements - 1))} className="h-8 w-8 !p-0" disabled={degree < 3}>-</Button>
                 <span className="text-xl font-black text-gray-900 dark:text-gray-100 w-6 text-center">{multiplierImprovements}</span>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={() => setMultiplierImprovements(Math.min(3, multiplierImprovements + 1))} 
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 !p-0"
                   disabled={degree < 3 || multiplierImprovements >= maxMultiplier}
                 >+</Button>
               </div>

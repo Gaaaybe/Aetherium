@@ -181,6 +181,7 @@ model AppliedEffect {
   grau           Int
   configuracaoId String?
   inputValue     String?
+  dadoModularizado String?
   nota           String?
   posicao        Int     @default(0)
 

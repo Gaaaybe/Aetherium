@@ -18,10 +18,11 @@ export function executeBehavior(
   context: PowerUseContext,
   sourcePowerId: string,
   basedOnAttribute = false,
+  dadoModularizado?: string,
 ): GameMutation[] {
   switch (behavior.kind) {
     case 'DANO':
-      return executeDano(behavior, targets, grau, context, basedOnAttribute);
+      return executeDano(behavior, targets, grau, context, basedOnAttribute, dadoModularizado);
 
     case 'RECUPERACAO':
       return executeRecuperacao(behavior, targets);

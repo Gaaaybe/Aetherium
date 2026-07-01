@@ -51,6 +51,7 @@ function formatAppliedEffect(effect: any) {
     grau: effect.grau,
     configuracaoId: effect.configuracaoId ?? null,
     inputValue: effect.inputValue ?? null,
+    dadoModularizado: effect.dadoModularizado ?? null,
     custo: {
       pda: effect.custoPda,
       pe: effect.custoPe,

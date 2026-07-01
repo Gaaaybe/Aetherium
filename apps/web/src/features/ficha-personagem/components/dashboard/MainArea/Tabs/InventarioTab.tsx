@@ -427,9 +427,9 @@ export function InventarioTab({
                   size="sm"
                   onClick={(e) => { e.stopPropagation(); setViewingItem(detail); }}
                   title="Ver detalhes"
-                  className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 shrink-0"
+                  className="h-8 w-8 !p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/50 shrink-0"
                 >
-                  <Info className="w-15 h-15" />
+                  <Info className="w-4 h-4" />
                 </Button>
               )}
               {(detail || itemId) && (
@@ -438,9 +438,9 @@ export function InventarioTab({
                   size="sm"
                   onClick={(e) => { e.stopPropagation(); handleUnequip(itemId!, slot); }}
                   title="Desequipar"
-                  className="h-8 w-8 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
+                  className="h-8 w-8 !p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
                 >
-                  <Package className="w-8 h-8" />
+                  <Package className="w-4 h-4" />
                 </Button>
               )}
             </div>
@@ -775,8 +775,8 @@ export function InventarioTab({
                             <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEquipModalItem(detail); }} className="h-7 px-3 text-[10px] font-bold border border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-900/50 dark:text-amber-400 dark:hover:bg-amber-900/30">
                               Equipar
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onRemoveItem(bagItem.itemId, bagItem.quantity); }} className="h-7 w-7 p-0 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20" title="Excluir Item do Inventário">
-                              <Trash2 className="w-3.5 h-3.5" />
+                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onRemoveItem(bagItem.itemId, bagItem.quantity); }} className="h-7 w-7 !p-0 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20" title="Excluir Item do Inventário">
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>

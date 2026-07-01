@@ -55,6 +55,7 @@ export interface EfeitoAplicadoResponse {
   grau: number;
   configuracaoId: string | null;
   inputValue: string | number | null;
+  dadoModularizado: string | null;
   custo: CustoResponse;
   modifications: ModificacaoAplicadaResponse[];
   nota: string | null;
@@ -96,6 +97,7 @@ export interface EfeitoAplicadoPayload {
   grau: number;
   configuracaoId?: string;
   inputValue?: string | number;
+  dadoModularizado?: string;
   modifications?: ModificacaoAplicadaPayload[];
   nota?: string;
 }

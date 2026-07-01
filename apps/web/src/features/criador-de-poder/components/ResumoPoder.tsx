@@ -93,6 +93,11 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
         linha += ` [${efeito.inputCustomizado}]`;
       }
       
+      // Dado modularizado
+      if (efeito.dadoModularizado) {
+        linha += ` [Dado: ${efeito.dadoModularizado}]`;
+      }
+      
       // Configuração (ex: Patamar 3)
       if (efeito.configuracaoSelecionada && efeitoBase.configuracoes) {
         const config = efeitoBase.configuracoes.opcoes.find(c => c.id === efeito.configuracaoSelecionada);
@@ -220,6 +225,11 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
       // Input customizado se houver
       if (ef.efeito.inputCustomizado) {
         texto += `  Especificação: ${ef.efeito.inputCustomizado}\n`;
+      }
+      
+      // Dado modularizado se houver
+      if (ef.efeito.dadoModularizado) {
+        texto += `  Dado Modularizado: ${ef.efeito.dadoModularizado}\n`;
       }
       
       // Configuração selecionada
@@ -526,6 +536,11 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                       {efeito.inputCustomizado && (
                         <p className="text-sm font-medium text-espirito-600 dark:text-espirito-400 mt-1">
                           Especificação: {efeito.inputCustomizado}
+                        </p>
+                      )}
+                      {efeito.dadoModularizado && (
+                        <p className="text-sm font-medium text-espirito-600 dark:text-espirito-400 mt-1">
+                          Dado Modularizado: {efeito.dadoModularizado}
                         </p>
                       )}
                       {efeito.configuracaoSelecionada && efeitoBase.configuracoes && (

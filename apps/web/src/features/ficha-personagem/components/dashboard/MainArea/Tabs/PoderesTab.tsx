@@ -277,11 +277,11 @@ export function PoderesTab({
             
             {!isNested && (
               <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-gray-100 dark:border-gray-800 mt-1 sm:mt-0">
-                <Button variant="ghost" size="sm" onClick={() => setViewingPower(poderResponseToPoder(detail))} className="h-9 w-9 p-0 text-gray-400 hover:text-indigo-500">
-                  <Info className="w-5 h-5" />
+                <Button variant="ghost" size="sm" onClick={() => setViewingPower(poderResponseToPoder(detail))} className="h-9 w-9 !p-0 text-gray-400 hover:text-indigo-500">
+                  <Info className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setEditingPower(poderResponseToPoder(detail))} className="h-9 w-9 p-0 text-gray-400 hover:text-emerald-500" title="Editar">
-                  <Edit2 className="w-5 h-5" />
+                <Button variant="ghost" size="sm" onClick={() => setEditingPower(poderResponseToPoder(detail))} className="h-9 w-9 !p-0 text-gray-400 hover:text-emerald-500" title="Editar">
+                  <Edit2 className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -299,31 +299,31 @@ export function PoderesTab({
                       setSavingToLibraryId(null);
                     }
                   }}
-                  className="h-9 w-9 p-0 text-gray-400 hover:text-blue-500"
+                  className="h-9 w-9 !p-0 text-gray-400 hover:text-blue-500"
                   title="Salvar na Biblioteca"
                 >
-                  <Bookmark className="w-5 h-5" />
+                  <Bookmark className="w-4 h-4" />
                 </Button>
                 {isEquipped ? (
-                  <Button variant="ghost" size="sm" onClick={() => onUnequipPower(power.powerId)} className="h-9 w-9 p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
-                    <Package className="w-5 h-5" />
+                  <Button variant="ghost" size="sm" onClick={() => onUnequipPower(power.powerId)} className="h-9 w-9 !p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
+                    <Package className="w-4 h-4" />
                   </Button>
                 ) : (
                   <Button variant="ghost" size="sm" onClick={() => onEquipPower(power.powerId)} className="h-8 px-2 text-[10px] font-bold border text-gray-600 hover:text-purple-600 hover:border-purple-600" title="Equipar">
                     Equipar
                   </Button>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => onRemovePower(power.powerId)} className="h-9 w-9 p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
-                  <Trash2 className="w-5 h-5" />
+                <Button variant="ghost" size="sm" onClick={() => onRemovePower(power.powerId)} className="h-9 w-9 !p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             )}
             {isNested && (
               <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-gray-100 dark:border-gray-800 mt-1 sm:mt-0">
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setViewingPower(poderResponseToPoder(detail)); }} className="h-8 w-8 p-0 text-gray-400 hover:text-indigo-500">
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setViewingPower(poderResponseToPoder(detail)); }} className="h-8 w-8 !p-0 text-gray-400 hover:text-indigo-500">
                   <Info className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEditingPower(poderResponseToPoder(detail)); }} className="h-8 w-8 p-0 text-gray-400 hover:text-emerald-500" title="Editar">
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEditingPower(poderResponseToPoder(detail)); }} className="h-8 w-8 !p-0 text-gray-400 hover:text-emerald-500" title="Editar">
                   <Edit2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -388,11 +388,11 @@ export function PoderesTab({
             </div>
             
             <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-gray-100 dark:border-gray-800 mt-1 sm:mt-0">
-              <Button variant="ghost" size="sm" onClick={() => detail && setViewingArray(detail)} className="h-9 w-9 p-0 text-gray-400 hover:text-indigo-500">
-                <Info className="w-5 h-5" />
+              <Button variant="ghost" size="sm" onClick={() => detail && setViewingArray(detail)} className="h-9 w-9 !p-0 text-gray-400 hover:text-indigo-500">
+                <Info className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => detail && setEditingArray(detail)} className="h-9 w-9 p-0 text-gray-400 hover:text-emerald-500" title="Editar">
-                <Edit2 className="w-5 h-5" />
+              <Button variant="ghost" size="sm" onClick={() => detail && setEditingArray(detail)} className="h-9 w-9 !p-0 text-gray-400 hover:text-emerald-500" title="Editar">
+                <Edit2 className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -411,22 +411,22 @@ export function PoderesTab({
                     setSavingToLibraryId(null);
                   }
                 }}
-                className="h-9 w-9 p-0 text-gray-400 hover:text-blue-500"
+                className="h-9 w-9 !p-0 text-gray-400 hover:text-blue-500"
                 title="Salvar na Biblioteca"
               >
-                <Bookmark className="w-5 h-5" />
+                <Bookmark className="w-4 h-4" />
               </Button>
               {isEquipped ? (
-                <Button variant="ghost" size="sm" onClick={() => onUnequipPowerArray(array.powerArrayId)} className="h-9 w-9 p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
-                  <Package className="w-5 h-5" />
+                <Button variant="ghost" size="sm" onClick={() => onUnequipPowerArray(array.powerArrayId)} className="h-9 w-9 !p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
+                  <Package className="w-4 h-4" />
                 </Button>
               ) : (
                 <Button variant="ghost" size="sm" onClick={() => onEquipPowerArray(array.powerArrayId)} className="h-8 px-2 text-[10px] font-bold border text-gray-600 hover:text-indigo-600 hover:border-indigo-600" title="Equipar">
                   Equipar
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={() => onRemovePowerArray(array.powerArrayId)} className="h-9 w-9 p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
-                <Trash2 className="w-5 h-5" />
+              <Button variant="ghost" size="sm" onClick={() => onRemovePowerArray(array.powerArrayId)} className="h-9 w-9 !p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
+                <Trash2 className="w-4 h-4" />
               </Button>
             </div>
           </div>

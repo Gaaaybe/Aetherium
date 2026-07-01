@@ -175,6 +175,16 @@ async function seedEffectBehaviors() {
         formula: 'tabela', // motor resolve pela tabela universal (grau)
       },
     },
+    {
+      id: 'fortalecer',
+      behavior: {
+        kind: 'FORTALECER',
+        // alvo padrão: PV_TEMP (PV temporários via tabela universal pelo grau)
+        // Poderes que usam PE_TEMP definem configuracaoId='pe-temp' no AppliedEffect.
+        // O motor verifica behavior.alvo para decidir a mutação.
+        alvo: 'PV_TEMP',
+      },
+    },
   ]
 
   for (const { id, behavior } of behaviors) {

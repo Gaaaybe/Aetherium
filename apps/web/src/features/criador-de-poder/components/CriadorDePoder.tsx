@@ -38,6 +38,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
     atualizarParametroPoder,
     atualizarInputCustomizado,
     atualizarConfiguracaoEfeito,
+    atualizarDadoModularizado,
     adicionarModificacaoLocal,
     removerModificacaoLocal,
     adicionarModificacaoGlobal,
@@ -439,6 +440,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                       <Select
                         label="Ação"
                         value={poder.acao.toString()}
+                        disabled={poder.duracao === 4}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                           atualizarParametroPoder('acao', Number(e.target.value))
                         }
@@ -447,6 +449,11 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                           label: esc.nome,
                         }))}
                       />
+                      {poder.duracao === 4 && (
+                        <p className="text-[10px] text-amber-500 font-bold mt-1">
+                          Poderes Permanentes exigem "Nenhuma" ação.
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -780,6 +787,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                 onRemoverModificacao={removerModificacaoLocal}
                 onAtualizarInputCustomizado={atualizarInputCustomizado}
                 onAtualizarConfiguracao={atualizarConfiguracaoEfeito}
+                onAtualizarDadoModularizado={atualizarDadoModularizado}
               />
             ))}
 

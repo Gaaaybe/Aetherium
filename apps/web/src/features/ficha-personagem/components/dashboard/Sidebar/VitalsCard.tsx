@@ -115,12 +115,12 @@ export function VitalsCard({ health, energy, onSync }: VitalsCardProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 w-9 p-0 text-blue-600 border-blue-200 hover:bg-blue-50"
+                className="h-9 w-9 !p-0 text-blue-600 border-blue-200 hover:bg-blue-50"
                 onClick={() => handleAdjustPV('temp')}
                 disabled={isProcessing}
                 title="PV Temporário"
               >
-                <ShieldPlus className="w-15 h-15" />
+                <ShieldPlus className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -191,12 +191,12 @@ export function VitalsCard({ health, energy, onSync }: VitalsCardProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 w-9 p-0 text-amber-600 border-amber-200 hover:bg-amber-50"
+                className="h-9 w-9 !p-0 text-amber-600 border-amber-200 hover:bg-amber-50"
                 onClick={() => handleAdjustPE('temp')}
                 disabled={isProcessing}
                 title="PE Temporário"
               >
-                <ShieldPlus className="w-6 h-6" />
+                <ShieldPlus className="w-4 h-4" />
               </Button>
             </div>
           </div>

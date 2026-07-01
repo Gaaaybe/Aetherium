@@ -186,6 +186,7 @@ export class PowerResolutionService {
         id: ae.id,
         effectBaseId: ae.effectBaseId,
         grau: ae.grau,
+        dadoModularizado: ae.dadoModularizado ?? undefined,
         behavior,
         modifications,
       };
