@@ -6,6 +6,8 @@ import type { PoderResponse } from '@/services/types';
 import type { ResolvePowerResponse } from '@/services/powers.service';
 import { describeMutations } from '@/features/ficha-personagem/hooks/usePowerUsage';
 import { DiceRoller } from '@/shared/components/DiceRoller';
+import { obterBonusFortalecerAtivos, obterBonusFortalecerDanoRecuperacao } from '@/features/ficha-personagem/utils/fortalecerHelper';
+import { fortaleceAlvoMatch } from '@aetherium/rules-engine';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -62,6 +64,9 @@ interface PowerUsageModalProps {
   isConfirming: boolean;
   onConfirm: (options: { spendPE: boolean }) => void;
   showOptionalPE?: boolean;
+  activePowers?: any[];
+  onSync?: (data: any) => Promise<void>;
+  onDeactivate?: (id: string) => void;
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
@@ -77,6 +82,9 @@ export function PowerUsageModal({
   isConfirming,
   onConfirm,
   showOptionalPE = false,
+  activePowers = [],
+  onSync,
+  onDeactivate,
 }: PowerUsageModalProps) {
   const [isDiceRollerOpen, setIsDiceRollerOpen] = useState(false);
   const [diceRollerConfig, setDiceRollerConfig] = useState<any>({});
@@ -90,36 +98,52 @@ export function PowerUsageModal({
   const hasEnoughPE = currentPE >= effectivePECost;
 
   // Dados do caster para o assistente de rolagem
+  const activeFortalecer = obterBonusFortalecerAtivos(activePowers, character);
   const dominioInfo = buscarDominio(power.dominio.name);
   const isMental = typeof power.dominio.espiritual === 'boolean'
     ? power.dominio.espiritual
     : (dominioInfo ? dominioInfo.espiritual : false);
+
+  const espiritualDomains = ['natural', 'sagrado', 'sacrilegio', 'psiquico'];
+  const isEspiritual = espiritualDomains.includes(power.dominio.name.toLowerCase()) ||
+    (power.dominio.name.toLowerCase() === 'peculiar' && (typeof power.dominio.espiritual === 'boolean' ? power.dominio.espiritual : (dominioInfo?.espiritual ?? false)));
+
+  const isDanoAcoplado =
+    resolution?.isDanoAcoplado ??
+    ((((power as any).originItemTipo?.toUpperCase() === 'WEAPON') || (power as any).originItemTipo === 'weapon') && !(isEspiritual && duracao === 0));
+
+  const getBaseFormula = (grau: number) => {
+    if (isDanoAcoplado) {
+      return `1d${4 * Math.pow(2, Math.max(1, grau) - 1)}`;
+    }
+    const danoInfo = buscarGrauNaTabela(grau);
+    return danoInfo ? danoInfo.dano : '';
+  };
+
   const keyFisico = character?.attributes?.keyPhysical || 'strength';
-  const modFisico = character?.attributes?.[keyFisico]?.rollModifier || 0;
+  const modFisico = (character?.attributes?.[keyFisico]?.rollModifier || 0) + (activeFortalecer.atributos[keyFisico] || 0);
   const keyMental = character?.attributes?.keyMental || 'intelligence';
-  const modMental = character?.attributes?.[keyMental]?.rollModifier || 0;
+  const modMental = (character?.attributes?.[keyMental]?.rollModifier || 0) + (activeFortalecer.atributos[keyMental] || 0);
   const effTeste = isMental ? modMental : modFisico;
   const eficiencia = character?.efficiencyBonus || 0;
   const cdInfo = 10 + effTeste;
 
   // Filtra todos os efeitos que possuem rolagens de dano/cura
   const damageEffects = power.effects.filter(
-    (e: any) => e.effectBaseId === 'dano' || e.effectBaseId === 'fortalecer',
+    (e: any) => e.effectBaseId === 'dano' || e.effectBaseId === 'fortalecer' || e.effectBaseId === 'recuperacao',
   );
 
   useEffect(() => {
     const initial: Record<string, string> = {};
     damageEffects.forEach((e: any) => {
-      const danoInfo = buscarGrauNaTabela(e.grau);
-      const baseFormula = danoInfo ? danoInfo.dano : '';
+      const baseFormula = getBaseFormula(e.grau);
       initial[e.id] = e.dadoModularizado || baseFormula;
     });
     setFormulasModularizadas(initial);
-  }, [power.effects]);
+  }, [power.effects, isDanoAcoplado]);
 
   const firstDamageEffect = damageEffects[0];
-  const firstDanoInfo = firstDamageEffect ? buscarGrauNaTabela(firstDamageEffect.grau) : null;
-  const firstBaseFormula = firstDanoInfo ? firstDanoInfo.dano : '';
+  const firstBaseFormula = firstDamageEffect ? getBaseFormula(firstDamageEffect.grau) : '';
   const firstFormulaSelecionada = firstDamageEffect ? (formulasModularizadas[firstDamageEffect.id] || firstDamageEffect.dadoModularizado || firstBaseFormula) : '';
   const firstHasBaseadoAtributos = firstDamageEffect ? (
     power.globalModifications.some((m: any) => m.modificationBaseId === 'baseado-atributos') ||
@@ -238,6 +262,7 @@ export function PowerUsageModal({
                   initialApplyEfficiency: true,
                   damageFormula: firstBaseFormula ? firstFormulaSelecionada : undefined,
                   damageModifier: firstHasBaseadoAtributos ? effTeste : 0,
+                  isDanoAcoplado,
                 });
                 setIsDiceRollerOpen(true);
               }}
@@ -264,12 +289,108 @@ export function PowerUsageModal({
                       modulacoes.length > 1 ? 'rounded-r-none border-r-0' : ''
                     }`}
                     onClick={() => {
+                      let onApplyCallback: ((val: number) => void) | undefined = undefined;
+                      let applyLabelText = 'Aplicar na Ficha';
+                      
+                      const effectBaseId = e.effectBaseId || e.id;
+                      const configId = e.configuracaoSelecionada || e.configuracaoId || '';
+                      
+                      if (effectBaseId === 'fortalecer' && configId === 'pv') {
+                        onApplyCallback = async (val: number) => {
+                          if (onSync) {
+                            await onSync({ tempPvChange: val });
+                          }
+                        };
+                        applyLabelText = 'Aplicar PV Temporário';
+                      } else if (effectBaseId === 'fortalecer' && configId === 'pe') {
+                        onApplyCallback = async (val: number) => {
+                          if (onSync) {
+                            await onSync({ tempPeChange: val });
+                          }
+                        };
+                        applyLabelText = 'Aplicar PE Temporário';
+                      } else if (effectBaseId === 'recuperacao' && configId === 'dano') {
+                        onApplyCallback = async (val: number) => {
+                          if (onSync) {
+                            await onSync({ pvChange: val });
+                          }
+                        };
+                        applyLabelText = 'Aplicar Cura de PV';
+                      } else if (effectBaseId === 'recuperacao' && configId === 'energia') {
+                        onApplyCallback = async (val: number) => {
+                          if (onSync) {
+                            await onSync({ peChange: val });
+                          }
+                        };
+                        applyLabelText = 'Aplicar Restauração de PE';
+                      }
+
+                       let finalDamageFormula = formulaSelecionada;
+                       if (effectBaseId === 'dano') {
+                         const customDescriptor = e.inputCustomizado || e.inputValue;
+                         const descriptorVal = customDescriptor ? String(customDescriptor).trim() : (power.dominio?.name || '');
+                         if (descriptorVal) {
+                           finalDamageFormula += ` [${descriptorVal.toUpperCase()}]`;
+                         }
+                       }
+                       const isRecuperacao = effectBaseId === 'recuperacao';
+
+                      const fortalecerBonuses = obterBonusFortalecerDanoRecuperacao(activePowers, {
+                        tipo: 'PODER',
+                        dominio: power.dominio?.name,
+                        originItemId: (power as any).originItemId
+                      }, character);
+
+                      for (const fb of fortalecerBonuses) {
+                        if (!isRecuperacao && fb.configId === 'dano') {
+                          const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
+                          finalDamageFormula += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
+                        } else if (isRecuperacao && fb.configId === 'recuperacao') {
+                          const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
+                          finalDamageFormula += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
+                        }
+                      }
+
                       setDiceRollerConfig({
-                        label: `Dado: ${power.nome}${e.nota ? ` (${e.nota})` : ''}`,
-                        damageFormula: formulaSelecionada,
+                        label: `${effectBaseId === 'recuperacao' ? 'Cura' : 'Efeito'}: ${power.nome}${e.nota ? ` (${e.nota})` : ''}`,
+                        damageFormula: finalDamageFormula,
                         damageModifier: hasBaseadoAtributos ? effTeste : 0,
                         onlyDamage: true,
-                        rollButtonLabel: 'Rolar Dano',
+                        rollButtonLabel: effectBaseId === 'recuperacao' ? 'Rolar Cura' : 'Rolar Efeito',
+                        isDanoAcoplado,
+                        onApply: onApplyCallback,
+                        applyLabel: applyLabelText,
+                        onRoll: () => {
+                          if (onDeactivate && activePowers) {
+                            for (const ap of activePowers) {
+                              if (ap.duracao === 0) {
+                                const efeitos = ap.efeitos || ap.effects;
+                                if (!efeitos || !Array.isArray(efeitos)) continue;
+
+                                let matches = false;
+                                for (const ef of efeitos) {
+                                  const baseId = ef.efeitoBaseId || ef.effectBaseId;
+                                  const configId = ef.configuracaoSelecionada || ef.configuracaoId;
+
+                                  if (baseId === 'fortalecer' && (configId === 'dano' || configId === 'recuperacao')) {
+                                    const inputValue = ef.inputCustomizado || ef.inputValue;
+                                    if (!inputValue) continue;
+                                    try {
+                                      const parsed = JSON.parse(String(inputValue));
+                                      if (parsed && parsed.alvo && fortaleceAlvoMatch(parsed.alvo, { tipo: 'PODER', dominio: power.dominio?.name, originItemId: (power as any).originItemId }, ap.originItemId)) {
+                                        matches = true;
+                                        break;
+                                      }
+                                    } catch {}
+                                  }
+                                }
+                                if (matches) {
+                                  onDeactivate(ap.id);
+                                }
+                              }
+                            }
+                          }
+                        }
                       });
                       setIsDiceRollerOpen(true);
                     }}

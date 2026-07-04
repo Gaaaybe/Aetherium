@@ -843,6 +843,11 @@ export function InventarioTab({
           icone={viewingItem.icone ?? undefined}
           descricao={viewingItem.descricao}
           dominio={{ name: viewingItem.dominio.name, peculiarId: viewingItem.dominio.peculiarId ?? undefined }}
+          dominios={viewingItem.dominios?.map(d => ({
+            name: d.name,
+            areaConhecimento: d.areaConhecimento ?? undefined,
+            peculiarId: d.peculiarId ?? undefined,
+          }))}
           custoBase={viewingItem.valorBase}
           nivelCalculado={viewingItem.nivelItem}
           custoRealCalculado={viewingItem.valorBase}

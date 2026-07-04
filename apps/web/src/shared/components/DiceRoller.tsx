@@ -19,6 +19,10 @@ interface DiceRollerProps {
   isModular?: boolean;
   referenceCDs?: { label: string; value: number }[];
   onlyDamage?: boolean;
+  onApply?: (value: number) => void;
+  applyLabel?: string;
+  onRoll?: () => void;
+  isDanoAcoplado?: boolean;
 }
 
 export function DiceRoller({ 
@@ -37,9 +41,13 @@ export function DiceRoller({
   isModular = false,
   referenceCDs = [],
   onlyDamage = false,
+  onApply,
+  applyLabel,
+  onRoll,
+  isDanoAcoplado = false,
 }: DiceRollerProps) {
   const [attackRoll, setAttackRoll] = useState<(RollResult & { efficiency?: number, manual?: number }) | null>(null);
-  const [damageRoll, setDamageRoll] = useState<{ total: number; rolls: number[]; modifier: number; multiplier: number } | null>(null);
+  const [damageRoll, setDamageRoll] = useState<{ total: number; rolls: number[]; modifier: number; multiplier: number; components?: Array<{ value: number; label: string }> } | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   
   const [extraDice, setExtraDice] = useState(0);
@@ -78,6 +86,7 @@ export function DiceRoller({
         manual: manualModifier !== 0 ? manualModifier : undefined
       });
       setIsRolling(false);
+      onRoll?.();
     }, 400);
   };
 
@@ -86,21 +95,37 @@ export function DiceRoller({
     if (!formulaToUse) return;
     
     setIsRolling(true);
-    const multiplier = attackRoll?.isCritical ? critMultiplier : 1;
-    const bonusToUse = (isModular ? localDamageMod : damageModifier) + manualDamageModifier;
+    const multiplier = (attackRoll?.isCritical && !isDanoAcoplado) ? critMultiplier : 1;
+    const baseMod = isModular ? localDamageMod : damageModifier;
+    const bonusToUse = baseMod + manualDamageModifier;
     
     setTimeout(() => {
-      const result = rollDamage(formulaToUse);
-      const baseTotalWithBonus = result.total + bonusToUse; 
-      const finalTotal = baseTotalWithBonus * multiplier;
+      const result = rollDamage(formulaToUse, multiplier);
+      const finalTotal = result.total + (bonusToUse * multiplier);
+      
+      const finalComponents = [...result.components];
+      if (baseMod !== 0) {
+        finalComponents.push({
+          value: baseMod * multiplier,
+          label: `${Math.abs(baseMod)}${multiplier > 1 ? ` x${multiplier}` : ''}`
+        });
+      }
+      if (manualDamageModifier !== 0) {
+        finalComponents.push({
+          value: manualDamageModifier * multiplier,
+          label: `${Math.abs(manualDamageModifier)}${multiplier > 1 ? ` x${multiplier}` : ''}`
+        });
+      }
       
       setDamageRoll({
         ...result,
         total: finalTotal,
-        modifier: result.modifier + bonusToUse,
+        modifier: result.modifier + (bonusToUse * multiplier),
+        components: finalComponents,
         multiplier
       });
       setIsRolling(false);
+      onRoll?.();
     }, 400);
   };
 
@@ -360,17 +385,46 @@ export function DiceRoller({
                 </div>
                 <Zap className="w-4 h-4 text-amber-500" />
               </div>
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="text-4xl font-black text-amber-600 leading-none">💥 {damageRoll.total}</span>
-                <span className="text-xs font-bold text-amber-700/60">
-                  Dados: [{damageRoll.rolls.join(', ')}] {damageRoll.modifier !== 0 ? `${damageRoll.modifier >= 0 ? '+' : ''}${damageRoll.modifier}` : ''}
-                  {damageRoll.multiplier > 1 ? ` x ${damageRoll.multiplier}` : ''}
+                <span className="text-xs font-bold text-amber-700/60 flex flex-wrap gap-1 items-center">
+                  ( {damageRoll.components && damageRoll.components.length > 0 ? (
+                    damageRoll.components.map((comp, idx) => {
+                      const sign = comp.value >= 0 ? '+' : '-';
+                      const cleanLabel = comp.label.replace(/^[+-]/, '').trim();
+                      return (
+                        <span key={idx} className="inline-flex items-center">
+                          {idx > 0 ? (
+                            <span className="mx-1 text-amber-700/40">{sign}</span>
+                          ) : (
+                            comp.value < 0 ? <span className="mr-1 text-amber-700/40">-</span> : null
+                          )}
+                          <span className={cleanLabel.includes('[') ? 'text-amber-600 dark:text-amber-400 font-extrabold border border-amber-200 dark:border-amber-900/50 bg-amber-100/30 dark:bg-amber-950/20 px-1 rounded' : ''}>
+                            {cleanLabel}
+                          </span>
+                        </span>
+                      );
+                    })
+                  ) : (
+                    `Dados: [${damageRoll.rolls.join(', ')}] ${damageRoll.modifier !== 0 ? `${damageRoll.modifier >= 0 ? '+' : ''}${damageRoll.modifier}` : ''}`
+                  )} {damageRoll.multiplier > 1 ? `) x ${damageRoll.multiplier}` : ')'}
                 </span>
               </div>
               <div className="pt-2 border-t border-dashed border-amber-200 dark:border-amber-900/50 flex items-center justify-between text-xs font-bold text-amber-700/80 dark:text-amber-400">
                 <span>Dano Parcial (Metade):</span>
                 <span className="font-black text-amber-600 dark:text-amber-300">💥 {Math.floor(damageRoll.total / 2)}</span>
               </div>
+              {onApply && (
+                <Button
+                  onClick={() => {
+                    onApply(damageRoll.total);
+                    onClose();
+                  }}
+                  className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black h-9 rounded-xl shadow-md gap-2"
+                >
+                  <Sparkles className="w-4 h-4" /> {applyLabel || 'Aplicar na Ficha'}
+                </Button>
+              )}
             </div>
           )}
         </div>

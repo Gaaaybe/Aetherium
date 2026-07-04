@@ -2,6 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { resolvePowerUse } from './resolve-power-use.js';
 import { resolvePassiveModifiers } from './resolve-passive.js';
 import { parseBehavior } from './schemas.js';
+import {
+  calcularBonusFortalecer,
+  fortaleceAlvoMatch,
+  executeFortalecerDanoRecuperacao,
+  calcularBonusCriticoMultiplicador,
+  calcularBonusCriticoMargem,
+  calcularBonusAlcanceItem,
+  parseFortalecerCaracteristicaItem,
+} from './behaviors/fortalecer.behavior.js';
 import type {
   ResolvedPower,
   PowerUseContext,
@@ -133,6 +142,25 @@ describe('resolvePowerUse — DANO', () => {
     });
     const [mut] = resolvePowerUse({ power, context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] } });
     expect(mut).toMatchObject({ formula: '8d16' });
+  });
+
+  it('usa a escala de dano de arma quando isDanoAcoplado é true', () => {
+    const power = makePower({
+      effects: [makeEffect({ grau: 3, behavior: { kind: 'DANO', tipoDano: 'corte' } })],
+      isDanoAcoplado: true,
+    });
+    const [mut] = resolvePowerUse({ power, context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] } });
+    // Grau 3: 4 * 2^(3-1) = 16 -> 1d16
+    expect(mut).toMatchObject({ formula: '1d16' });
+  });
+
+  it('usa dadoModularizado mesmo quando isDanoAcoplado é true', () => {
+    const power = makePower({
+      effects: [makeEffect({ grau: 3, dadoModularizado: '2d8', behavior: { kind: 'DANO', tipoDano: 'corte' } })],
+      isDanoAcoplado: true,
+    });
+    const [mut] = resolvePowerUse({ power, context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] } });
+    expect(mut).toMatchObject({ formula: '2d8' });
   });
 });
 
@@ -502,13 +530,186 @@ describe('FORTALECER behavior', () => {
     expect(mutations[0]).toMatchObject({ type: 'ADD_TEMP_PE', formula: '12' }); // 3 × 4
   });
 
+  it('PV_TEMP aplica modificador de atributo físico/mental com base no isEspiritual', () => {
+    const powerAttr = makePower({
+      effects: [
+        makeEffect({
+          grau: 1,
+          behavior: { kind: 'FORTALECER', alvo: 'PV_TEMP', formula: '1d6' },
+          modifications: [{ modificationBaseId: 'baseado-atributos', grau: 1, targetingEffect: 'NENHUM', casterEffect: 'NENHUM' }],
+        })
+      ]
+    });
+
+    // Físico (isEspiritual = false)
+    const ctxFisico = {
+      ...BASE_CONTEXT,
+      isEspiritual: false,
+      casterState: {
+        ...BASE_CONTEXT.casterState,
+        keyPhysicalModifier: 3,
+        keyMentalModifier: 5,
+      }
+    };
+    const mutFisico = resolvePowerUse({ power: powerAttr, context: ctxFisico });
+    expect(mutFisico[0]).toMatchObject({ type: 'ADD_TEMP_PV', formula: '1d6+3' });
+
+    // Mental/Espiritual (isEspiritual = true)
+    const ctxMental = {
+      ...BASE_CONTEXT,
+      isEspiritual: true,
+      casterState: {
+        ...BASE_CONTEXT.casterState,
+        keyPhysicalModifier: 3,
+        keyMentalModifier: 5,
+      }
+    };
+    const mutMental = resolvePowerUse({ power: powerAttr, context: ctxMental });
+    expect(mutMental[0]).toMatchObject({ type: 'ADD_TEMP_PV', formula: '1d6+5' });
+  });
+
   it('DANO_BONUS retorna vazio (Fase 2)', () => {
     const power = makePower({
       effects: [makeEffect({ behavior: { kind: 'FORTALECER', alvo: 'DANO_BONUS' } })],
     });
     expect(resolvePowerUse({ power, context: BASE_CONTEXT })).toHaveLength(0);
   });
+
+  describe('Dano e Recuperação (Cálculos e Matching)', () => {
+    it('calcularBonusFortalecer dobra bônus a partir de +4', () => {
+      expect(calcularBonusFortalecer(1)).toBe(4);
+      expect(calcularBonusFortalecer(2)).toBe(8);
+      expect(calcularBonusFortalecer(3)).toBe(16);
+      expect(calcularBonusFortalecer(5)).toBe(64);
+      expect(calcularBonusFortalecer(10)).toBe(2048);
+    });
+
+    it('fortaleceAlvoMatch bate desarmado corretamente', () => {
+      expect(fortaleceAlvoMatch({ tipo: 'DESARMADO' }, { tipo: 'DESARMADO' })).toBe(true);
+      expect(fortaleceAlvoMatch({ tipo: 'DESARMADO' }, { tipo: 'ARMA', domains: ['arma-branca'] })).toBe(false);
+    });
+
+    it('fortaleceAlvoMatch bate domínios com normalização case-insensitive e de hifens/underscores', () => {
+      // DOMINIO vs PODER
+      expect(fortaleceAlvoMatch({ tipo: 'DOMINIO', dominio: 'ARMA_BRANCA' }, { tipo: 'PODER', dominio: 'arma-branca' })).toBe(true);
+      expect(fortaleceAlvoMatch({ tipo: 'DOMINIO', dominio: 'arma-branca' }, { tipo: 'PODER', dominio: 'ARMA_BRANCA' })).toBe(true);
+      expect(fortaleceAlvoMatch({ tipo: 'DOMINIO', dominio: 'natural' }, { tipo: 'PODER', dominio: 'NATURAL' })).toBe(true);
+
+      // DOMINIO vs ARMA
+      expect(fortaleceAlvoMatch(
+        { tipo: 'DOMINIO', dominio: 'ARMA_BRANCA' },
+        { tipo: 'ARMA', domains: ['natural', 'arma-branca'] }
+      )).toBe(true);
+      expect(fortaleceAlvoMatch(
+        { tipo: 'DOMINIO', dominio: 'arma-branca' },
+        { tipo: 'ARMA', domains: ['natural', 'ARMA_BRANCA'] }
+      )).toBe(true);
+      expect(fortaleceAlvoMatch(
+        { tipo: 'DOMINIO', dominio: 'sacrilegio' },
+        { tipo: 'ARMA', domains: ['natural', 'arma-branca'] }
+      )).toBe(false);
+    });
+
+    it('executeFortalecerDanoRecuperacao calcula bônus e retorna componente correto ou null', () => {
+      const config = {
+        alvo: { tipo: 'DOMINIO' as const, dominio: 'ARMA_BRANCA' },
+        bonusDescritor: 'Fogo',
+      };
+
+      const matched = executeFortalecerDanoRecuperacao(config, 2, { tipo: 'ARMA', domains: ['arma-branca'] });
+      expect(matched).toEqual({ formula: '+8', descritor: 'Fogo' });
+
+      const unmatched = executeFortalecerDanoRecuperacao(config, 2, { tipo: 'ARMA', domains: ['natural'] });
+      expect(unmatched).toBeNull();
+    });
+
+    it('suporta tipo ITEM e compara corretamente com o id do item', () => {
+      const config = {
+        alvo: { tipo: 'ITEM' as const },
+        bonusDescritor: 'Físico',
+      };
+
+      // Match do item de arma
+      const matchedArma = executeFortalecerDanoRecuperacao(
+        config,
+        1,
+        { tipo: 'ARMA', domains: ['arma-branca'], itemId: 'weapon-123' },
+        'weapon-123'
+      );
+      expect(matchedArma).toEqual({ formula: '+4', descritor: 'Físico' });
+
+      // Unmatch se o id da arma for diferente
+      const unmatchedArma = executeFortalecerDanoRecuperacao(
+        config,
+        1,
+        { tipo: 'ARMA', domains: ['arma-branca'], itemId: 'weapon-456' },
+        'weapon-123'
+      );
+      expect(unmatchedArma).toBeNull();
+
+      // Match do item de poder
+      const matchedPoder = executeFortalecerDanoRecuperacao(
+        config,
+        1,
+        { tipo: 'PODER', dominio: 'fogo', originItemId: 'weapon-123' },
+        'weapon-123'
+      );
+      expect(matchedPoder).toEqual({ formula: '+4', descritor: 'Físico' });
+
+      // Unmatch se o originItemId do poder for diferente
+      const unmatchedPoder = executeFortalecerDanoRecuperacao(
+        config,
+        1,
+        { tipo: 'PODER', dominio: 'fogo', originItemId: 'weapon-456' },
+        'weapon-123'
+      );
+      expect(unmatchedPoder).toBeNull();
+    });
+  });
+
+  describe('Características de Item (Crítico e Alcance)', () => {
+    it('calcularBonusCriticoMultiplicador retorna floor(grau / 2)', () => {
+      expect(calcularBonusCriticoMultiplicador(1)).toBe(0);
+      expect(calcularBonusCriticoMultiplicador(2)).toBe(1);
+      expect(calcularBonusCriticoMultiplicador(3)).toBe(1);
+      expect(calcularBonusCriticoMultiplicador(4)).toBe(2);
+      expect(calcularBonusCriticoMultiplicador(5)).toBe(2);
+      expect(calcularBonusCriticoMultiplicador(6)).toBe(3);
+    });
+
+    it('calcularBonusCriticoMargem retorna floor(grau / 2)', () => {
+      expect(calcularBonusCriticoMargem(1)).toBe(0);
+      expect(calcularBonusCriticoMargem(2)).toBe(1);
+      expect(calcularBonusCriticoMargem(3)).toBe(1);
+      expect(calcularBonusCriticoMargem(4)).toBe(2);
+      expect(calcularBonusCriticoMargem(5)).toBe(2);
+      expect(calcularBonusCriticoMargem(6)).toBe(3);
+    });
+
+    it('calcularBonusAlcanceItem retorna grau * 2', () => {
+      expect(calcularBonusAlcanceItem(1)).toBe(2);
+      expect(calcularBonusAlcanceItem(2)).toBe(4);
+      expect(calcularBonusAlcanceItem(5)).toBe(10);
+      expect(calcularBonusAlcanceItem(10)).toBe(20);
+    });
+
+    it('parseFortalecerCaracteristicaItem parseia input JSON corretamente', () => {
+      expect(parseFortalecerCaracteristicaItem('{"alvo":{"tipo":"DESARMADO"}}')).toEqual({
+        alvo: { tipo: 'DESARMADO' },
+      });
+      expect(parseFortalecerCaracteristicaItem('{"alvo":{"tipo":"ITEM"}}')).toEqual({
+        alvo: { tipo: 'ITEM' },
+      });
+      expect(parseFortalecerCaracteristicaItem(undefined)).toEqual({
+        alvo: { tipo: 'ITEM' },
+      });
+      expect(parseFortalecerCaracteristicaItem('invalid')).toEqual({
+        alvo: { tipo: 'ITEM' },
+      });
+    });
+  });
 });
+
 
 describe('APLICAR_CONDICAO behavior (afligir)', () => {
   it('gera APPLY_CONDITION para cada alvo', () => {

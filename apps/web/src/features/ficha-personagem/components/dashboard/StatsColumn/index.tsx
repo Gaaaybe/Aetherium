@@ -3,10 +3,13 @@ import { CharacterResponse, SyncCharacterData } from '@/services/characters.type
 import { Card, CardHeader, CardTitle, CardContent, Modal, ModalFooter, Button, Input, Select } from '@/shared/ui';
 import { Brain, Dumbbell, ShieldCheck, ListFilter, Edit2, Shield, Circle, Dices } from 'lucide-react';
 import { DiceRoller } from '@/shared/components/DiceRoller';
+import { obterBonusFortalecerAtivos } from '@/features/ficha-personagem/utils/fortalecerHelper';
 
 interface StatsColumnProps {
   character: CharacterResponse;
   onSync: (data: SyncCharacterData) => Promise<void>;
+  activePowers?: any[];
+  deactivatePower?: (id: string) => void;
 }
 
 const SKILL_ATTRIBUTE_MAP: Record<string, { key: keyof CharacterResponse['attributes'], label: string, order: number, color: string }> = {
@@ -36,7 +39,7 @@ const SKILL_ATTRIBUTE_MAP: Record<string, { key: keyof CharacterResponse['attrib
   'Vontade': { key: 'charisma', label: 'CAR', order: 6, color: 'text-purple-500' },
 };
 
-export function StatsColumn({ character, onSync }: StatsColumnProps) {
+export function StatsColumn({ character, onSync, activePowers = [], deactivatePower }: StatsColumnProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [localSkills, setLocalSkills] = useState([...character.skills]);
@@ -47,6 +50,8 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
     efficiencyBonus?: number;
     modifierLabel?: string;
   } | null>(null);
+
+  const activeFortalecer = obterBonusFortalecerAtivos(activePowers, character);
 
   const openModal = () => {
     setLocalSkills([...character.skills]);
@@ -63,7 +68,7 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
     setIsProcessing(true);
     try {
       await onSync({ 
-        skills: localSkills.map(s => ({
+         skills: localSkills.map(s => ({
           name: s.name,
           state: s.proficiencyState,
           trainingBonus: s.trainingBonus,
@@ -105,15 +110,19 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
     };
   };
 
-  const getSkillBonus = (skillName: string, skillsArray = character.skills) => {
+  const getSkillBonus = (skillName: string, skillsArray = character.skills, includeFortalecer = true) => {
     const skill = skillsArray.find(s => s.name === skillName);
     if (!skill) return 0;
 
     const attributeKey = getAttributeKeyForSkill(skillName);
     const attribute = character.attributes[attributeKey] as any;
-    const attributeModifier = attribute?.rollModifier || 0;
     
-    let bonus = skill.trainingBonus + (skill.extraBonus || 0) + attributeModifier;
+    const attributeBonus = includeFortalecer ? (activeFortalecer.atributos[attributeKey] || 0) : 0;
+    const attributeModifier = (attribute?.rollModifier || 0) + attributeBonus;
+    
+    const skillBonus = includeFortalecer ? (activeFortalecer.pericias[skillName] || 0) : 0;
+    
+    let bonus = skill.trainingBonus + (skill.extraBonus || 0) + attributeModifier + skillBonus;
     if (skill.proficiencyState === 'EFFICIENT') bonus += character.efficiencyBonus;
     if (skill.proficiencyState === 'INEFFICIENT') bonus -= Math.round(character.efficiencyBonus / 2);
     
@@ -126,9 +135,13 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
 
     const attributeKey = getAttributeKeyForSkill(name);
     const attribute = character.attributes[attributeKey] as any;
-    const attrModifier = attribute?.rollModifier || 0;
     
-    let baseModifier = attrModifier + skill.trainingBonus + (skill.extraBonus || 0);
+    const attributeBonus = activeFortalecer.atributos[attributeKey] || 0;
+    const attrModifier = (attribute?.rollModifier || 0) + attributeBonus;
+    
+    const skillBonus = activeFortalecer.pericias[name] || 0;
+    
+    let baseModifier = attrModifier + skill.trainingBonus + (skill.extraBonus || 0) + skillBonus;
 
     const isInefficient = skill.proficiencyState === 'INEFFICIENT';
     if (isInefficient) {
@@ -147,7 +160,10 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
   const handleRollAttribute = (type: 'physical' | 'mental') => {
     const key = type === 'physical' ? character.attributes.keyPhysical : character.attributes.keyMental;
     const attr = character.attributes[key] as any;
-    const mod = attr?.rollModifier || 0;
+    
+    const attributeBonus = activeFortalecer.atributos[key] || 0;
+    const mod = (attr?.rollModifier || 0) + attributeBonus;
+    
     setRollingAction({
       name: `Teste de Capacidade ${type === 'physical' ? 'Física' : 'Mental'}`,
       modifier: mod,
@@ -216,6 +232,14 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
                 <span className="text-2xl font-black text-red-900 dark:text-red-100 group-hover:text-red-600 transition-colors">
                   {keyPhysicalAttr.rollModifier >= 0 ? `+${keyPhysicalAttr.rollModifier}` : keyPhysicalAttr.rollModifier}
                 </span>
+                {(() => {
+                  const bonus = activeFortalecer.atributos[character.attributes.keyPhysical] || 0;
+                  return bonus > 0 && (
+                    <span className="text-xs font-black text-amber-600 dark:text-amber-400" title="Bônus Temporário de Fortalecer">
+                      (+{bonus})
+                    </span>
+                  );
+                })()}
                 <Dices className="w-3 h-3 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
@@ -232,6 +256,14 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
                 <span className="text-2xl font-black text-blue-900 dark:text-blue-100 group-hover:text-blue-600 transition-colors">
                   {keyMentalAttr.rollModifier >= 0 ? `+${keyMentalAttr.rollModifier}` : keyMentalAttr.rollModifier}
                 </span>
+                {(() => {
+                  const bonus = activeFortalecer.atributos[character.attributes.keyMental] || 0;
+                  return bonus > 0 && (
+                    <span className="text-xs font-black text-amber-600 dark:text-amber-400" title="Bônus Temporário de Fortalecer">
+                      (+{bonus})
+                    </span>
+                  );
+                })()}
                 <Dices className="w-3 h-3 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
@@ -252,9 +284,11 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
           <CardContent className="space-y-3 py-2">
             {resistances.map((res) => {
               const skill = character.skills.find(s => s.name === res.name);
-              const bonus = getSkillBonus(res.name);
+              const baseBonus = getSkillBonus(res.name, character.skills, false);
+              const totalBonus = getSkillBonus(res.name, character.skills, true);
               const extra = skill?.extraBonus || 0;
-              const baseDisplay = bonus - extra;
+              const baseDisplay = baseBonus - extra;
+              const activeBonus = totalBonus - baseBonus;
               return (
                 <div 
                   key={res.name} 
@@ -262,7 +296,7 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
                   onClick={() => handleRollSkill(res.name)}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm group-hover:border-indigo-500 transition-colors">
+                    <div className="w-8 h-8 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm group-hover:border-indigo-500 transition-colors">
                       {renderProficiencyIcon(skill?.proficiencyState || 'NEUTRAL', true)}
                     </div>
                     <div>
@@ -275,6 +309,11 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
                       <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform">
                         {baseDisplay >= 0 ? `+${baseDisplay}` : baseDisplay}
                       </span>
+                      {activeBonus > 0 && (
+                        <span className="text-[10px] font-black text-amber-600 dark:text-amber-400" title="Bônus Temporário de Fortalecer">
+                          (+{activeBonus})
+                        </span>
+                      )}
                       {extra > 0 && <span className="text-[10px] font-bold text-emerald-500">+{extra}</span>}
                     </div>
                     <Dices className="w-4 h-4 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -303,9 +342,11 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
               .filter(s => !['Fortitude', 'Reflexos', 'Vontade'].includes(s.name))
               .sort(sortSkillsByAttribute)
               .map((skill) => {
-                const bonus = getSkillBonus(skill.name);
+                const baseBonus = getSkillBonus(skill.name, character.skills, false);
+                const totalBonus = getSkillBonus(skill.name, character.skills, true);
                 const extra = skill.extraBonus || 0;
-                const baseDisplay = bonus - extra;
+                const baseDisplay = baseBonus - extra;
+                const activeBonus = totalBonus - baseBonus;
                 const isEfficient = skill.proficiencyState === 'EFFICIENT';
                 const isInefficient = skill.proficiencyState === 'INEFFICIENT';
                 const attrInfo = getAttributeLabelForSkill(skill.name);
@@ -332,13 +373,18 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
                         <span className={`font-black ${isEfficient ? 'text-emerald-600' : isInefficient ? 'text-red-600' : 'text-gray-600 dark:text-gray-400'}`}>
                           {baseDisplay >= 0 ? `+${baseDisplay}` : baseDisplay}
                         </span>
+                        {activeBonus > 0 && (
+                          <span className="text-[9px] font-black text-amber-600 dark:text-amber-400" title="Bônus Temporário de Fortalecer">
+                            (+{activeBonus})
+                          </span>
+                        )}
                         {extra > 0 && <span className="text-[9px] font-bold text-emerald-500">+{extra}</span>}
                       </div>
                       <Dices className="w-3.5 h-3.5 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   </div>
                 );
-            })}
+              })}
           </CardContent>
         </Card>
       </div>
@@ -351,6 +397,46 @@ export function StatsColumn({ character, onSync }: StatsColumnProps) {
         efficiencyBonus={rollingAction?.efficiencyBonus}
         initialApplyEfficiency={rollingAction?.initialApplyEfficiency}
         modifierLabel={rollingAction?.modifierLabel}
+        onRoll={() => {
+          if (rollingAction && deactivatePower) {
+            const rolledName = rollingAction.name;
+            let rolledAttrKey = '';
+            if (rolledName.startsWith('Teste de Capacidade')) {
+              rolledAttrKey = rolledName.includes('Física')
+                ? character.attributes.keyPhysical
+                : character.attributes.keyMental;
+            } else {
+              rolledAttrKey = getAttributeKeyForSkill(rolledName);
+            }
+
+            for (const ap of activePowers) {
+              if (ap.duracao === 0 && ap.efeitos) {
+                let matches = false;
+                for (const ef of ap.efeitos) {
+                  const baseId = ef.efeitoBaseId || ef.effectBaseId || ef.id;
+                  if (baseId !== 'fortalecer') continue;
+                  const val = ef.inputCustomizado || ef.inputValue || ef.value;
+                  if (!val) continue;
+                  try {
+                    const alocs = JSON.parse(String(val));
+                    if (Array.isArray(alocs)) {
+                      for (const aloc of alocs) {
+                        if (aloc.tipo === 'pericia' && aloc.alvo === rolledName) {
+                          matches = true;
+                        } else if (aloc.tipo === 'atributo' && aloc.alvo === rolledAttrKey) {
+                          matches = true;
+                        }
+                      }
+                    }
+                  } catch {}
+                }
+                if (matches) {
+                  deactivatePower(ap.id);
+                }
+              }
+            }
+          }
+        }}
       />
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Gerenciar Perícias & Resistências" size="xl">

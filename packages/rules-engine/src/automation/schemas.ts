@@ -32,8 +32,15 @@ export const efeitoBehaviorSchema: z.ZodType<EfeitoBehavior> = z.discriminatedUn
   }),
   z.object({
     kind: z.literal('FORTALECER'),
-    alvo: z.enum(['PV_TEMP', 'PE_TEMP', 'DANO_BONUS', 'RD_BONUS', 'ACOES']),
+    alvo: z.enum(['PV_TEMP', 'PE_TEMP', 'DANO_BONUS', 'RECUPERACAO_BONUS', 'RD_BONUS', 'ACOES']),
     formula: z.string().optional(),
+    configDano: z.object({
+      alvo: z.discriminatedUnion('tipo', [
+        z.object({ tipo: z.literal('DOMINIO'), dominio: z.string() }),
+        z.object({ tipo: z.literal('DESARMADO') }),
+      ]),
+      bonusDescritor: z.string(),
+    }).optional(),
   }),
   z.object({
     kind: z.literal('APLICAR_CONDICAO'),

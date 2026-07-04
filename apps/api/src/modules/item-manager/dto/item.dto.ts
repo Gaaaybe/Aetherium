@@ -49,7 +49,8 @@ const commonFields = {
     .string()
     .min(10, 'A descrição do item deve ter pelo menos 10 caracteres')
     .max(1000, 'A descrição do item não pode exceder 1000 caracteres'),
-  dominio: dominioSchema,
+  dominio: dominioSchema.optional(),
+  dominios: z.array(dominioSchema).max(2, 'O item pode ter no máximo 2 domínios').default([]),
   custoBase: z.number().int().min(0, 'O custo base não pode ser menor que zero'),
   nivelItem: z.number().int().min(1, 'O nível do item deve ser pelo menos 1').optional(),
   isPublic: z.boolean().default(false),
@@ -61,7 +62,14 @@ const commonFields = {
   maxStack: z.number().int().min(2, 'O empilhamento máximo deve ser de pelo menos 2').optional(),
 };
 
-export const createItemBodySchema = z.discriminatedUnion('tipo', [
+export const createItemBodySchema = z.preprocess((val: any) => {
+  if (val && typeof val === 'object') {
+    if (val.dominio && !val.dominios) {
+      val.dominios = [val.dominio];
+    }
+  }
+  return val;
+}, z.discriminatedUnion('tipo', [
   z
     .object({
       ...commonFields,
@@ -122,7 +130,7 @@ export const createItemBodySchema = z.discriminatedUnion('tipo', [
     tier: z.number().int().min(1).max(4),
     maxUpgradeLimit: z.number().int().min(1),
   }),
-]);
+]));
 
 export type CreateItemBodySchema = z.infer<typeof createItemBodySchema>;
 
@@ -138,6 +146,7 @@ const commonOptional = {
     .max(1000, 'A descrição do item não pode exceder 1000 caracteres')
     .optional(),
   dominio: dominioSchema.optional(),
+  dominios: z.array(dominioSchema).max(2, 'O item pode ter no máximo 2 domínios').optional(),
   custoBase: z.number().int().min(0, 'O custo base não pode ser menor que zero').optional(),
   nivelItem: z.number().int().min(1, 'O nível do item deve ser pelo menos 1').optional(),
   isPublic: z.boolean().optional(),
@@ -149,7 +158,14 @@ const commonOptional = {
   maxStack: z.number().int().min(2, 'O empilhamento máximo deve ser de pelo menos 2').optional(),
 };
 
-export const updateItemBodySchema = z.discriminatedUnion('tipo', [
+export const updateItemBodySchema = z.preprocess((val: any) => {
+  if (val && typeof val === 'object') {
+    if (val.dominio && !val.dominios) {
+      val.dominios = [val.dominio];
+    }
+  }
+  return val;
+}, z.discriminatedUnion('tipo', [
   z
     .object({
       ...commonOptional,
@@ -215,7 +231,7 @@ export const updateItemBodySchema = z.discriminatedUnion('tipo', [
     tier: z.number().int().min(1).max(4).optional(),
     maxUpgradeLimit: z.number().int().min(1).optional(),
   }),
-]);
+]));
 
 export type UpdateItemBodySchema = z.infer<typeof updateItemBodySchema>;
 
@@ -239,10 +255,15 @@ export function formatItemToHTTP(raw: any) {
     icone: raw.icone ?? null,
     notas: raw.notas ?? null,
     dominio: {
-      name: raw.domainName.toLowerCase().replace(/_/g, '-'),
+      name: raw.domains && raw.domains[0] ? raw.domains[0].toLowerCase().replace(/_/g, '-') : 'natural',
       areaConhecimento: raw.domainAreaConhecimento ?? null,
-      peculiarId: raw.domainPeculiarId ?? null,
+      peculiarId: raw.domainPeculiarIds && raw.domainPeculiarIds[0] ? raw.domainPeculiarIds[0] : null,
     },
+    dominios: raw.domains ? raw.domains.map((d: any, idx: number) => ({
+      name: d.toLowerCase().replace(/_/g, '-'),
+      areaConhecimento: d === 'CIENTIFICO' ? raw.domainAreaConhecimento : null,
+      peculiarId: d === 'PECULIAR' ? (raw.domainPeculiarIds?.[idx] ?? raw.domainPeculiarIds?.[0] ?? null) : null,
+    })) : [],
     custoBase: raw.custoBase,
     nivelItem: raw.nivelItem,
     valorBase: calculateItemBaseValue(raw.custoBase, raw.nivelItem),
@@ -361,7 +382,8 @@ const importCommonFields = {
     .string()
     .min(10, 'A descrição do item deve ter pelo menos 10 caracteres')
     .max(1000, 'A descrição do item não pode exceder 1000 caracteres'),
-  dominio: dominioSchema,
+  dominio: dominioSchema.optional(),
+  dominios: z.array(dominioSchema).max(2, 'O item pode ter no máximo 2 domínios').default([]),
   custoBase: z.number().int().min(0, 'O custo base não pode ser menor que zero'),
   isPublic: z.boolean().default(false),
   notas: z.string().max(2000, 'As notas não podem exceder 2000 caracteres').optional(),
@@ -372,7 +394,14 @@ const importCommonFields = {
   maxStack: z.number().int().min(2, 'O empilhamento máximo deve ser de pelo menos 2').optional(),
 };
 
-export const importItemBodySchema = z.discriminatedUnion('tipo', [
+export const importItemBodySchema = z.preprocess((val: any) => {
+  if (val && typeof val === 'object') {
+    if (val.dominio && !val.dominios) {
+      val.dominios = [val.dominio];
+    }
+  }
+  return val;
+}, z.discriminatedUnion('tipo', [
   z
     .object({
       ...importCommonFields,
@@ -433,6 +462,6 @@ export const importItemBodySchema = z.discriminatedUnion('tipo', [
     tier: z.number().int().min(1).max(4),
     maxUpgradeLimit: z.number().int().min(1),
   }),
-]);
+]));
 
 export type ImportItemBodySchema = z.infer<typeof importItemBodySchema>;

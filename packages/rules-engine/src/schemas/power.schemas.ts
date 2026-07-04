@@ -17,6 +17,14 @@ export const appliedEffectSchema = z.object({
   dadoModularizado: z.string().optional(),
   modifications: z.array(appliedModificationSchema).default([]),
   nota: z.string().max(500).optional(),
+}).refine((ef) => {
+  if (ef.effectBaseId === 'dano' && typeof ef.inputValue === 'string' && ef.inputValue.length > 30) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'O tipo/descritor de dano deve ter no máximo 30 caracteres',
+  path: ['inputValue'],
 });
 
 export const custoAlternativoSchema = z.object({

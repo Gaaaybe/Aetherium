@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Package, Save, RefreshCw, Link2, Sword, Shield, FlaskConical, FileText, Plus, Eye, Sparkles, BookOpen, Hammer, Box } from 'lucide-react';
+import { Package, Save, RefreshCw, Link2, Sword, Shield, FlaskConical, FileText, Plus, Eye, Sparkles, BookOpen, Hammer, Box, Trash2 } from 'lucide-react';
 import { DOMINIOS } from '@/data';
 import { usePeculiaridades } from '@/shared/hooks/usePeculiaridades';
 import { Button, Card, CardContent, CardHeader, CardTitle, Input, Select, Textarea, Badge, toast, Tooltip, DynamicIcon, ConfirmDialog } from '@/shared/ui';
@@ -11,7 +11,7 @@ import { useItemCreatorStore } from '@/stores/item-creator.store';
 import { SeletorVinculosModal } from './SeletorVinculosModal';
 import { ResumoItem } from './ResumoItem';
 import { ResumoVinculoModal } from './ResumoVinculoModal';
-import type { ItemResponse, ItemType, UpdateItemPayload } from '@/services/types';
+import type { ItemResponse, ItemType, UpdateItemPayload, DomainName } from '@/services/types';
 import { UPGRADE_PATAMARES, type UpgradePatamarId } from '../hooks/useItemBuilder';
 
 function ItemTypeIcon({ tipo }: { tipo: ItemType }) {
@@ -77,6 +77,8 @@ export function CriadorDeItem({
   const {
     state,
     updateField,
+    addDomain,
+    removeDomain,
     updateDomain,
     setTipo,
     togglePower,
@@ -109,7 +111,10 @@ export function CriadorDeItem({
       } catch {
         toast.error('Erro ao carregar o template.');
       } finally {
-        localStorage.removeItem('criador-de-item-template');
+        // Remove de forma assíncrona para permitir que a montagem dupla do Strict Mode encontre o item
+        setTimeout(() => {
+          localStorage.removeItem('criador-de-item-template');
+        }, 100);
       }
     } else if (raw) {
       try {
@@ -119,8 +124,12 @@ export function CriadorDeItem({
       } catch {
         toast.error('Não foi possível carregar o item selecionado.');
       } finally {
-        localStorage.removeItem('criador-de-item-carregar');
+        // Remove de forma assíncrona para permitir que a montagem dupla do Strict Mode encontre o item
+        setTimeout(() => {
+          localStorage.removeItem('criador-de-item-carregar');
+        }, 100);
       }
+    } else {
       // Se não há item inicial nem no localstorage, mas o Zustand tem um editingItemId (UUID)
       // de uma sessão anterior, reseta para começar limpo
       const currentEditingId = useItemCreatorStore.getState().state.editingItemId;
@@ -134,25 +143,24 @@ export function CriadorDeItem({
     return () => {
       const currentEditingId = useItemCreatorStore.getState().state.editingItemId;
       const isApiId = /^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(currentEditingId || '');
-      if (isApiId) {
+      const isLeavingPage = !window.location.pathname.includes('/criador');
+      if (isApiId && isLeavingPage) {
         reset();
       }
     };
   }, [itemInicial, hydrateFromItem, reset]);
 
-  const dominioAtual = state.dominio.name;
+  const dominiosAtuais = useMemo(() => state.dominios.map((d) => d.name), [state.dominios]);
 
   const poderesCompativeis = useMemo(
-    () => poderesCompletos.filter((p) => p.dominio.name === dominioAtual),
-    [poderesCompletos, dominioAtual],
+    () => poderesCompletos.filter((p) => dominiosAtuais.includes(p.dominio.name)),
+    [poderesCompletos, dominiosAtuais],
   );
 
   const acervosCompativeis = useMemo(
-    () => acervosCompletos.filter((a) => a.dominio.name === dominioAtual),
-    [acervosCompletos, dominioAtual],
+    () => acervosCompletos.filter((a) => dominiosAtuais.includes(a.dominio.name)),
+    [acervosCompletos, dominiosAtuais],
   );
-
-  const dominioSelecionado = DOMINIOS.find((d) => d.id === state.dominio.name);
 
   const poderesSelecionados = useMemo(
     () => poderesCompletos.filter((poder) => state.powerIds.includes(poder.id)),
@@ -312,20 +320,95 @@ export function CriadorDeItem({
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select
-              label="Domínio"
-              value={state.dominio.name}
-              onChange={(e) =>
-                updateDomain({
-                  name: e.target.value as typeof state.dominio.name,
-                  areaConhecimento: undefined,
-                  peculiarId: undefined,
-                })
-              }
-              options={DOMINIOS.map((dominio) => ({ value: dominio.id, label: dominio.nome }))}
-              placeholder=""
-            />
+          {/* Domínios do Item */}
+          <div className="space-y-4 border border-gray-100 dark:border-gray-800 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/10">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                Domínios ({state.dominios.length})
+              </h4>
+              {state.dominios.length < 2 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addDomain({ name: 'natural' })}
+                  className="flex items-center gap-1.5 h-8 text-xs font-bold text-espirito-600 dark:text-espirito-400 border-espirito-200 dark:border-espirito-800 hover:bg-espirito-50 dark:hover:bg-espirito-900/20"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Adicionar Domínio
+                </Button>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              {state.dominios.length === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                  Nenhum domínio selecionado. Este item não terá domínio vinculado.
+                </p>
+              )}
+              {state.dominios.map((dom, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/50 space-y-3 relative group"
+                >
+                  <div className="flex items-end gap-3">
+                    <div className="flex-1">
+                      <Select
+                        label={`Domínio #${idx + 1}`}
+                        value={dom.name}
+                        onChange={(e) =>
+                          updateDomain(idx, {
+                            name: e.target.value as DomainName,
+                            areaConhecimento: undefined,
+                            peculiarId: undefined,
+                          })
+                        }
+                        options={DOMINIOS.map((dominio) => ({
+                          value: dominio.id,
+                          label: dominio.nome,
+                        }))}
+                        placeholder=""
+                      />
+                    </div>
+                    {state.dominios.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => removeDomain(idx)}
+                        className="h-10 px-3 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
+                        title="Remover este domínio"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  {dom.name === 'cientifico' && (
+                    <Select
+                      label="Área de Conhecimento"
+                      value={dom.areaConhecimento ?? ''}
+                      onChange={(e) => updateDomain(idx, { areaConhecimento: e.target.value })}
+                      options={(
+                        DOMINIOS.find((d) => d.id === 'cientifico')?.areasConhecimento ?? []
+                      ).map((area) => ({ value: area, label: area }))}
+                      placeholder="Selecione a área"
+                    />
+                  )}
+
+                  {dom.name === 'peculiar' && (
+                    <Select
+                      label="Peculiaridade"
+                      value={dom.peculiarId ?? ''}
+                      onChange={(e) => updateDomain(idx, { peculiarId: e.target.value })}
+                      options={peculiaridades.map((p) => ({ value: p.id, label: p.nome }))}
+                      placeholder="Selecione a peculiaridade"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
             <Input
               label="Notas"
               value={state.notas}
@@ -333,28 +416,6 @@ export function CriadorDeItem({
               placeholder="Notas opcionais do item"
             />
           </div>
-
-          {state.dominio.name === 'cientifico' && (
-            <Select
-              label="Área de Conhecimento"
-              value={state.dominio.areaConhecimento ?? ''}
-              onChange={(e) => updateDomain({ areaConhecimento: e.target.value })}
-              options={(
-                DOMINIOS.find((d) => d.id === 'cientifico')?.areasConhecimento ?? []
-              ).map((area) => ({ value: area, label: area }))}
-              placeholder="Selecione a área"
-            />
-          )}
-
-          {state.dominio.name === 'peculiar' && (
-            <Select
-              label="Peculiaridade"
-              value={state.dominio.peculiarId ?? ''}
-              onChange={(e) => updateDomain({ peculiarId: e.target.value })}
-              options={peculiaridades.map((p) => ({ value: p.id, label: p.nome }))}
-              placeholder="Selecione a peculiaridade"
-            />
-          )}
 
           <div className="flex items-center gap-2">
             <input
@@ -371,10 +432,10 @@ export function CriadorDeItem({
 
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-900/40">
             <p className="text-sm text-gray-700 dark:text-gray-300">
-              <span className="font-semibold">Domínio atual:</span> {dominioSelecionado?.nome ?? dominioAtual}
+              <span className="font-semibold">Domínios atuais:</span> {state.dominios.map((d) => DOMINIOS.find((dom) => dom.id === d.name)?.nome ?? d.name).join(', ')}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Apenas poderes e acervos do mesmo domínio podem ser vinculados.
+              Apenas poderes e acervos com domínio compatível com algum dos selecionados podem ser vinculados.
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               `Upgrade Level` de armas e equipamentos defensivos é separado do nível do item e começa em 0.
@@ -797,7 +858,7 @@ export function CriadorDeItem({
         nome={state.nome.trim()}
         icone={state.icone.trim()}
         descricao={state.descricao.trim()}
-        dominio={state.dominio}
+        dominios={state.dominios}
         custoBase={state.custoBase}
         nivelCalculado={nivelCalculado}
         custoRealCalculado={custoRealCalculado}

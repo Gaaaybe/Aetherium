@@ -14,6 +14,39 @@ export const modificacaoAplicadaSchema = z.object({
   nota: z.string().optional(),
 });
 
+function obterBonusFortalecerPorGrau(grau: number): number {
+  if (grau <= 0) return 0;
+  if (grau === 1) return 3;
+  if (grau === 2) return 5;
+  if (grau === 3) return 10;
+  return 10 + (grau - 3) * 15;
+}
+
+interface FortaleceAlvo {
+  tipo: 'atributo' | 'pericia';
+  alvo: string;
+  bonus: number;
+}
+
+function parseAlocacoes(input: string | undefined, tipoPadrao: 'atributo' | 'pericia', bonusPadrao: number): FortaleceAlvo[] {
+  if (!input) return [];
+  try {
+    const trimmed = input.trim();
+    if (trimmed.startsWith('[')) {
+      return JSON.parse(trimmed);
+    }
+    if (trimmed) {
+      return [{ tipo: tipoPadrao, alvo: trimmed, bonus: bonusPadrao }];
+    }
+    return [];
+  } catch (e) {
+    if (input) {
+      return [{ tipo: tipoPadrao, alvo: input, bonus: bonusPadrao }];
+    }
+    return [];
+  }
+}
+
 /**
  * Schema de validação para EfeitoAplicado
  */
@@ -28,6 +61,26 @@ export const efeitoAplicadoSchema = z.object({
   modificacoesLocais: z.array(modificacaoAplicadaSchema).default([]),
   inputCustomizado: z.string().optional(),
   configuracaoSelecionada: z.string().optional(),
+}).refine((ef) => {
+  if (ef.efeitoBaseId === 'dano' && ef.inputCustomizado && ef.inputCustomizado.length > 30) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'O tipo/descritor de dano deve ter no máximo 30 caracteres',
+  path: ['inputCustomizado'],
+}).refine((ef) => {
+  if (ef.efeitoBaseId === 'fortalecer') {
+    const bonusMax = obterBonusFortalecerPorGrau(ef.grau);
+    const tipoSelecionado = (ef.configuracaoSelecionada as 'atributo' | 'pericia') || 'atributo';
+    const alocacoes = parseAlocacoes(ef.inputCustomizado, tipoSelecionado, bonusMax);
+    const somaAlocada = alocacoes.reduce((sum, item) => sum + item.bonus, 0);
+    return somaAlocada <= bonusMax;
+  }
+  return true;
+}, {
+  message: 'Os bônus alocados do Fortalecer excedem o limite do Grau correspondente',
+  path: ['inputCustomizado'],
 });
 
 /**

@@ -26,19 +26,23 @@ export function ActivePowersTracker({
   onUse,
   isDisabled,
 }: ActivePowersTrackerProps) {
-  if (activePowers.length === 0) return null;
+  const displayPowers = (activePowers || []).filter(
+    (ap) => ap.duracao !== 4 && ap.duracao !== 5
+  );
+
+  if (displayPowers.length === 0) return null;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 px-1">
         <Flame className="w-3.5 h-3.5 text-orange-500" />
         <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest">
-          Poderes Ativos ({activePowers.length})
+          Poderes Ativos ({displayPowers.length})
         </h3>
       </div>
 
       <div className="flex flex-col gap-2">
-        {activePowers.map(ap => (
+        {displayPowers.map(ap => (
           <div
             key={ap.id}
             className="flex items-center gap-3 p-3 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/5 transition-all"

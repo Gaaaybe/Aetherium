@@ -82,7 +82,10 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
       } catch (error) {
         console.error('Erro ao carregar poder pendente:', error);
       } finally {
-        localStorage.removeItem('criador-de-poder-carregar');
+        // Remove de forma assíncrona para permitir que a montagem dupla do Strict Mode encontre o item
+        setTimeout(() => {
+          localStorage.removeItem('criador-de-poder-carregar');
+        }, 100);
       }
     } else {
       // Se não há poder inicial nem pendente (criando novo poder)
@@ -96,10 +99,12 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
     // Cleanup ao desmontar o componente
     return () => {
       // Sempre reseta o poder ao fechar/desmontar se ele for um poder salvo da API (UUID)
-      // para evitar que seu ID fique persistido no Zustand e contamine a próxima sessão
+      // para evitar que seu ID fique persistido no Zustand e contamine a próxima sessão.
+      // Apenas faz isso se estivermos realmente saindo da rota '/criador'
       const currentPower = usePowerCreatorStore.getState().poder;
       const isApiId = /^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(currentPower.id);
-      if (isApiId) {
+      const isLeavingPage = !window.location.pathname.includes('/criador');
+      if (isApiId && isLeavingPage) {
         resetarPoder();
       }
     };

@@ -2,30 +2,55 @@ import { useState, useEffect } from 'react';
 import { CharacterResponse } from '@/services/characters.types';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button, DynamicIcon, toast } from '@/shared/ui';
 import { Sword, Zap, Shield, Repeat, Package, Activity, Dices, Plus, Minus, RotateCcw, Search } from 'lucide-react';
-import { ACOES_COMBATE } from '@/data';
+import { ACOES_COMBATE, buscarGrauNaTabela } from '@/data';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { getItemById } from '@/services/items.service';
 import { getPowerById } from '@/services/powers.service';
 import { getPowerArrayById } from '@/services/powerArrays.service';
 import type { ItemResponse, WeaponItemResponse, PoderResponse, AcervoResponse } from '@/services/types';
 import { UnarmedMasteryModal } from './UnarmedMasteryModal';
-import { usePowerUsage, type ActivePower } from '@/features/ficha-personagem/hooks/usePowerUsage';
+import { type ActivePower } from '@/features/ficha-personagem/hooks/usePowerUsage';
 import { PowerUsageModal } from './PowerUsageModal';
 import { ActivePowersTracker } from './ActivePowersTracker';
 import type { ResolvePowerResponse } from '@/services/powers.service';
+import {
+  obterBonusFortalecerDanoRecuperacao,
+  obterBonusFortalecerCaracteristicasItem,
+  obterBonusFortalecerCaracteristicasDesarmado,
+  obterBonusFortalecerAcoes
+} from '../../../../utils/fortalecerHelper';
+import { fortaleceAlvoMatch } from '@aetherium/rules-engine';
 
 interface AcoesTabProps {
   character: CharacterResponse;
   onUpdateUnarmedMastery: (mastery: any) => Promise<void>;
   onSync: (data: any) => Promise<void>;
+  activePowers: ActivePower[];
+  isResolving: boolean;
+  isConfirming: boolean;
+  previewPower: any;
+  confirmUsePower: any;
+  maintainPower: any;
+  deactivatePower: any;
 }
 
-export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTabProps) {
+export function AcoesTab({
+  character,
+  onUpdateUnarmedMastery,
+  onSync,
+  activePowers,
+  isResolving,
+  isConfirming,
+  previewPower,
+  confirmUsePower,
+  maintainPower,
+  deactivatePower,
+}: AcoesTabProps) {
   const [detailedItems, setDetailedItems] = useState<Record<string, ItemResponse>>({});
   const [detailedPowers, setDetailedPowers] = useState<Record<string, PoderResponse>>({});
   const [detailedArrays, setDetailedArrays] = useState<Record<string, AcervoResponse>>({});
   
-  const [usingPower, setUsingPower] = useState<PoderResponse | null>(null);
+  const [usingPower, setUsingPower] = useState<(PoderResponse & { originItemId?: string }) | null>(null);
   const [usingPowerFromActive, setUsingPowerFromActive] = useState<boolean>(false);
   const [resolution, setResolution] = useState<ResolvePowerResponse | null>(null);
 
@@ -53,33 +78,23 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
     }
   };
 
-  const {
-    activePowers,
-    isResolving,
-    isConfirming,
-    previewPower,
-    confirmUsePower,
-    maintainPower,
-    deactivatePower,
-  } = usePowerUsage({
-    characterId: character.id,
-    onSync,
-  });
-
   // Contadores locais de turno
+  const activeFortalecerAcoes = obterBonusFortalecerAcoes(activePowers);
+  const defaultActions = 1 + activeFortalecerAcoes;
+
   const [actions, setActions] = useState(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(`character_${character.id}_actions`);
-      return stored ? parseInt(stored) : 0;
+      return stored ? parseInt(stored) : defaultActions;
     }
-    return 0;
+    return defaultActions;
   });
   const [movement, setMovement] = useState(() => {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(`character_${character.id}_movement`);
-      return stored ? parseInt(stored) : 0;
+      return stored ? parseInt(stored) : 1;
     }
-    return 0;
+    return 1;
   });
 
   useEffect(() => {
@@ -93,9 +108,9 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
   useEffect(() => {
     const storedActions = localStorage.getItem(`character_${character.id}_actions`);
     const storedMovement = localStorage.getItem(`character_${character.id}_movement`);
-    setActions(storedActions ? parseInt(storedActions) : 0);
-    setMovement(storedMovement ? parseInt(storedMovement) : 0);
-  }, [character.id]);
+    setActions(storedActions ? parseInt(storedActions) : defaultActions);
+    setMovement(storedMovement ? parseInt(storedMovement) : 1);
+  }, [character.id, defaultActions]);
 
 
   // Busca e Filtro de Ações de Combate
@@ -110,6 +125,9 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
     critMargin?: number;
     critMultiplier?: number;
     efficiencyBonus?: number;
+    tipo?: 'ARMA' | 'DESARMADO';
+    domains?: string[];
+    itemId?: string;
   } | null>(null);
 
   const [isUnarmedModalOpen, setIsUnarmedModalOpen] = useState(false);
@@ -129,111 +147,177 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
   };
 
   useEffect(() => {
-    const fetchItemDetails = async () => {
-      const itemIds = character.equipment.hands.map(i => i.itemId);
-      const uniqueIds = Array.from(new Set(itemIds));
+    let active = true;
 
-      const newDetails: Record<string, ItemResponse> = { ...detailedItems };
-      let changed = false;
+    const fetchAllDetails = async () => {
+      // 1. Gather all equipped item IDs
+      const itemIds: string[] = [];
+      if (character.equipment.suitId) itemIds.push(character.equipment.suitId);
+      if (character.equipment.accessoryId) itemIds.push(character.equipment.accessoryId);
+      character.equipment.hands.forEach(h => itemIds.push(h.itemId));
+      character.equipment.quickAccess.forEach(q => itemIds.push(q.itemId));
+      const uniqueItemIds = Array.from(new Set(itemIds));
 
-      for (const id of uniqueIds) {
-        if (!newDetails[id]) {
+      // Fetch missing item details
+      const newDetailedItems = { ...detailedItems };
+      let itemsChanged = false;
+      for (const id of uniqueItemIds) {
+        if (!newDetailedItems[id]) {
           try {
             const detail = await getItemById(id);
-            newDetails[id] = detail;
-            changed = true;
+            newDetailedItems[id] = detail;
+            itemsChanged = true;
           } catch (err) {
             console.error(`Erro ao buscar item ${id}`, err);
           }
         }
       }
-
-      if (changed) {
-        setDetailedItems(newDetails);
+      if (itemsChanged && active) {
+        setDetailedItems(newDetailedItems);
       }
-    };
 
-    fetchItemDetails();
-  }, [character.equipment.hands]);
+      // 2. Gather all power IDs and power array IDs (character + equipped items)
+      const equippedItemsList = uniqueItemIds
+        .map(id => newDetailedItems[id])
+        .filter(Boolean);
 
-  useEffect(() => {
-    const fetchPowerDetails = async () => {
-      const powerIds = character.powers.map(p => p.powerId);
-      const uniqueIds = Array.from(new Set(powerIds));
+      const itemPowerIds = equippedItemsList.flatMap(item => item.powerIds || []);
+      const itemPowerArrayIds = equippedItemsList.flatMap(item => item.powerArrayIds || []);
 
-      const newDetails: Record<string, PoderResponse> = { ...detailedPowers };
-      let changed = false;
+      const allPowerIds = Array.from(new Set([
+        ...character.powers.map(p => p.powerId),
+        ...itemPowerIds
+      ]));
 
-      for (const id of uniqueIds) {
-        if (!newDetails[id]) {
+      const allPowerArrayIds = Array.from(new Set([
+        ...character.powerArrays.map(a => a.powerArrayId),
+        ...itemPowerArrayIds
+      ]));
+
+      // Fetch missing power details
+      const newDetailedPowers = { ...detailedPowers };
+      let powersChanged = false;
+      for (const id of allPowerIds) {
+        if (!newDetailedPowers[id]) {
           try {
             const detail = await getPowerById(id);
-            newDetails[id] = detail;
-            changed = true;
+            newDetailedPowers[id] = detail;
+            powersChanged = true;
           } catch (err) {
             console.error(`Erro ao buscar poder ${id}`, err);
           }
         }
       }
-
-      if (changed) {
-        setDetailedPowers(newDetails);
+      if (powersChanged && active) {
+        setDetailedPowers(newDetailedPowers);
       }
-    };
 
-    fetchPowerDetails();
-  }, [character.powers]);
-
-  useEffect(() => {
-    const fetchArrayDetails = async () => {
-      const arrayIds = character.powerArrays.map(a => a.powerArrayId);
-      const uniqueIds = Array.from(new Set(arrayIds));
-
-      const newDetails: Record<string, AcervoResponse> = { ...detailedArrays };
-      let changed = false;
-
-      for (const id of uniqueIds) {
-        if (!newDetails[id]) {
+      // Fetch missing power array details
+      const newDetailedArrays = { ...detailedArrays };
+      let arraysChanged = false;
+      for (const id of allPowerArrayIds) {
+        if (!newDetailedArrays[id]) {
           try {
             const detail = await getPowerArrayById(id);
-            newDetails[id] = detail;
-            changed = true;
+            newDetailedArrays[id] = detail;
+            arraysChanged = true;
           } catch (err) {
             console.error(`Erro ao buscar acervo ${id}`, err);
           }
         }
       }
-
-      if (changed) {
-        setDetailedArrays(newDetails);
+      if (arraysChanged && active) {
+        setDetailedArrays(newDetailedArrays);
       }
     };
 
-    fetchArrayDetails();
-  }, [character.powerArrays]);
+    fetchAllDetails();
+
+    return () => {
+      active = false;
+    };
+  }, [
+    character.equipment.suitId,
+    character.equipment.accessoryId,
+    character.equipment.hands,
+    character.equipment.quickAccess,
+    character.powers,
+    character.powerArrays
+  ]);
 
   // Filtra itens e poderes que seriam exibidos como ações
   const equippedItems = character.equipment.hands;
 
-  // 1. Poderes individuais equipados
+  // 1. Poderes individuais equipados (do personagem)
   const individualEquipped = character.powers
     .filter(p => p.isEquipped)
     .map(p => detailedPowers[p.powerId])
     .filter((p): p is PoderResponse => !!p);
 
-  // 2. Poderes de acervos equipados
+  // 2. Poderes de acervos equipados (do personagem)
   const arrayEquipped = character.powerArrays
     .filter(a => a.isEquipped)
     .flatMap(a => detailedArrays[a.powerArrayId]?.powers || []);
 
-  // 3. Unifica e remove duplicatas por ID
+  // 3. Poderes de itens equipados
+  const equippedItemIdsList = [
+    character.equipment.suitId,
+    character.equipment.accessoryId,
+    ...character.equipment.hands.map(h => h.itemId),
+    ...character.equipment.quickAccess.map(q => q.itemId),
+  ].filter(Boolean);
+
+  const itemIndividualPowers: (PoderResponse & { originItemName?: string; originItemId?: string })[] = [];
+  const itemArrayPowers: (PoderResponse & { originItemName?: string; originItemId?: string })[] = [];
+
+  equippedItemIdsList.forEach(itemId => {
+    const itemDetail = detailedItems[itemId!];
+    if (!itemDetail) return;
+
+    if (itemDetail.powerIds) {
+      itemDetail.powerIds.forEach(pid => {
+        const power = detailedPowers[pid];
+        if (power) {
+          itemIndividualPowers.push({
+            ...power,
+            originItemName: itemDetail.nome,
+            originItemId: itemDetail.id,
+            originItemTipo: itemDetail.tipo
+          } as any);
+        }
+      });
+    }
+
+    if (itemDetail.powerArrayIds) {
+      itemDetail.powerArrayIds.forEach(paid => {
+        const arrayDetail = detailedArrays[paid];
+        if (arrayDetail && arrayDetail.powers) {
+          arrayDetail.powers.forEach(power => {
+            itemArrayPowers.push({
+              ...power,
+              originItemName: itemDetail.nome,
+              originItemId: itemDetail.id,
+              originItemTipo: itemDetail.tipo
+            } as any);
+          });
+        }
+      });
+    }
+  });
+
+  // 4. Unifica e remove duplicatas por ID
   const allUsablePowers = Array.from(
-    new Map([...individualEquipped, ...arrayEquipped].map(p => [p.id, p])).values()
+    new Map([
+      ...individualEquipped,
+      ...arrayEquipped,
+      ...itemIndividualPowers,
+      ...itemArrayPowers
+    ].map(p => [p.id, p])).values()
   );
 
-  // 4. Filtra para exibir apenas poderes ativos (qualquer ação que não seja passiva - valor 5 e não permanente - valor 4)
+  // 5. Filtra para exibir apenas poderes ativos (qualquer ação que não seja passiva - valor 5 e não permanente - valor 4)
   const activeEquippedPowers = allUsablePowers.filter(
-    p => p.parametros?.acao !== 5 && p.parametros?.duracao !== 4
+    p => p.parametros?.duracao !== 4
   );
 
   const filteredCombatActions = ACOES_COMBATE.filter(acao => {
@@ -255,7 +339,7 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                 <Sword className="w-4 h-4 text-red-500" />
                 Ações de Turno
               </div>
-              <Button variant="ghost" size="sm" className="h-7 w-7 rounded-full hover:bg-red-50 !p-0 flex items-center justify-center transition-transform hover:rotate-180 duration-500" onClick={() => { setActions(1); setMovement(1); }} title="Reiniciar Turno">
+              <Button variant="ghost" size="sm" className="h-7 w-7 rounded-full hover:bg-red-50 !p-0 flex items-center justify-center transition-transform hover:rotate-180 duration-500" onClick={() => { setActions(defaultActions); setMovement(1); }} title="Reiniciar Turno">
                 <RotateCcw className="w-4 h-4 text-red-500" />
               </Button>
             </CardTitle>
@@ -267,7 +351,16 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                 <Button variant="outline" size="sm" className="h-8 w-8 rounded-lg border-red-100 !p-0 flex items-center justify-center" onClick={() => setActions(Math.max(0, actions - 1))}>
                   <Minus className="w-4 h-4 text-red-500" />
                 </Button>
-                <span className="text-3xl font-black text-red-600 w-8 text-center">{actions}</span>
+                {(() => {
+                  const extraRestante = Math.max(0, actions - 1);
+                  const baseRestante = Math.min(1, actions);
+                  const textDisplay = extraRestante > 0 ? `${baseRestante} (+${extraRestante})` : `${actions}`;
+                  return (
+                    <span className="text-2xl font-black text-red-600 min-w-[3.5rem] text-center" title={`${baseRestante} Ação Base + ${extraRestante} Extra(s)`}>
+                      {textDisplay}
+                    </span>
+                  );
+                })()}
                 <Button variant="outline" size="sm" className="h-8 w-8 rounded-lg border-red-100 !p-0 flex items-center justify-center" onClick={() => setActions(actions + 1)}>
                   <Plus className="w-4 h-4 text-red-500" />
                 </Button>
@@ -342,9 +435,24 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                           Grau {character.unarmedMastery?.degree || 0}
                         </Badge>
                       </div>
-                      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter mt-0.5 truncate">
-                        {character.unarmedMastery?.damageDie || '1d2'} {character.unarmedMastery?.damageType || 'Impacto'}
-                      </p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter mt-0.5 truncate">
+                          {character.unarmedMastery?.damageDie || '1d2'} {character.unarmedMastery?.damageType || 'Impacto'}
+                        </p>
+                        {(() => {
+                          const unarmedCritBonus = obterBonusFortalecerCaracteristicasDesarmado(activePowers);
+                          if (unarmedCritBonus.critMarginBonus > 0 || unarmedCritBonus.critMultiplierBonus > 0) {
+                            const finalCritMargin = Math.max(1, (character.unarmedMastery?.criticalMargin || 20) - unarmedCritBonus.critMarginBonus);
+                            const finalCritMultiplier = (character.unarmedMastery?.criticalMultiplier || 2) + unarmedCritBonus.critMultiplierBonus;
+                            return (
+                              <Badge className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1">
+                                CRIT: {finalCritMargin}+ / x{finalCritMultiplier}
+                              </Badge>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -356,14 +464,32 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                         const attrKey = character.attributes.keyPhysical || 'strength';
                         const mod = (character.attributes[attrKey] as any)?.rollModifier || 0;
 
+                        const baseDamage = character.unarmedMastery?.damageDie || '1d2';
+                        const fortalecerBonuses = obterBonusFortalecerDanoRecuperacao(activePowers, {
+                          tipo: 'DESARMADO'
+                        }, character);
+
+                        let finalDamage = baseDamage;
+                        for (const fb of fortalecerBonuses) {
+                          if (fb.configId === 'dano') {
+                            const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
+                            finalDamage += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
+                          }
+                        }
+
+                        const unarmedCritBonus = obterBonusFortalecerCaracteristicasDesarmado(activePowers);
+                        const finalCritMargin = Math.max(1, (character.unarmedMastery?.criticalMargin || 20) - unarmedCritBonus.critMarginBonus);
+                        const finalCritMultiplier = (character.unarmedMastery?.criticalMultiplier || 2) + unarmedCritBonus.critMultiplierBonus;
+
                         setRollingAction({
                           name: character.unarmedMastery?.customName || 'Ataque Desarmado',
-                          damage: character.unarmedMastery?.damageDie || '1d2',
+                          damage: finalDamage,
                           modifier: mod,
                           damageModifier: mod,
-                          critMargin: character.unarmedMastery?.criticalMargin || 20,
-                          critMultiplier: character.unarmedMastery?.criticalMultiplier || 2,
-                          efficiencyBonus: character.efficiencyBonus
+                          critMargin: finalCritMargin,
+                          critMultiplier: finalCritMultiplier,
+                          efficiencyBonus: character.efficiencyBonus,
+                          tipo: 'DESARMADO'
                         });
                       }}
                     >
@@ -404,9 +530,33 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                           <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100 italic">
                             {itemDetail?.nome || item.itemId}
                           </h4>
-                          <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">
-                            {itemDetail?.danos?.map(d => d.dado).join(' + ') || 'Arma Atacante'}
-                          </p>
+                          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">
+                              {itemDetail?.danos?.map(d => d.dado).join(' + ') || 'Arma Atacante'}
+                            </p>
+                            {(() => {
+                              if (!itemDetail) return null;
+                              const itemFortalecerBonus = obterBonusFortalecerCaracteristicasItem(activePowers, itemDetail.id);
+                              const badges = [];
+                              if (itemFortalecerBonus.critMarginBonus > 0 || itemFortalecerBonus.critMultiplierBonus > 0) {
+                                const finalCritMargin = Math.max(1, (itemDetail.critMargin || 20) - itemFortalecerBonus.critMarginBonus);
+                                const finalCritMultiplier = (itemDetail.critMultiplier || 2) + itemFortalecerBonus.critMultiplierBonus;
+                                badges.push(
+                                  <Badge key="crit" className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1">
+                                    CRIT: {finalCritMargin}+ / x{finalCritMultiplier}
+                                  </Badge>
+                                );
+                              }
+                              if (itemFortalecerBonus.alcanceBonus > 0) {
+                                badges.push(
+                                  <Badge key="alcance" className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1">
+                                    ALCANCE: +{itemFortalecerBonus.alcanceBonus}m
+                                  </Badge>
+                                );
+                              }
+                              return badges;
+                            })()}
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -422,14 +572,75 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                             const attrKey = map[escalonamento] || character.attributes.keyPhysical || 'strength';
                             const mod = (character.attributes[attrKey] as any)?.rollModifier || 0;
 
+                            const baseDamage = itemDetail?.danos?.map(d => d.dado).join(' + ') || '';
+                            const weaponDomains = itemDetail?.dominios?.map((d: any) => d.name) || [];
+                            const fortalecerBonuses = obterBonusFortalecerDanoRecuperacao(activePowers, {
+                              tipo: 'ARMA',
+                              domains: weaponDomains,
+                              itemId: itemDetail?.id
+                            }, character);
+
+                            let finalDamage = baseDamage;
+                            for (const fb of fortalecerBonuses) {
+                              if (fb.configId === 'dano') {
+                                const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
+                                finalDamage += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
+                              }
+                            }
+
+                            // Procurar poderes do próprio item que estão ativos/equipados e têm Efeito Dano
+                            const itemDanoPowers = activePowers.filter(p => p.originItemId === itemDetail?.id);
+                            for (const ip of itemDanoPowers) {
+                              const powerInfo = detailedPowers[ip.powerId];
+                              if (!powerInfo) continue;
+
+                              const effects = powerInfo.effects || [];
+                              for (const eff of effects) {
+                                const baseId = eff.effectBaseId;
+                                if (baseId === 'dano') {
+                                  const degree = eff.grau || 1;
+                                  
+                                  const espiritualDomains = ['natural', 'sagrado', 'sacrilegio', 'psiquico'];
+                                  const domainName = powerInfo.dominio?.name || '';
+                                  const isEspiritualDomain = espiritualDomains.includes(domainName.toLowerCase());
+                                  const isEspiritual = isEspiritualDomain || (domainName.toLowerCase() === 'peculiar' && !!(powerInfo.dominio as any)?.espiritual);
+                                  const isInstantaneous = powerInfo.parametros?.duracao === 0;
+                                  const itemTipo = ip.originItemTipo || (ip.originItemId ? detailedItems[ip.originItemId]?.tipo : undefined);
+                                  const isDanoAcoplado = ((itemTipo?.toUpperCase() === 'WEAPON' || itemTipo === 'weapon') && !(isEspiritual && isInstantaneous));
+
+                                  let formula = '';
+                                  if (isDanoAcoplado) {
+                                    formula = `1d${4 * Math.pow(2, Math.max(1, degree) - 1)}`;
+                                  } else {
+                                    const danoInfo = buscarGrauNaTabela(degree);
+                                    formula = danoInfo ? danoInfo.dano : '';
+                                  }
+
+                                  if (formula) {
+                                    const customDescriptor = eff.inputCustomizado || eff.inputValue;
+                                    const descriptorVal = customDescriptor ? String(customDescriptor).trim() : domainName;
+                                    const descriptor = descriptorVal ? ` [${descriptorVal.toUpperCase()}]` : '';
+                                    finalDamage += ` + ${formula}${descriptor}[Acoplado]`;
+                                  }
+                                }
+                              }
+                            }
+
+                            const itemFortalecerBonus = obterBonusFortalecerCaracteristicasItem(activePowers, itemDetail?.id);
+                            const finalCritMargin = Math.max(1, (itemDetail?.critMargin || 20) - itemFortalecerBonus.critMarginBonus);
+                            const finalCritMultiplier = (itemDetail?.critMultiplier || 2) + itemFortalecerBonus.critMultiplierBonus;
+
                             setRollingAction({
                               name: itemDetail?.nome || 'Ataque',
-                              damage: itemDetail?.danos?.map(d => d.dado).join(' + '),
+                              damage: finalDamage,
                               modifier: mod,
                               damageModifier: mod,
-                              critMargin: itemDetail?.critMargin,
-                              critMultiplier: itemDetail?.critMultiplier,
-                              efficiencyBonus: character.efficiencyBonus
+                              critMargin: finalCritMargin,
+                              critMultiplier: finalCritMultiplier,
+                              efficiencyBonus: character.efficiencyBonus,
+                              tipo: 'ARMA',
+                              domains: weaponDomains,
+                              itemId: itemDetail?.id
                             });
                           }}
                         >
@@ -473,7 +684,7 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
 
               <div className="space-y-2">
                 {activeEquippedPowers.length > 0 ? (
-                  activeEquippedPowers.map((powerDetail) => {
+                  activeEquippedPowers.map((powerDetail: any) => {
                     return (
                       <div key={powerDetail.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 group hover:border-purple-500/30 transition-all">
                         <div className="flex items-center gap-3">
@@ -488,7 +699,9 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                             <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100">
                               {powerDetail.nome}
                             </h4>
-                            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">Poder Ativo</p>
+                            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">
+                              {powerDetail.originItemName ? `Item: ${powerDetail.originItemName}` : 'Poder Ativo'}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -546,96 +759,151 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
             <CardContent>
               <div className="space-y-3">
                 {/* Poderes Passivos e Ativados Ligados */}
-                {[
-                  ...character.powers.map(p => ({ powerId: p.powerId, isEquipped: p.isEquipped, id: p.id })),
-                  ...character.powerArrays
+                {(() => {
+                  const passiveOrActivatedPowersList: { powerId: string; isEquipped: boolean; id: string; originItemName?: string }[] = [];
+
+                  character.powers.forEach(p => {
+                    passiveOrActivatedPowersList.push({
+                      powerId: p.powerId,
+                      isEquipped: p.isEquipped,
+                      id: p.id,
+                    });
+                  });
+
+                  character.powerArrays
                     .filter(a => a.isEquipped)
-                    .flatMap(a => {
+                    .forEach(a => {
                       const arrayDetail = detailedArrays[a.powerArrayId];
-                      return (arrayDetail?.powers || []).map(p => ({
-                        powerId: p.id,
-                        isEquipped: true,
-                        id: p.id,
-                      }));
-                    })
-                ]
-                  .filter((p, index, self) => self.findIndex(t => t.powerId === p.powerId) === index)
-                  .filter(p => {
-                    const detail = detailedPowers[p.powerId];
-                    if (!p.isEquipped || !detail) return false;
-                    
-                    // Passivo puro (acao = 5) ou Permanente (duracao = 4)
-                    if (detail.parametros?.acao === 5 || detail.parametros?.duracao === 4) {
-                      return true;
+                      if (arrayDetail && arrayDetail.powers) {
+                        arrayDetail.powers.forEach(p => {
+                          passiveOrActivatedPowersList.push({
+                            powerId: p.id,
+                            isEquipped: true,
+                            id: p.id,
+                          });
+                        });
+                      }
+                    });
+
+                  equippedItemIdsList.forEach(itemId => {
+                    const itemDetail = detailedItems[itemId!];
+                    if (!itemDetail) return;
+
+                    if (itemDetail.powerIds) {
+                      itemDetail.powerIds.forEach(pid => {
+                        passiveOrActivatedPowersList.push({
+                          powerId: pid,
+                          isEquipped: true,
+                          id: pid,
+                          originItemName: itemDetail.nome
+                        });
+                      });
                     }
-                    
-                    // Ativado (3) e atualmente ligado (presente em activePowers)
-                    if (detail.parametros?.duracao === 3) {
-                      return activePowers.some(ap => ap.powerId === p.powerId);
+
+                    if (itemDetail.powerArrayIds) {
+                      itemDetail.powerArrayIds.forEach(paid => {
+                        const arrayDetail = detailedArrays[paid];
+                        if (arrayDetail && arrayDetail.powers) {
+                          arrayDetail.powers.forEach(p => {
+                            passiveOrActivatedPowersList.push({
+                              powerId: p.id,
+                              isEquipped: true,
+                              id: p.id,
+                              originItemName: itemDetail.nome
+                            });
+                          });
+                        }
+                      });
                     }
-                    
-                    return false;
-                  })
-                  .map(p => {
-                    const detail = detailedPowers[p.powerId];
-                    const isAtivado = detail?.parametros?.duracao === 3;
-                    return (
-                      <div 
-                        key={p.id} 
-                        className={`p-3 rounded-lg border group transition-colors ${
-                          isAtivado 
-                            ? 'bg-purple-50/30 dark:bg-purple-900/10 border-purple-100 dark:border-purple-900/20' 
-                            : 'bg-emerald-50/30 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/20'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="p-1 rounded-lg bg-white dark:bg-gray-900 border-[0.5px] border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-center overflow-hidden">
-                            {detail?.icone ? (
-                              <DynamicIcon name={detail.icone} className={`w-7 h-7 ${isAtivado ? 'text-purple-500' : 'text-emerald-500'}`} />
-                            ) : (
-                              isAtivado ? (
-                                <Zap className="w-7 h-7 text-purple-500" />
-                              ) : (
-                                <Shield className="w-7 h-7 text-emerald-500" />
-                              )
-                            )}
+                  });
+
+                  const passiveEffectsToRender = passiveOrActivatedPowersList
+                    .filter((p, index, self) => self.findIndex(t => t.powerId === p.powerId) === index)
+                    .filter(p => {
+                      const detail = detailedPowers[p.powerId];
+                      if (!p.isEquipped || !detail) return false;
+                      
+                      // Permanente (duracao = 4)
+                      if (detail.parametros?.duracao === 4) {
+                        return true;
+                      }
+                      
+                      // Ativado (3) e atualmente ligado (presente em activePowers)
+                      if (detail.parametros?.duracao === 3) {
+                        return activePowers.some(ap => ap.powerId === p.powerId);
+                      }
+                      
+                      return false;
+                    });
+
+                  return (
+                    <>
+                      {passiveEffectsToRender.map(p => {
+                        const detail = detailedPowers[p.powerId];
+                        const isAtivado = detail?.parametros?.duracao === 3;
+                        return (
+                          <div 
+                            key={p.id} 
+                            className={`p-3 rounded-lg border group transition-colors ${
+                              isAtivado 
+                                ? 'bg-purple-50/30 dark:bg-purple-900/10 border-purple-100 dark:border-purple-900/20' 
+                                : 'bg-emerald-50/30 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/20'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-1 rounded-lg bg-white dark:bg-gray-900 border-[0.5px] border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-center overflow-hidden">
+                                {detail?.icone ? (
+                                  <DynamicIcon name={detail.icone} className={`w-7 h-7 ${isAtivado ? 'text-purple-500' : 'text-emerald-500'}`} />
+                                ) : (
+                                  isAtivado ? (
+                                    <Zap className="w-7 h-7 text-purple-500" />
+                                  ) : (
+                                    <Shield className="w-7 h-7 text-emerald-500" />
+                                  )
+                                )}
+                              </div>
+                              <div>
+                                <h4 className={`font-black text-sm ${isAtivado ? 'text-purple-900 dark:text-purple-100' : 'text-emerald-900 dark:text-emerald-100'}`}>
+                                  {detail?.nome || p.powerId}
+                                </h4>
+                                <div className="flex gap-2 items-center mt-0.5">
+                                  {isAtivado && (
+                                    <span className="text-[9px] uppercase font-black tracking-widest text-purple-500">
+                                      Ativado (Ligado)
+                                    </span>
+                                  )}
+                                  {p.originItemName && (
+                                    <Badge variant="secondary" className="h-3.5 px-1.5 text-[8px] font-black bg-gray-100 dark:bg-gray-800 text-gray-500 border-none uppercase">
+                                      {p.originItemName}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <p className={`text-[11px] mt-1 pl-7 italic line-clamp-2 ${isAtivado ? 'text-purple-700/80 dark:text-purple-400/80' : 'text-emerald-700/80 dark:text-emerald-400/80'}`}>
+                              {detail?.descricao}
+                            </p>
                           </div>
+                        );
+                      })}
+
+                      {/* Condições e Estados */}
+                      {character.conditions.length > 0 ? character.conditions.map((cond) => (
+                        <div key={cond} className="flex items-center gap-3 p-3 rounded-lg bg-indigo-50/30 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/20">
+                          <Activity className="w-4 h-4 text-indigo-500" />
                           <div>
-                            <h4 className={`font-black text-sm ${isAtivado ? 'text-purple-900 dark:text-purple-100' : 'text-emerald-900 dark:text-emerald-100'}`}>
-                              {detail?.nome || p.powerId}
-                            </h4>
-                            {isAtivado && (
-                              <span className="text-[9px] uppercase font-black tracking-widest text-purple-500">
-                                Ativado (Ligado)
-                              </span>
-                            )}
+                            <h4 className="font-bold text-sm text-indigo-900 dark:text-indigo-100">{cond}</h4>
+                            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 uppercase font-bold tracking-tighter">Condição Ativa</p>
                           </div>
                         </div>
-                        <p className={`text-[11px] mt-1 pl-7 italic line-clamp-2 ${isAtivado ? 'text-purple-700/80 dark:text-purple-400/80' : 'text-emerald-700/80 dark:text-emerald-400/80'}`}>
-                          {detail?.descricao}
-                        </p>
-                      </div>
-                    );
-                  })
-                }
+                      )) : null}
 
-                {/* Condições e Estados */}
-                {character.conditions.length > 0 ? character.conditions.map((cond) => (
-                  <div key={cond} className="flex items-center gap-3 p-3 rounded-lg bg-indigo-50/30 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/20">
-                    <Activity className="w-4 h-4 text-indigo-500" />
-                    <div>
-                      <h4 className="font-bold text-sm text-indigo-900 dark:text-indigo-100">{cond}</h4>
-                      <p className="text-[10px] text-indigo-600 dark:text-indigo-400 uppercase font-bold tracking-tighter">Condição Ativa</p>
-                    </div>
-                  </div>
-                )) : null}
-
-                {character.powers.filter(p => {
-                  const detail = detailedPowers[p.powerId];
-                  return p.isEquipped && (detail?.parametros?.acao === 5 || detail?.parametros?.duracao === 4);
-                }).length === 0 && character.conditions.length === 0 && (
-                    <p className="text-sm text-gray-500 italic py-2">Nenhum efeito passivo relevante.</p>
-                  )}
+                      {passiveEffectsToRender.length === 0 && character.conditions.length === 0 && (
+                        <p className="text-sm text-gray-500 italic py-2">Nenhum efeito passivo relevante.</p>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
@@ -714,6 +982,42 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
         initialApplyEfficiency={true}
         modifierLabel="Bônus de Ataque"
         rollButtonLabel="Atacar"
+        onRoll={() => {
+          if (deactivatePower && activePowers && rollingAction) {
+            const isUnarmed = rollingAction.tipo === 'DESARMADO';
+            const sourceInfo = isUnarmed
+              ? { tipo: 'DESARMADO' as const }
+              : { tipo: 'ARMA' as const, domains: rollingAction.domains || [], itemId: rollingAction.itemId };
+
+            for (const ap of activePowers) {
+              if (ap.duracao === 0) {
+                const efeitos = ap.efeitos;
+                if (!efeitos || !Array.isArray(efeitos)) continue;
+
+                let matches = false;
+                for (const ef of efeitos) {
+                  const baseId = ef.efeitoBaseId || ef.effectBaseId;
+                  const configId = ef.configuracaoSelecionada || ef.configuracaoId;
+
+                  if (baseId === 'fortalecer' && (configId === 'dano' || configId === 'recuperacao')) {
+                    const inputValue = ef.inputCustomizado || ef.inputValue;
+                    if (!inputValue) continue;
+                    try {
+                      const parsed = JSON.parse(String(inputValue));
+                      if (parsed && parsed.alvo && fortaleceAlvoMatch(parsed.alvo, sourceInfo, ap.originItemId)) {
+                        matches = true;
+                        break;
+                      }
+                    } catch {}
+                  }
+                }
+                if (matches) {
+                  deactivatePower(ap.id);
+                }
+              }
+            }
+          }
+        }}
       />
 
       <UnarmedMasteryModal 
@@ -739,6 +1043,9 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
           isResolving={isResolving}
           isConfirming={isConfirming}
           showOptionalPE={usingPowerFromActive}
+          activePowers={activePowers}
+          onSync={onSync}
+          onDeactivate={deactivatePower}
           onConfirm={async ({ spendPE }) => {
             const detail = usingPower;
             const peCost = spendPE ? (detail.custoTotal?.pe ?? 0) : 0;
@@ -749,8 +1056,10 @@ export function AcoesTab({ character, onUpdateUnarmedMastery, onSync }: AcoesTab
                 icone: detail.icone,
                 duracao: detail.parametros.duracao,
                 peCost,
+                efeitos: detail.effects,
+                originItemId: detail.originItemId,
               },
-              { skipActivation: usingPowerFromActive }
+              { skipActivation: usingPowerFromActive, mutations: resolution?.mutations }
             );
             setUsingPower(null);
             setUsingPowerFromActive(false);

@@ -38,6 +38,8 @@ const syncCharacterBodySchema = z.object({
   peChange: z.number().int().optional(),
   tempPvChange: z.number().int().min(0).optional(),
   tempPeChange: z.number().int().min(0).optional(),
+  customMaxPV: z.number().int().min(1).optional(),
+  customMaxPE: z.number().int().min(1).optional(),
   attributes: z
     .object({
       strength: z.object({

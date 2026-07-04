@@ -75,12 +75,12 @@ export class ItemsService {
   ) {}
 
   private async calculateItemLevel(
-    domainName: string,
+    domains: string[],
     powerIds?: string[],
     powerArrayIds?: string[],
   ): Promise<number> {
     let totalContribution = 0;
-    const targetPrismaDomain = DOMAIN_MAP[domainName];
+    const targetPrismaDomains = domains.map((d) => DOMAIN_MAP[d]);
 
     if (powerIds && powerIds.length > 0) {
       for (const powerId of powerIds) {
@@ -97,9 +97,9 @@ export class ItemsService {
           throw new ResourceNotFoundError(`Poder com ID ${powerId} não encontrado`);
         }
 
-        if (power.domainName !== targetPrismaDomain) {
+        if (!targetPrismaDomains.includes(power.domainName)) {
           throw new InvalidItemDomainError(
-            `Poder "${power.nome}" é do domínio "${power.domainName.toLowerCase().replace(/_/g, '-')}", mas o item é do domínio "${domainName}"`,
+            `Poder "${power.nome}" é do domínio "${power.domainName.toLowerCase().replace(/_/g, '-')}", mas o item não possui esse domínio`,
           );
         }
 
@@ -130,9 +130,9 @@ export class ItemsService {
           throw new ResourceNotFoundError(`Acervo com ID ${powerArrayId} não encontrado`);
         }
 
-        if (powerArray.domainName !== targetPrismaDomain) {
+        if (!targetPrismaDomains.includes(powerArray.domainName)) {
           throw new InvalidItemDomainError(
-            `Acervo "${powerArray.nome}" é do domínio "${powerArray.domainName.toLowerCase().replace(/_/g, '-')}", mas o item é do domínio "${domainName}"`,
+            `Acervo "${powerArray.nome}" é do domínio "${powerArray.domainName.toLowerCase().replace(/_/g, '-')}", mas o item não possui esse domínio`,
           );
         }
 
@@ -151,7 +151,7 @@ export class ItemsService {
 
   async create(userId: string, body: CreateItemBodySchema) {
     const computedLevel = await this.calculateItemLevel(
-      body.dominio.name,
+      body.dominios.map((d) => d.name),
       body.powerIds,
       body.powerArrayIds,
     );
@@ -169,9 +169,9 @@ export class ItemsService {
       notas: body.notas,
       canStack: body.canStack ?? false,
       maxStack: body.maxStack ?? 2,
-      domainName: DOMAIN_MAP[body.dominio.name] as any,
-      domainAreaConhecimento: body.dominio.areaConhecimento || null,
-      domainPeculiarId: body.dominio.peculiarId || null,
+      domains: body.dominios.map((d) => DOMAIN_MAP[d.name]) as any,
+      domainAreaConhecimento: body.dominios.find((d) => d.name === 'cientifico')?.areaConhecimento || null,
+      domainPeculiarIds: body.dominios.filter((d) => d.name === 'peculiar' && d.peculiarId).map((d) => d.peculiarId!) as any,
       custoBase: body.custoBase,
       nivelItem: computedLevel,
     };
@@ -251,8 +251,9 @@ export class ItemsService {
       throw new NotAllowedError();
     }
 
-    const targetDomainName =
-      body.dominio?.name ?? existing.domainName.toLowerCase().replace(/_/g, '-');
+    const targetDomains = body.dominios
+      ? body.dominios.map((d) => d.name)
+      : existing.domains.map((d) => d.toLowerCase().replace(/_/g, '-'));
 
     let currentPowerIds = existing.itemPowers.map((ip) => ip.powerId);
     if (body.powerIds !== undefined) {
@@ -265,7 +266,7 @@ export class ItemsService {
     }
 
     const computedLevel = await this.calculateItemLevel(
-      targetDomainName,
+      targetDomains,
       currentPowerIds,
       currentPowerArrayIds,
     );
@@ -282,10 +283,10 @@ export class ItemsService {
       nivelItem: computedLevel,
     };
 
-    if (body.dominio) {
-      baseData.domainName = DOMAIN_MAP[body.dominio.name] as any;
-      baseData.domainAreaConhecimento = body.dominio.areaConhecimento || null;
-      baseData.domainPeculiarId = body.dominio.peculiarId || null;
+    if (body.dominios) {
+      baseData.domains = body.dominios.map((d) => DOMAIN_MAP[d.name]) as any;
+      baseData.domainAreaConhecimento = body.dominios.find((d) => d.name === 'cientifico')?.areaConhecimento || null;
+      baseData.domainPeculiarIds = body.dominios.filter((d) => d.name === 'peculiar' && d.peculiarId).map((d) => d.peculiarId!) as any;
     }
 
     const updates: any[] = [];
@@ -623,9 +624,9 @@ export class ItemsService {
           durabilidade: original.durabilidade,
           canStack: original.canStack,
           maxStack: original.maxStack,
-          domainName: original.domainName,
+          domains: original.domains,
           domainAreaConhecimento: original.domainAreaConhecimento,
-          domainPeculiarId: original.domainPeculiarId,
+          domainPeculiarIds: original.domainPeculiarIds,
           custoBase: original.custoBase,
           nivelItem: original.nivelItem,
           critMargin: original.critMargin,
@@ -866,11 +867,11 @@ export class ItemsService {
       notas: item.notas ?? undefined,
       canStack: item.canStack,
       maxStack: item.maxStack,
-      dominio: {
-        name: item.domainName.toLowerCase().replace(/_/g, '-'),
-        areaConhecimento: item.domainAreaConhecimento ?? undefined,
-        peculiarId: item.domainPeculiarId ?? undefined,
-      },
+      dominios: item.domains.map((d: any, idx: number) => ({
+        name: d.toLowerCase().replace(/_/g, '-'),
+        areaConhecimento: d === 'CIENTIFICO' ? item.domainAreaConhecimento ?? undefined : undefined,
+        peculiarId: d === 'PECULIAR' ? (item.domainPeculiarIds?.[idx] ?? item.domainPeculiarIds?.[0] ?? undefined) : undefined,
+      })),
       custoBase: item.custoBase,
       powers: orderedPowers.map((p) => this.sanitizePower(p)),
       powerArrays: item.itemPowerArrays.map((ipa: any) => this.sanitizePowerArray(ipa.powerArray)),
@@ -948,7 +949,7 @@ export class ItemsService {
       tipo: body.tipo,
       nome: body.nome,
       descricao: body.descricao,
-      dominio: body.dominio,
+      dominios: body.dominios,
       custoBase: body.custoBase,
       isPublic: body.isPublic,
       notas: body.notas,

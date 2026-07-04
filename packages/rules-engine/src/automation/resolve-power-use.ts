@@ -69,7 +69,8 @@ export function resolvePowerUse({ power, context, selectedTargetIds }: PowerUseI
       context,
       power.id,
       basedOnAttribute,
-      effect.dadoModularizado
+      effect.dadoModularizado,
+      power.isDanoAcoplado
     ));
 
   }

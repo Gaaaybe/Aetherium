@@ -25,13 +25,15 @@ export function useItemBuilder() {
       errors.push('Descrição não pode exceder 1000 caracteres.');
     }
 
-    if (state.dominio.name === 'cientifico' && !state.dominio.areaConhecimento) {
-      errors.push('Área de conhecimento é obrigatória para domínio Científico.');
-    }
-
-    if (state.dominio.name === 'peculiar' && !state.dominio.peculiarId) {
-      errors.push('Peculiaridade é obrigatória para domínio Peculiar.');
-    }
+    state.dominios.forEach((dom, index) => {
+      const prefix = state.dominios.length > 1 ? `No domínio #${index + 1}: ` : '';
+      if (dom.name === 'cientifico' && !dom.areaConhecimento) {
+        errors.push(`${prefix}Área de conhecimento é obrigatória para domínio Científico.`);
+      }
+      if (dom.name === 'peculiar' && !dom.peculiarId) {
+        errors.push(`${prefix}Peculiaridade é obrigatória para domínio Peculiar.`);
+      }
+    });
 
     if (state.tipo === 'consumable' && state.consumable.descritorEfeito.trim().length === 0) {
       errors.push('Consumível exige descritor de efeito.');
@@ -57,16 +59,22 @@ export function useItemBuilder() {
 
   const buildPayload = (): CreateItemPayload => {
     const state = store.state;
+    const firstDom = state.dominios[0] || { name: 'natural' };
     const common = {
       nome: state.nome.trim(),
       descricao: state.descricao.trim(),
       dominio: {
-        name: state.dominio.name,
-        ...(state.dominio.areaConhecimento && {
-          areaConhecimento: state.dominio.areaConhecimento,
+        name: firstDom.name,
+        ...(firstDom.areaConhecimento && {
+          areaConhecimento: firstDom.areaConhecimento,
         }),
-        ...(state.dominio.peculiarId && { peculiarId: state.dominio.peculiarId }),
+        ...(firstDom.peculiarId && { peculiarId: firstDom.peculiarId }),
       },
+      dominios: state.dominios.map((d) => ({
+        name: d.name,
+        ...(d.areaConhecimento && { areaConhecimento: d.areaConhecimento }),
+        ...(d.peculiarId && { peculiarId: d.peculiarId }),
+      })),
       custoBase: state.custoBase,
       isPublic: state.isPublic,
       ...(state.notas.trim() && { notas: state.notas.trim() }),
@@ -138,6 +146,8 @@ export function useItemBuilder() {
   return {
     state: store.state,
     updateField: store.updateField,
+    addDomain: store.addDomain,
+    removeDomain: store.removeDomain,
     updateDomain: store.updateDomain,
     setTipo: store.setTipo,
     togglePower: store.togglePower,

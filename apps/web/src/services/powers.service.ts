@@ -27,6 +27,7 @@ export interface GameMutation {
 export interface ResolvePowerResponse {
   resolutionMode: 'ON_USE' | 'PASSIVE' | 'NARRATIVE';
   mutations: GameMutation[];
+  isDanoAcoplado?: boolean;
 }
 
 export interface ResolvePowerInput {

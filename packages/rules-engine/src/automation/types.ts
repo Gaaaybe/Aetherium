@@ -16,7 +16,15 @@ export type EfeitoBehavior =
    * - alvo: 'RD_BONUS'  → bônus de RD temporário (Fase 2)
    * - alvo: 'ACOES'     → ações extras (Fase 2)
    */
-  | { kind: 'FORTALECER'; alvo: 'PV_TEMP' | 'PE_TEMP' | 'DANO_BONUS' | 'RD_BONUS' | 'ACOES'; formula?: string }
+  | {
+      kind: 'FORTALECER';
+      alvo: 'PV_TEMP' | 'PE_TEMP' | 'DANO_BONUS' | 'RECUPERACAO_BONUS' | 'RD_BONUS' | 'ACOES';
+      formula?: string;
+      configDano?: {
+        alvo: { tipo: 'DOMINIO'; dominio: string } | { tipo: 'DESARMADO' };
+        bonusDescritor: string;
+      };
+    }
   /**
    * APLICAR_CONDICAO — afligir. Impõe condição de sistema ao alvo.
    * condicaoId: string da condição (ex: 'Abalado', 'Lento', 'Cego').
@@ -107,6 +115,7 @@ export interface PowerUseContext {
    * undefined é tratado como "acertou" (seguro para Fase 1).
    */
   attackSucceeded?: boolean;
+  isEspiritual?: boolean;
 }
 
 export interface PassiveContext {
@@ -142,6 +151,7 @@ export interface ResolvedPower {
   globalModifications: ResolvedModification[];
   /** Fórmula de dano no caster quando EFEITO_COLATERAL dispara. Default: '2d8' */
   colateralFormula?: string;
+  isDanoAcoplado?: boolean;
 }
 
 export interface ResolvedPassivePower {

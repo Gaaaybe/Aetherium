@@ -164,6 +164,8 @@ export interface SyncCharacterData {
   peChange?: number;
   tempPvChange?: number;
   tempPeChange?: number;
+  customMaxPV?: number;
+  customMaxPE?: number;
   attributes?: {
     strength: { baseValue: number; extraBonus?: number };
     dexterity: { baseValue: number; extraBonus?: number };

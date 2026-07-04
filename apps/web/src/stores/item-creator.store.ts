@@ -19,11 +19,11 @@ export interface ItemBuilderState {
   tipo: ItemType;
   nome: string;
   descricao: string;
-  dominio: {
+  dominios: {
     name: DomainName;
     areaConhecimento?: string;
     peculiarId?: string;
-  };
+  }[];
   custoBase: number;
   isPublic: boolean;
   icone: string;
@@ -62,7 +62,7 @@ const createInitialState = (): ItemBuilderState => ({
   tipo: 'weapon',
   nome: '',
   descricao: '',
-  dominio: { name: 'natural' },
+  dominios: [{ name: 'natural' }],
   custoBase: 1,
   isPublic: false,
   icone: '',
@@ -100,7 +100,9 @@ const createInitialState = (): ItemBuilderState => ({
 interface ItemCreatorStore {
   state: ItemBuilderState;
   updateField: <K extends keyof ItemBuilderState>(key: K, value: ItemBuilderState[K]) => void;
-  updateDomain: (partial: Partial<ItemBuilderState['dominio']>) => void;
+  addDomain: (dominio: { name: DomainName; areaConhecimento?: string; peculiarId?: string }) => void;
+  removeDomain: (index: number) => void;
+  updateDomain: (index: number, partial: Partial<{ name: DomainName; areaConhecimento?: string; peculiarId?: string }>) => void;
   setTipo: (tipo: ItemType) => void;
   togglePower: (powerId: string) => void;
   togglePowerArray: (powerArrayId: string) => void;
@@ -136,13 +138,26 @@ export const useItemCreatorStore = create<ItemCreatorStore>()(
         },
       })),
 
-      updateDomain: (partial) => set((prev) => ({
+      addDomain: (dominio) => set((prev) => ({
         state: {
           ...prev.state,
-          dominio: {
-            ...prev.state.dominio,
-            ...partial,
-          },
+          dominios: [...prev.state.dominios, dominio],
+        },
+      })),
+
+      removeDomain: (index) => set((prev) => ({
+        state: {
+          ...prev.state,
+          dominios: prev.state.dominios.filter((_, i) => i !== index),
+        },
+      })),
+
+      updateDomain: (index, partial) => set((prev) => ({
+        state: {
+          ...prev.state,
+          dominios: prev.state.dominios.map((d, i) =>
+            i === index ? { ...d, ...partial } : d
+          ),
         },
       })),
 
@@ -257,11 +272,19 @@ export const useItemCreatorStore = create<ItemCreatorStore>()(
           tipo: item.tipo,
           nome: item.nome,
           descricao: item.descricao,
-          dominio: {
-            name: item.dominio.name as DomainName,
-            areaConhecimento: item.dominio.areaConhecimento ?? undefined,
-            peculiarId: item.dominio.peculiarId ?? undefined,
-          },
+          dominios: item.dominios
+            ? item.dominios.map(d => ({
+                name: d.name as DomainName,
+                areaConhecimento: d.areaConhecimento ?? undefined,
+                peculiarId: d.peculiarId ?? undefined,
+              }))
+            : item.dominio
+              ? [{
+                  name: item.dominio.name as DomainName,
+                  areaConhecimento: item.dominio.areaConhecimento ?? undefined,
+                  peculiarId: item.dominio.peculiarId ?? undefined,
+                }]
+              : [],
           custoBase: item.custoBase,
           isPublic: item.isPublic,
           icone: item.icone ?? '',
@@ -326,6 +349,30 @@ export const useItemCreatorStore = create<ItemCreatorStore>()(
     }),
     {
       name: 'criador-de-item-store',
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0 && persistedState && persistedState.state) {
+          const oldState = persistedState.state;
+          let oldDominio = oldState.dominio;
+          let dominios: any[] = [];
+          if (oldDominio) {
+            if (typeof oldDominio === 'string') {
+              dominios = [{ name: oldDominio }];
+            } else if (typeof oldDominio === 'object') {
+              dominios = [{
+                name: oldDominio.name || 'natural',
+                areaConhecimento: oldDominio.areaConhecimento,
+                peculiarId: oldDominio.peculiarId,
+              }];
+            }
+          } else {
+            dominios = [{ name: 'natural' }];
+          }
+          delete oldState.dominio;
+          oldState.dominios = dominios;
+        }
+        return persistedState;
+      },
     }
   )
 );

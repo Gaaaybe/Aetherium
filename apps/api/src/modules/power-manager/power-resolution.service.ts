@@ -64,6 +64,7 @@ export interface ResolvePowerUseResult {
   mutations: GameMutation[];
   /** Modo de resolução do poder — narrativo implica sem automação */
   resolutionMode: 'ON_USE' | 'PASSIVE' | 'NARRATIVE';
+  isDanoAcoplado?: boolean;
 }
 
 export interface ResolvePassiveInput {
@@ -101,6 +102,7 @@ export class PowerResolutionService {
     const power = await this.prisma.power.findUnique({
       where: { id: powerId },
       include: {
+        peculiarity: { select: { espiritual: true } },
         appliedEffects: {
           include: {
             effectBase: { select: { id: true, behavior: true } },
@@ -142,7 +144,7 @@ export class PowerResolutionService {
 
     // Passivos e narrativos não produzem GameMutation via este endpoint
     if (resolutionMode.mode !== 'ON_USE') {
-      return { mutations: [], resolutionMode: resolutionMode.mode };
+      return { mutations: [], resolutionMode: resolutionMode.mode, isDanoAcoplado: false };
     }
 
     // 3. Busca marcadores de cena ativos para o contexto
@@ -164,7 +166,39 @@ export class PowerResolutionService {
 
     // 4. Hidrata o ResolvedPower para o motor
     const resolvedEffects: ResolvedEffect[] = power.appliedEffects.map((ae) => {
-      const behavior = parseBehavior(ae.effectBase.behavior);
+      let behavior = parseBehavior(ae.effectBase.behavior);
+      if (behavior && behavior.kind === 'FORTALECER') {
+        const configId = ae.configuracaoId;
+        let targetAlvo: 'PV_TEMP' | 'PE_TEMP' | 'DANO_BONUS' | 'RECUPERACAO_BONUS' | 'RD_BONUS' | 'ACOES' = 'PV_TEMP';
+        if (configId === 'pe') targetAlvo = 'PE_TEMP';
+        else if (configId === 'pv') targetAlvo = 'PV_TEMP';
+        else if (configId === 'dano') targetAlvo = 'DANO_BONUS';
+        else if (configId === 'recuperacao') targetAlvo = 'RECUPERACAO_BONUS';
+        else if (configId === 'rd') targetAlvo = 'RD_BONUS';
+        else if (configId === 'acoes') targetAlvo = 'ACOES';
+
+        let configDanoObj: any = undefined;
+
+        if (ae.inputValue) {
+          try {
+            const parsed = JSON.parse(ae.inputValue);
+            if (parsed && (parsed.alvo || parsed.bonusDescritor)) {
+              configDanoObj = {
+                alvo: parsed.alvo,
+                bonusDescritor: parsed.bonusDescritor || '',
+              };
+            }
+          } catch {
+            // ignore
+          }
+        }
+
+        behavior = {
+          ...behavior,
+          alvo: targetAlvo,
+          configDano: configDanoObj,
+        } as any;
+      }
 
       const modifications: ResolvedModification[] = ae.appliedModifications.map((am) => {
         const automation = parseModificationAutomation({
@@ -201,17 +235,54 @@ export class PowerResolutionService {
         return allMods[i]?.scope === 'GLOBAL';
       });
 
+    // Verifica se o poder pertence a algum Item diretamente
+    const itemPower = await this.prisma.itemPower.findFirst({
+      where: { powerId },
+      include: { item: true },
+    });
+
+    let itemPowerArrayItem: any = null;
+    if (!itemPower) {
+      // Se não, verifica se pertence a algum PowerArray de algum Item
+      const powerArrayPower = await this.prisma.powerArrayPower.findFirst({
+        where: { powerId },
+      });
+      if (powerArrayPower) {
+        const itemPowerArray = await this.prisma.itemPowerArray.findFirst({
+          where: { powerArrayId: powerArrayPower.powerArrayId },
+          include: { item: true },
+        });
+        if (itemPowerArray) {
+          itemPowerArrayItem = itemPowerArray.item;
+        }
+      }
+    }
+
+    const item = itemPower?.item || itemPowerArrayItem;
+    const isFromWeapon = item?.tipo === 'WEAPON';
+
+    // Domínios espirituais: NATURAL, SAGRADO, SACRILEGIO, PSIQUICO
+    const espiritualDomains = ['NATURAL', 'SAGRADO', 'SACRILEGIO', 'PSIQUICO'];
+    const isEspiritualDomain = espiritualDomains.includes(power.domainName);
+    const isEspiritualPeculiarity = power.domainName === 'PECULIAR' && !!(power.peculiarity as any)?.espiritual;
+    const isEspiritual = isEspiritualDomain || isEspiritualPeculiarity;
+    const isInstantaneous = power.parametrosDuracao === 0;
+
+    const isDanoAcoplado = isFromWeapon && !(isEspiritual && isInstantaneous);
+
     const resolvedPower: ResolvedPower = {
       id: power.id,
       parametros,
       effects: resolvedEffects,
       globalModifications,
+      isDanoAcoplado,
     };
 
     // 5. Chama o motor com contexto enriquecido
     const enrichedContext: PowerUseContext = {
       ...context,
       activeMarkers,
+      isEspiritual,
     };
 
     const mutations = resolvePowerUse({
@@ -220,7 +291,7 @@ export class PowerResolutionService {
       selectedTargetIds,
     });
 
-    return { mutations, resolutionMode: 'ON_USE' };
+    return { mutations, resolutionMode: 'ON_USE', isDanoAcoplado };
   }
 
   /**

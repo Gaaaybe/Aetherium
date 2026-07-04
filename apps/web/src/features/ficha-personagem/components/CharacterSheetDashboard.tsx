@@ -7,6 +7,11 @@ import { MainArea } from './dashboard/MainArea';
 import { MobileBottomNav } from './dashboard/Mobile/MobileBottomNav';
 import { ConfirmDialog } from '@/shared/ui';
 import { DescansoModal } from './dashboard/DescansoModal';
+import { usePowerUsage } from '../hooks/usePowerUsage';
+import { charactersService } from '@/services/characters.service';
+import { obterBonusVidaEnergiaFortalecer } from '../utils/fortalecerHelper';
+import { getPowerById } from '@/services/powers.service';
+import { getPowerArrayById } from '@/services/powerArrays.service';
 
 interface CharacterSheetDashboardProps {
   characterId: string;
@@ -44,6 +49,146 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
     pendingAction,
     clearPendingAction,
   } = useCharacterSheet(characterId);
+
+  const {
+    activePowers,
+    isResolving: isPowerResolving,
+    isConfirming: isPowerConfirming,
+    previewPower,
+    confirmUsePower,
+    maintainPower,
+    deactivatePower,
+  } = usePowerUsage({
+    characterId,
+    onSync: sync,
+  });
+
+  const [equippedPassives, setEquippedPassives] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadPassives = async () => {
+      try {
+        const [powersList, arraysList, itemsList] = await Promise.all([
+          charactersService.fetchCharacterPowers(characterId).catch(() => []),
+          charactersService.fetchCharacterPowerArrays(characterId).catch(() => []),
+          charactersService.fetchCharacterItems(characterId).catch(() => [])
+        ]);
+
+        if (!character) return;
+
+        // 1. Get all equipped items
+        const equippedItemIds = new Set<string>();
+        if (character.equipment.suitId) equippedItemIds.add(character.equipment.suitId);
+        if (character.equipment.accessoryId) equippedItemIds.add(character.equipment.accessoryId);
+        character.equipment.hands.forEach(h => equippedItemIds.add(h.itemId));
+        character.equipment.quickAccess.forEach(q => equippedItemIds.add(q.itemId));
+
+        const equippedItems = itemsList.filter(item => equippedItemIds.has(item.id));
+        const itemPowerIds = equippedItems.flatMap(item => item.powerIds || []);
+        const itemPowerArrayIds = equippedItems.flatMap(item => item.powerArrayIds || []);
+
+        // 2. Fetch missing powers/arrays that are on equipped items but not in our lists
+        const missingPowerIds = itemPowerIds.filter(pid => !powersList.some(p => p.id === pid));
+        const missingPowerArrayIds = itemPowerArrayIds.filter(paid => !arraysList.some(a => a.id === paid));
+
+        const fetchedPowers = await Promise.all(
+          missingPowerIds.map(pid => getPowerById(pid).catch(() => null))
+        );
+        const fetchedArrays = await Promise.all(
+          missingPowerArrayIds.map(paid => getPowerArrayById(paid).catch(() => null))
+        );
+
+        const allPowers = [...powersList, ...fetchedPowers.filter(Boolean) as any[]];
+        const allArrays = [...arraysList, ...fetchedArrays.filter(Boolean) as any[]];
+
+        // 3. Individual equipped powers (from character)
+        const individualEquipped = character.powers
+          ?.filter(p => p.isEquipped)
+          ?.map(p => allPowers.find(pl => pl.id === p.powerId))
+          ?.filter(Boolean) || [];
+
+        // 4. Array equipped powers (from character)
+        const arrayEquipped = character.powerArrays
+          ?.filter(a => a.isEquipped)
+          ?.flatMap(a => {
+            const arr = allArrays.find(al => al.id === a.powerArrayId);
+            return arr?.powers || [];
+          }) || [];
+
+        // 5. Powers from equipped items
+        const itemPowers: any[] = [];
+        equippedItems.forEach(item => {
+          item.powerIds?.forEach(pid => {
+            const power = allPowers.find(p => p.id === pid);
+            if (power) {
+              itemPowers.push({
+                ...power,
+                originItemName: item.nome,
+                originItemId: item.id,
+                originItemTipo: item.tipo
+              });
+            }
+          });
+          item.powerArrayIds?.forEach(paid => {
+            const arr = allArrays.find(a => a.id === paid);
+            if (arr && arr.powers) {
+              arr.powers.forEach((power: any) => {
+                itemPowers.push({
+                  ...power,
+                  originItemName: item.nome,
+                  originItemId: item.id,
+                  originItemTipo: item.tipo
+                });
+              });
+            }
+          });
+        });
+
+        // 6. Merge and keep only permanent powers (duracao === 4)
+        const allEquipped = Array.from(
+          new Map([...individualEquipped, ...arrayEquipped, ...itemPowers].map(p => [p.id, p])).values()
+        );
+
+        const passives = allEquipped.filter(
+          p => p.parametros?.duracao === 4
+        );
+
+        setEquippedPassives(passives);
+      } catch (e) {
+        console.error('Error loading passive powers:', e);
+      }
+    };
+
+    if (character) {
+      loadPassives();
+    }
+  }, [
+    characterId,
+    character?.powers,
+    character?.powerArrays,
+    character?.equipment?.suitId,
+    character?.equipment?.accessoryId,
+    character?.equipment?.hands,
+    character?.equipment?.quickAccess
+  ]);
+
+  const allActivePowers = [
+    ...(activePowers || []),
+    ...equippedPassives.map(p => ({
+      id: p.id,
+      powerId: p.id,
+      nome: p.nome,
+      icone: p.icone,
+      duracao: p.parametros?.duracao ?? 4,
+      peCostPerRound: 0,
+      activatedAt: Date.now(),
+      effects: p.effects || p.efeitos || [],
+      efeitos: p.effects || p.efeitos || [],
+      originItemId: p.originItemId,
+      originItemTipo: p.originItemTipo,
+    }))
+  ];
+
   const [isRestModalOpen, setIsRestModalOpen] = useState(false);
   const storageKey = `aetherium-tab-${characterId}`;
   const [activeTab, setActiveTab] = useState(() => {
@@ -98,12 +243,12 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Coluna 1: Sidebar Fixa (Estatísticas vitais) */}
         <div className={`lg:col-span-3 space-y-6 ${activeMobileSection === 'geral' ? 'block' : 'hidden'} lg:block`}>
-          <SidebarColumn character={character} onSync={sync} />
+          <SidebarColumn character={character} onSync={sync} activePowers={allActivePowers} />
         </div>
 
         {/* Coluna 2: Detalhes de Atributos e Perícias */}
         <div className={`lg:col-span-3 space-y-6 ${activeMobileSection === 'geral' ? 'block' : 'hidden'} lg:block`}>
-          <StatsColumn character={character} onSync={sync} />
+          <StatsColumn character={character} onSync={sync} activePowers={allActivePowers} deactivatePower={deactivatePower} />
         </div>
 
         {/* Coluna 3: Área Principal de Conteúdo Dinâmico */}
@@ -135,6 +280,13 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
             onAcquireBenefit={acquireBenefit}
             onRemoveBenefit={removeBenefit}
             onUpdateUnarmedMastery={updateUnarmedMastery}
+            activePowers={allActivePowers}
+            isPowerResolving={isPowerResolving}
+            isPowerConfirming={isPowerConfirming}
+            previewPower={previewPower}
+            confirmUsePower={confirmUsePower}
+            maintainPower={maintainPower}
+            deactivatePower={deactivatePower}
           />
         </div>
       </div>
@@ -145,7 +297,14 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
         isOpen={isRestModalOpen}
         onClose={() => setIsRestModalOpen(false)}
         character={character}
-        onRest={rest}
+        onRest={(payload) => {
+          const bonuses = obterBonusVidaEnergiaFortalecer(allActivePowers, character);
+          return rest({
+            ...payload,
+            customMaxPV: character.health.maxPV + bonuses.maxPV,
+            customMaxPE: character.energy.maxPE + bonuses.maxPE,
+          });
+        }}
         isProcessing={isSyncing}
       />
 
