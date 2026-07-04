@@ -1,7 +1,47 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { resolvePower, type ResolvePowerResponse, type GameMutation } from '@/services/powers.service';
 import type { CharacterResponse } from '@/services/characters.types';
 import { toast } from '@/shared/ui';
+
+// ─── Assistente de Rolagem de Dados Interno ──────────────────────────────────
+function rollDiceFormula(formula: string): number {
+  if (!formula) return 0;
+  const cleaned = formula.replace(/\s+/g, '').toLowerCase();
+  
+  if (/^\d+$/.test(cleaned)) {
+    return parseInt(cleaned, 10);
+  }
+  
+  const diceRegex = /(\+|-)?(\d+)?d(\d+)/g;
+  let total = 0;
+  let match;
+  let hasDice = false;
+  
+  while ((match = diceRegex.exec(cleaned)) !== null) {
+    hasDice = true;
+    const sign = match[1] === '-' ? -1 : 1;
+    const count = match[2] ? parseInt(match[2], 10) : 1;
+    const faces = parseInt(match[3], 10);
+    
+    let diceSum = 0;
+    for (let i = 0; i < count; i++) {
+      diceSum += Math.floor(Math.random() * faces) + 1;
+    }
+    total += sign * diceSum;
+  }
+  
+  const flatMatches = cleaned.match(/(\+|-)\d+(?!d)/g) || [];
+  for (const flat of flatMatches) {
+    total += parseInt(flat, 10);
+  }
+  
+  const firstFlatMatch = cleaned.match(/^\d+(?!d)/);
+  if (firstFlatMatch && !hasDice) {
+    total += parseInt(firstFlatMatch[0], 10);
+  }
+  
+  return total;
+}
 
 // ─── Tipos públicos ───────────────────────────────────────────────────────────
 
@@ -13,6 +53,9 @@ export interface ActivePower {
   duracao: number;
   peCostPerRound: number;
   activatedAt: number;
+  efeitos?: any[];
+  originItemId?: string;
+  originItemTipo?: string;
 }
 
 export interface UsePowerResult {
@@ -50,6 +93,10 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
   );
   const [isResolving, setIsResolving] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+
+  useEffect(() => {
+    setActivePowers(loadActivePowers(characterId));
+  }, [characterId]);
 
   const updateActive = useCallback(
     (updater: (prev: ActivePower[]) => ActivePower[]) => {
@@ -118,26 +165,71 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
    * o endpoint /apply-mutations estiver disponível. Por ora, sincroniza só o PE.
    */
   const confirmUsePower = useCallback(
-    async (power: {
-      powerId: string;
-      nome: string;
-      icone?: string | null;
-      duracao: number;
-      peCost: number;
-    }) => {
+    async (
+      power: {
+        powerId: string;
+        nome: string;
+        icone?: string | null;
+        duracao: number;
+        peCost: number;
+        efeitos?: any[];
+        originItemId?: string;
+        originItemTipo?: string;
+      },
+      options?: { skipActivation?: boolean; mutations?: any[] }
+    ) => {
       setIsConfirming(true);
       try {
-        // Debita o custo de PE via onSync
-        if (power.peCost > 0) {
+        let pvChange = 0;
+        let peChange = 0;
+        let tempPvChange = 0;
+        let tempPeChange = 0;
+
+        if (options?.mutations && Array.isArray(options.mutations)) {
+          for (const mut of options.mutations) {
+            const targetIsCaster = !mut.targetId || mut.targetId === characterId;
+            if (targetIsCaster) {
+              const formula = mut.formula || '0';
+              const rolledVal = rollDiceFormula(formula);
+
+              if (mut.type === 'ADD_TEMP_PV') {
+                tempPvChange = Math.max(tempPvChange, rolledVal);
+              } else if (mut.type === 'ADD_TEMP_PE') {
+                tempPeChange = Math.max(tempPeChange, rolledVal);
+              } else if (mut.type === 'HEAL') {
+                pvChange += rolledVal;
+              } else if (mut.type === 'RESTORE_PE') {
+                peChange += rolledVal;
+              }
+            }
+          }
+        }
+
+        const finalPeChange = peChange - power.peCost;
+
+        if (pvChange !== 0 || finalPeChange !== 0 || tempPvChange !== 0 || tempPeChange !== 0) {
           await onSync({
-            peChange: -power.peCost,
+            pvChange: pvChange !== 0 ? pvChange : undefined,
+            peChange: finalPeChange !== 0 ? finalPeChange : undefined,
+            tempPvChange: tempPvChange !== 0 ? tempPvChange : undefined,
+            tempPeChange: tempPeChange !== 0 ? tempPeChange : undefined,
           });
         }
 
         // Registra poder ativo se tiver duração (Concentração, Sustentado, Ativado)
-        if (power.duracao >= 1 && power.duracao <= 3) {
+        // OU se for Instantâneo (0) e contiver um efeito 'fortalecer' de atributo ou perícia
+        const hasFortalecerEffect = power.efeitos?.some((ef: any) => {
+          const baseId = ef.efeitoBaseId || ef.effectBaseId || ef.id;
+          return baseId === 'fortalecer';
+        });
+
+        if (
+          !options?.skipActivation &&
+          ((power.duracao >= 1 && power.duracao <= 3) ||
+            (power.duracao === 0 && hasFortalecerEffect))
+        ) {
           const entry: ActivePower = {
-            id: `${power.powerId}-${Date.now()}`,
+            id: `${power.powerId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             powerId: power.powerId,
             nome: power.nome,
             icone: power.icone,
@@ -145,15 +237,25 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
             // Manutenção: metade do custo por rodada (arredondado p/ baixo)
             peCostPerRound: power.duracao <= 2 ? Math.floor(power.peCost / 2) : 0,
             activatedAt: Date.now(),
+            efeitos: power.efeitos,
+            originItemId: power.originItemId,
+            originItemTipo: (power as any).originItemTipo,
           };
-          updateActive(prev => [entry, ...prev.filter(p => p.powerId !== power.powerId)]);
+          updateActive(prev => [entry, ...prev]);
         }
 
-        if (power.peCost > 0) {
-          toast.success(`${power.nome} usado! −${power.peCost} PE`);
-        } else {
-          toast.success(`${power.nome} ativado!`);
+        let resultMsg = `${power.nome} usado!`;
+        const details: string[] = [];
+        if (power.peCost > 0) details.push(`−${power.peCost} PE`);
+        if (pvChange > 0) details.push(`+${pvChange} PV`);
+        if (peChange > 0) details.push(`+${peChange} PE`);
+        if (tempPvChange > 0) details.push(`+${tempPvChange} PV Temp`);
+        if (tempPeChange > 0) details.push(`+${tempPeChange} PE Temp`);
+        
+        if (details.length > 0) {
+          resultMsg += ` (${details.join(', ')})`;
         }
+        toast.success(resultMsg);
       } catch (err: any) {
         const msg = err?.response?.data?.message ?? 'Erro ao usar poder';
         toast.error(msg);
@@ -162,7 +264,7 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
         setIsConfirming(false);
       }
     },
-    [onSync, updateActive],
+    [characterId, onSync, updateActive],
   );
 
   /**
@@ -191,9 +293,13 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
 
   const deactivatePower = useCallback(
     (activeId: string) => {
+      const item = activePowers.find(p => p.id === activeId);
+      if (item) {
+        toast.success(`${item.nome} desativado!`);
+      }
       updateActive(prev => prev.filter(p => p.id !== activeId));
     },
-    [updateActive],
+    [activePowers, updateActive],
   );
 
   const clearAll = useCallback(() => {

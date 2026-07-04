@@ -1150,6 +1150,11 @@ export function ComunidadePage() {
             areaConhecimento: itemVisualizando.dominio.areaConhecimento ?? undefined,
             peculiarId: itemVisualizando.dominio.peculiarId ?? undefined,
           }}
+          dominios={itemVisualizando.dominios?.map(d => ({
+            name: d.name,
+            areaConhecimento: d.areaConhecimento ?? undefined,
+            peculiarId: d.peculiarId ?? undefined,
+          }))}
           custoBase={itemVisualizando.custoBase}
           nivelCalculado={itemVisualizando.nivelItem}
           custoRealCalculado={itemVisualizando.valorBase}

@@ -48,6 +48,7 @@ function efeitoResponseToEfeitoAplicado(efeito: EfeitoAplicadoResponse): EfeitoA
     grau: efeito.grau,
     configuracaoSelecionada: efeito.configuracaoId ?? undefined,
     inputCustomizado: efeito.inputValue != null ? String(efeito.inputValue) : undefined,
+    dadoModularizado: efeito.dadoModularizado ?? undefined,
     modificacoesLocais: efeito.modifications.map((m, i) =>
       modResponseToModAplicada(m, `${efeito.id}-mod-${i}`),
     ),
@@ -186,6 +187,7 @@ export function poderToCreatePayload(poder: Poder): CreatePoderPayload {
       grau: e.grau,
       configuracaoId: e.configuracaoSelecionada,
       inputValue: e.inputCustomizado,
+      dadoModularizado: e.dadoModularizado || undefined,
       modifications: e.modificacoesLocais.map(modToPayload),
     })),
     globalModifications: poder.modificacoesGlobais.map(modToPayload),
@@ -298,6 +300,7 @@ export function legacyPoderToCreatePayload(raw: unknown): CreatePoderPayload {
       grau: e.grau,
       configuracaoId: e.configuracaoSelecionada,
       inputValue: e.inputCustomizado,
+      dadoModularizado: (e as any).dadoModularizado || undefined,
       modifications: (e.modificacoesLocais ?? []).map(
         (m): ModificacaoAplicadaPayload => ({
           modificationBaseId: m.modificacaoBaseId,

@@ -40,3 +40,17 @@ export type { TargetingTransform } from './targeting/index.js';
 
 // Behaviors dispatch
 export { executeBehavior } from './behaviors/index.js';
+
+// Fortalecer helpers
+export {
+  calcularBonusFortalecer,
+  fortaleceAlvoMatch,
+  executeFortalecerDanoRecuperacao,
+  calcularBonusCriticoMultiplicador,
+  calcularBonusCriticoMargem,
+  calcularBonusAlcanceItem,
+  parseFortalecerCaracteristicaItem,
+  type FortalecerCaracteristicaItemInput,
+} from './behaviors/fortalecer.behavior.js';
+
+

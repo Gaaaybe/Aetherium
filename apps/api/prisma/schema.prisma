@@ -181,6 +181,7 @@ model AppliedEffect {
   grau           Int
   configuracaoId String?
   inputValue     String?
+  dadoModularizado String?
   nota           String?
   posicao        Int     @default(0)
 
@@ -286,9 +287,9 @@ model Item {
   canStack     Boolean          @default(false)
   maxStack     Int              @default(2)
 
-  domainName             DomainName
+  domains                DomainName[]
   domainAreaConhecimento String?
-  domainPeculiarId       String?
+  domainPeculiarIds      String[]
 
   custoBase Int
   nivelItem Int @default(1)
@@ -332,7 +333,6 @@ model Item {
   @@index([tipo])
   @@index([isPublic])
   @@index([userId, isPublic])
-  @@index([domainName])
   @@map("items")
 }
 

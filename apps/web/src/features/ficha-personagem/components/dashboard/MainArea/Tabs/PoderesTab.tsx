@@ -17,6 +17,7 @@ import { CriadorAcervo } from '@/features/criador-de-poder/components/CriadorAce
 import { calcularDetalhesPoder, type Poder as PoderCalculo } from '@/features/criador-de-poder/regras/calculadoraCusto';
 import { CriadorDePoderModal } from '@/features/gerenciador-criaturas/components/CriadorDePoderModal';
 import { poderResponseToPoder, acervoResponseToAcervo } from '@/features/criador-de-poder/utils/poderApiConverter';
+import { obterBonusFortalecerAtivos } from '@/features/ficha-personagem/utils/fortalecerHelper';
 
 // Helper para obter nome da escala
 function getNomeEscala(tipo: 'acao' | 'alcance' | 'duracao', valor: number): string {
@@ -37,6 +38,7 @@ interface PoderesTabProps {
   onUnequipPowerArray: (powerArrayId: string) => Promise<void>;
   onRemovePower: (powerId: string) => void | Promise<void>;
   onRemovePowerArray: (powerArrayId: string) => void | Promise<void>;
+  activePowers?: any[];
 }
 
 export function PoderesTab({ 
@@ -51,7 +53,8 @@ export function PoderesTab({
   onEquipPowerArray,
   onUnequipPowerArray,
   onRemovePower,
-  onRemovePowerArray
+  onRemovePowerArray,
+  activePowers = [],
 }: PoderesTabProps) {
   // ─── Estados Principais (Ordem Crítica) ──────────────────────────────────
   const [viewingPower, setViewingPower] = useState<any | null>(null);
@@ -277,11 +280,11 @@ export function PoderesTab({
             
             {!isNested && (
               <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-gray-100 dark:border-gray-800 mt-1 sm:mt-0">
-                <Button variant="ghost" size="sm" onClick={() => setViewingPower(poderResponseToPoder(detail))} className="h-9 w-9 p-0 text-gray-400 hover:text-indigo-500">
-                  <Info className="w-5 h-5" />
+                <Button variant="ghost" size="sm" onClick={() => setViewingPower(poderResponseToPoder(detail))} className="h-9 w-9 !p-0 text-gray-400 hover:text-indigo-500">
+                  <Info className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setEditingPower(poderResponseToPoder(detail))} className="h-9 w-9 p-0 text-gray-400 hover:text-emerald-500" title="Editar">
-                  <Edit2 className="w-5 h-5" />
+                <Button variant="ghost" size="sm" onClick={() => setEditingPower(poderResponseToPoder(detail))} className="h-9 w-9 !p-0 text-gray-400 hover:text-emerald-500" title="Editar">
+                  <Edit2 className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="ghost"
@@ -299,31 +302,31 @@ export function PoderesTab({
                       setSavingToLibraryId(null);
                     }
                   }}
-                  className="h-9 w-9 p-0 text-gray-400 hover:text-blue-500"
+                  className="h-9 w-9 !p-0 text-gray-400 hover:text-blue-500"
                   title="Salvar na Biblioteca"
                 >
-                  <Bookmark className="w-5 h-5" />
+                  <Bookmark className="w-4 h-4" />
                 </Button>
                 {isEquipped ? (
-                  <Button variant="ghost" size="sm" onClick={() => onUnequipPower(power.powerId)} className="h-9 w-9 p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
-                    <Package className="w-5 h-5" />
+                  <Button variant="ghost" size="sm" onClick={() => onUnequipPower(power.powerId)} className="h-9 w-9 !p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
+                    <Package className="w-4 h-4" />
                   </Button>
                 ) : (
                   <Button variant="ghost" size="sm" onClick={() => onEquipPower(power.powerId)} className="h-8 px-2 text-[10px] font-bold border text-gray-600 hover:text-purple-600 hover:border-purple-600" title="Equipar">
                     Equipar
                   </Button>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => onRemovePower(power.powerId)} className="h-9 w-9 p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
-                  <Trash2 className="w-5 h-5" />
+                <Button variant="ghost" size="sm" onClick={() => onRemovePower(power.powerId)} className="h-9 w-9 !p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
             )}
             {isNested && (
               <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-gray-100 dark:border-gray-800 mt-1 sm:mt-0">
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setViewingPower(poderResponseToPoder(detail)); }} className="h-8 w-8 p-0 text-gray-400 hover:text-indigo-500">
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setViewingPower(poderResponseToPoder(detail)); }} className="h-8 w-8 !p-0 text-gray-400 hover:text-indigo-500">
                   <Info className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEditingPower(poderResponseToPoder(detail)); }} className="h-8 w-8 p-0 text-gray-400 hover:text-emerald-500" title="Editar">
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEditingPower(poderResponseToPoder(detail)); }} className="h-8 w-8 !p-0 text-gray-400 hover:text-emerald-500" title="Editar">
                   <Edit2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -388,11 +391,11 @@ export function PoderesTab({
             </div>
             
             <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-gray-100 dark:border-gray-800 mt-1 sm:mt-0">
-              <Button variant="ghost" size="sm" onClick={() => detail && setViewingArray(detail)} className="h-9 w-9 p-0 text-gray-400 hover:text-indigo-500">
-                <Info className="w-5 h-5" />
+              <Button variant="ghost" size="sm" onClick={() => detail && setViewingArray(detail)} className="h-9 w-9 !p-0 text-gray-400 hover:text-indigo-500">
+                <Info className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => detail && setEditingArray(detail)} className="h-9 w-9 p-0 text-gray-400 hover:text-emerald-500" title="Editar">
-                <Edit2 className="w-5 h-5" />
+              <Button variant="ghost" size="sm" onClick={() => detail && setEditingArray(detail)} className="h-9 w-9 !p-0 text-gray-400 hover:text-emerald-500" title="Editar">
+                <Edit2 className="w-4 h-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -411,22 +414,22 @@ export function PoderesTab({
                     setSavingToLibraryId(null);
                   }
                 }}
-                className="h-9 w-9 p-0 text-gray-400 hover:text-blue-500"
+                className="h-9 w-9 !p-0 text-gray-400 hover:text-blue-500"
                 title="Salvar na Biblioteca"
               >
-                <Bookmark className="w-5 h-5" />
+                <Bookmark className="w-4 h-4" />
               </Button>
               {isEquipped ? (
-                <Button variant="ghost" size="sm" onClick={() => onUnequipPowerArray(array.powerArrayId)} className="h-9 w-9 p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
-                  <Package className="w-5 h-5" />
+                <Button variant="ghost" size="sm" onClick={() => onUnequipPowerArray(array.powerArrayId)} className="h-9 w-9 !p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
+                  <Package className="w-4 h-4" />
                 </Button>
               ) : (
                 <Button variant="ghost" size="sm" onClick={() => onEquipPowerArray(array.powerArrayId)} className="h-8 px-2 text-[10px] font-bold border text-gray-600 hover:text-indigo-600 hover:border-indigo-600" title="Equipar">
                   Equipar
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={() => onRemovePowerArray(array.powerArrayId)} className="h-9 w-9 p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
-                <Trash2 className="w-5 h-5" />
+              <Button variant="ghost" size="sm" onClick={() => onRemovePowerArray(array.powerArrayId)} className="h-9 w-9 !p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
+                <Trash2 className="w-4 h-4" />
               </Button>
             </div>
           </div>
@@ -479,18 +482,37 @@ export function PoderesTab({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between p-3 rounded-lg bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-900/20">
-              <div>
-                <p className="text-[10px] font-bold text-purple-700 dark:text-purple-400 uppercase">Mental CD</p>
-                <p className="text-lg font-black text-purple-900 dark:text-purple-100">
-                  {10 + character.attributes[character.attributes.keyMental].rollModifier}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-red-700 dark:text-red-400 uppercase">Física CD</p>
-                <p className="text-lg font-black text-red-900 dark:text-red-100">
-                  {10 + character.attributes[character.attributes.keyPhysical].rollModifier}
-                </p>
-              </div>
+              {(() => {
+                const activeFortalecer = obterBonusFortalecerAtivos(activePowers);
+                const bonusKeyMental = activeFortalecer.atributos[character.attributes.keyMental] || 0;
+                const bonusKeyPhysical = activeFortalecer.atributos[character.attributes.keyPhysical] || 0;
+                return (
+                  <>
+                    <div>
+                      <p className="text-[10px] font-bold text-purple-700 dark:text-purple-400 uppercase">Mental CD</p>
+                      <p className="text-lg font-black text-purple-900 dark:text-purple-100">
+                        {10 + character.attributes[character.attributes.keyMental].rollModifier + bonusKeyMental}
+                        {bonusKeyMental > 0 && (
+                          <span className="text-xs font-black text-amber-600 dark:text-amber-400 ml-1">
+                            (+{bonusKeyMental})
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-red-700 dark:text-red-400 uppercase">Física CD</p>
+                      <p className="text-lg font-black text-red-900 dark:text-red-100">
+                        {10 + character.attributes[character.attributes.keyPhysical].rollModifier + bonusKeyPhysical}
+                        {bonusKeyPhysical > 0 && (
+                          <span className="text-xs font-black text-amber-600 dark:text-amber-400 ml-1">
+                            (+{bonusKeyPhysical})
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </CardContent>
         </Card>
@@ -572,21 +594,21 @@ export function PoderesTab({
       ) : (
         <div className="space-y-8">
           {/* Ativáveis */}
-          {character.powers.some(p => p.isEquipped && !(detailedPowers[p.powerId]?.parametros?.acao === 5 && detailedPowers[p.powerId]?.parametros?.duracao === 4)) && (
+          {character.powers.some(p => p.isEquipped && !(detailedPowers[p.powerId]?.parametros?.duracao === 4)) && (
             <div className="space-y-3">
               <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 px-1"><Zap className="w-3.5 h-3.5" /> Poderes Ativáveis</h3>
               <div className="flex flex-col gap-3">
-                {character.powers.filter(p => p.isEquipped && !(detailedPowers[p.powerId]?.parametros?.acao === 5 && detailedPowers[p.powerId]?.parametros?.duracao === 4)).map(p => renderPowerCard(p, true, false))}
+                {character.powers.filter(p => p.isEquipped && !(detailedPowers[p.powerId]?.parametros?.duracao === 4)).map(p => renderPowerCard(p, true, false))}
               </div>
             </div>
           )}
 
           {/* Passivas */}
-          {character.powers.some(p => p.isEquipped && (detailedPowers[p.powerId]?.parametros?.acao === 5 && detailedPowers[p.powerId]?.parametros?.duracao === 4)) && (
+          {character.powers.some(p => p.isEquipped && (detailedPowers[p.powerId]?.parametros?.duracao === 4)) && (
             <div className="space-y-3">
               <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 px-1"><Shield className="w-3.5 h-3.5 text-blue-500" /> Passivas Equipadas</h3>
               <div className="flex flex-col gap-3">
-                {character.powers.filter(p => p.isEquipped && (detailedPowers[p.powerId]?.parametros?.acao === 5 && detailedPowers[p.powerId]?.parametros?.duracao === 4)).map(p => renderPowerCard(p, true, true))}
+                {character.powers.filter(p => p.isEquipped && (detailedPowers[p.powerId]?.parametros?.duracao === 4)).map(p => renderPowerCard(p, true, true))}
               </div>
             </div>
           )}

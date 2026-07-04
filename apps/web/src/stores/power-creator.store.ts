@@ -27,6 +27,7 @@ interface PowerCreatorStore {
   atualizarParametroPoder: (parametro: 'acao' | 'alcance' | 'duracao', valor: number) => void;
   atualizarInputCustomizado: (efeitoId: string, valor: string) => void;
   atualizarConfiguracaoEfeito: (efeitoId: string, configuracaoId: string) => void;
+  atualizarDadoModularizado: (efeitoId: string, dado: string) => void;
   adicionarModificacaoLocal: (efeitoId: string, modificacaoBaseId: string, parametros?: Record<string, any>) => void;
   removerModificacaoLocal: (efeitoId: string, modificacaoId: string) => void;
   adicionarModificacaoGlobal: (modificacaoBaseId: string, parametros?: Record<string, any>) => void;
@@ -104,12 +105,23 @@ export const usePowerCreatorStore = create<PowerCreatorStore>()(
         },
       })),
 
-      atualizarParametroPoder: (parametro, valor) => set((state) => ({
-        poder: {
+      atualizarParametroPoder: (parametro, valor) => set((state) => {
+        const nextPoder = {
           ...state.poder,
           [parametro]: valor,
-        },
-      })),
+        };
+        
+        // Se a duração for Permanente (4), a ação DEVE ser Nenhuma (5)
+        if (parametro === 'duracao' && valor === 4) {
+          nextPoder.acao = 5;
+        }
+        // Se a ação for alterada e a duração atual for Permanente (4), a ação deve permanecer Nenhuma (5)
+        if (parametro === 'acao' && state.poder.duracao === 4) {
+          nextPoder.acao = 5;
+        }
+        
+        return { poder: nextPoder };
+      }),
 
       atualizarInputCustomizado: (efeitoId, valor) => set((state) => ({
         poder: {
@@ -125,6 +137,15 @@ export const usePowerCreatorStore = create<PowerCreatorStore>()(
           ...state.poder,
           efeitos: state.poder.efeitos.map((e) =>
             e.id === efeitoId ? { ...e, configuracaoSelecionada: configuracaoId } : e
+          ),
+        },
+      })),
+
+      atualizarDadoModularizado: (efeitoId, dado) => set((state) => ({
+        poder: {
+          ...state.poder,
+          efeitos: state.poder.efeitos.map((e) =>
+            e.id === efeitoId ? { ...e, dadoModularizado: dado || undefined } : e
           ),
         },
       })),

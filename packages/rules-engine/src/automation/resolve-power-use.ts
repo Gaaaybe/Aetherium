@@ -62,7 +62,16 @@ export function resolvePowerUse({ power, context, selectedTargetIds }: PowerUseI
     );
 
     // 4. Executa o behavior contra os alvos filtrados
-    mutations.push(...executeBehavior(behavior, targets, effect.grau, context, power.id, basedOnAttribute));
+    mutations.push(...executeBehavior(
+      behavior,
+      targets,
+      effect.grau,
+      context,
+      power.id,
+      basedOnAttribute,
+      effect.dadoModularizado,
+      power.isDanoAcoplado
+    ));
 
   }
 

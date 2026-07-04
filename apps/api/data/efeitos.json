@@ -59,6 +59,10 @@
       "alcance": 1,
       "duracao": 0
     },
+    "requerInput": true,
+    "tipoInput": "texto",
+    "labelInput": "Tipo/Descritor de Dano",
+    "placeholderInput": "Ex: Fogo, Corte, Impacto, Frio...",
     "categorias": ["Ataque"],
     "exemplos": "Bola de fogo, rajada de energia, soco energizado"
   },
@@ -187,7 +191,13 @@
           "id": "dano",
           "nome": "Dano",
           "modificadorCusto": 2,
-          "descricao": "Aumenta dano específico (por domínio ou arma). +2 (grau 1), dobra a cada grau até +1024 (grau 10)"
+          "descricao": "Aumenta dano específico (por domínio ou arma). +4 (grau 1), dobra a cada grau até +2048 (grau 10)"
+        },
+        {
+          "id": "recuperacao",
+          "nome": "Recuperação",
+          "modificadorCusto": 2,
+          "descricao": "Aumenta cura/recuperação específica (por domínio). +4 (grau 1), dobra a cada grau até +2048 (grau 10)"
         },
         {
           "id": "rd",
@@ -198,8 +208,8 @@
         {
           "id": "pv",
           "nome": "Pontos de Vida (PV)",
-          "modificadorCusto": 2,
-          "descricao": "Concede PV temporários. Quantidade = rolagem de cura conforme tabela de dano/cura"
+          "modificadorCusto": 3,
+          "descricao": "Concede Pontos de Vida temporários ao alvo. A quantidade é igual ao resultado de uma rolagem de dados de cura, conforme a tabela de dano/cura do sistema. Caso seja para um efeito permanente pegue o máximo."
         },
         {
           "id": "acoes",

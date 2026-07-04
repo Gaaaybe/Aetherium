@@ -14,8 +14,17 @@ export const appliedEffectSchema = z.object({
   grau: z.number().int().min(-5).max(20),
   configuracaoId: z.string().min(1).optional(),
   inputValue: z.union([z.string(), z.number()]).optional(),
+  dadoModularizado: z.string().optional(),
   modifications: z.array(appliedModificationSchema).default([]),
   nota: z.string().max(500).optional(),
+}).refine((ef) => {
+  if (ef.effectBaseId === 'dano' && typeof ef.inputValue === 'string' && ef.inputValue.length > 30) {
+    return false;
+  }
+  return true;
+}, {
+  message: 'O tipo/descritor de dano deve ter no máximo 30 caracteres',
+  path: ['inputValue'],
 });
 
 export const custoAlternativoSchema = z.object({

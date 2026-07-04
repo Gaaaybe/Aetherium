@@ -426,6 +426,8 @@ export function useCharacterSheet(characterId: string) {
     hasCare?: boolean;
     useGastronomicRule?: boolean;
     consumedMeal?: boolean;
+    customMaxPV?: number;
+    customMaxPE?: number;
   }) => {
     if (!character) return null;
     setIsSyncing(true);

@@ -422,6 +422,7 @@ export class PowersService {
         grau: e.grau,
         configuracaoId: e.configuracaoId,
         inputValue: e.inputValue !== undefined ? String(e.inputValue) : undefined,
+        dadoModularizado: e.dadoModularizado,
         custoPda: effectCost.pda,
         custoPe: effectCost.pe,
         custoEspacos: effectCost.espacos,
@@ -556,6 +557,7 @@ export class PowersService {
             grau: ae.grau,
             configuracaoId: ae.configuracaoId || undefined,
             inputValue: ae.inputValue !== null ? ae.inputValue : undefined,
+            dadoModularizado: ae.dadoModularizado || undefined,
             modifications: mods,
             nota: ae.nota || undefined,
           };
@@ -640,6 +642,7 @@ export class PowersService {
               grau: ae.grau,
               configuracaoId: ae.configuracaoId || undefined,
               inputValue: ae.inputValue !== null ? ae.inputValue : undefined,
+              dadoModularizado: ae.dadoModularizado || undefined,
               modifications: mods,
               nota: ae.nota || undefined,
             };
@@ -691,6 +694,7 @@ export class PowersService {
             grau: e.grau,
             configuracaoId: e.configuracaoId,
             inputValue: e.inputValue !== undefined ? String(e.inputValue) : undefined,
+            dadoModularizado: e.dadoModularizado,
             custoPda: effectCost.pda,
             custoPe: effectCost.pe,
             custoEspacos: effectCost.espacos,

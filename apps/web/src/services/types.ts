@@ -55,6 +55,7 @@ export interface EfeitoAplicadoResponse {
   grau: number;
   configuracaoId: string | null;
   inputValue: string | number | null;
+  dadoModularizado: string | null;
   custo: CustoResponse;
   modifications: ModificacaoAplicadaResponse[];
   nota: string | null;
@@ -96,6 +97,7 @@ export interface EfeitoAplicadoPayload {
   grau: number;
   configuracaoId?: string;
   inputValue?: string | number;
+  dadoModularizado?: string;
   modifications?: ModificacaoAplicadaPayload[];
   nota?: string;
 }
@@ -194,6 +196,7 @@ export interface ItemBaseResponse {
   icone: string | null;
   notas: string | null;
   dominio: DominioResponse;
+  dominios: DominioResponse[];
   custoBase: number;
   nivelItem: number;
   valorBase: number;
@@ -273,7 +276,8 @@ export interface DamageDescriptorPayload {
 interface ItemCommonPayload {
   nome: string;
   descricao: string;
-  dominio: { name: DomainName; areaConhecimento?: string; peculiarId?: string };
+  dominio?: { name: DomainName; areaConhecimento?: string; peculiarId?: string };
+  dominios: { name: DomainName; areaConhecimento?: string; peculiarId?: string }[];
   custoBase: number;
   nivelItem?: number;
   isPublic?: boolean;

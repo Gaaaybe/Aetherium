@@ -6,6 +6,7 @@ import { ESCALAS, type Modificacao, DOMINIOS } from '../../../data';
 import { getThemeByDomain, PatternOverlay } from '../../../shared/utils/summary-themes';
 import { useCatalog } from '@/context/useCatalog';
 import { usePeculiaridades } from '../../../shared/hooks/usePeculiaridades';
+import { formatarInputCustomizado } from './CardEfeito';
 import type { DetalhesPoder } from '../types';
 
 interface ResumoPoderProps {
@@ -88,9 +89,15 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
       // Grau
       linha += ` ${efeito.grau}`;
       
-      // Input customizado (ex: Imunidade a Fogo)
-      if (efeito.inputCustomizado) {
-        linha += ` [${efeito.inputCustomizado}]`;
+      // Input customizado ou bônus padrão de fortalecimento
+      const espec = formatarInputCustomizado(efeito.inputCustomizado, efeitoBase.id, efeito.configuracaoSelecionada, efeito.grau);
+      if (espec) {
+        linha += ` [${espec}]`;
+      }
+      
+      // Dado modularizado
+      if (efeito.dadoModularizado) {
+        linha += ` [Dado: ${efeito.dadoModularizado}]`;
       }
       
       // Configuração (ex: Patamar 3)
@@ -217,9 +224,15 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
       
       texto += `\n${ef.efeitoBase.nome} - Grau ${ef.efeito.grau} (${ef.custoTotal} PdA)\n`;
       
-      // Input customizado se houver
-      if (ef.efeito.inputCustomizado) {
-        texto += `  Especificação: ${ef.efeito.inputCustomizado}\n`;
+      // Input customizado se houver ou bônus padrão de fortalecimento
+      const espec = formatarInputCustomizado(ef.efeito.inputCustomizado, ef.efeitoBase.id, ef.efeito.configuracaoSelecionada, ef.efeito.grau);
+      if (espec) {
+        texto += `  Especificação: ${espec}\n`;
+      }
+      
+      // Dado modularizado se houver
+      if (ef.efeito.dadoModularizado) {
+        texto += `  Dado Modularizado: ${ef.efeito.dadoModularizado}\n`;
       }
       
       // Configuração selecionada
@@ -523,9 +536,17 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         {efeitoBase.descricao}
                       </p>
-                      {efeito.inputCustomizado && (
+                      {(() => {
+                        const espec = formatarInputCustomizado(efeito.inputCustomizado, efeitoBase.id, efeito.configuracaoSelecionada, efeito.grau);
+                        return espec ? (
+                          <p className="text-sm font-medium text-espirito-600 dark:text-espirito-400 mt-1">
+                            Especificação: {espec}
+                          </p>
+                        ) : null;
+                      })()}
+                      {efeito.dadoModularizado && (
                         <p className="text-sm font-medium text-espirito-600 dark:text-espirito-400 mt-1">
-                          Especificação: {efeito.inputCustomizado}
+                          Dado Modularizado: {efeito.dadoModularizado}
                         </p>
                       )}
                       {efeito.configuracaoSelecionada && efeitoBase.configuracoes && (

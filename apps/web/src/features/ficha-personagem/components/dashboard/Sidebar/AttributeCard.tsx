@@ -4,18 +4,21 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Modal, ModalFooter, I
 import { Activity, Edit2, Shield, Brain, Plus, Minus, Info, Dices } from 'lucide-react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { DiceRoller } from '@/shared/components/DiceRoller';
+import { obterBonusFortalecerAtivos } from '@/features/ficha-personagem/utils/fortalecerHelper';
 
 interface AttributeCardProps {
   character: CharacterResponse;
   onSync: (data: SyncCharacterData) => Promise<void>;
+  activePowers?: any[];
 }
 
-export function AttributeCard({ character, onSync }: AttributeCardProps) {
+export function AttributeCard({ character, onSync, activePowers }: AttributeCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [rollingAttribute, setRollingAttribute] = useState<{ label: string; modifier: number } | null>(null);
 
   const { attributes, level } = character;
+  const activeFortalecer = obterBonusFortalecerAtivos(activePowers || [], character);
 
   const items = [
     { key: 'strength', label: 'FOR', attr: attributes.strength, color: 'text-red-500', bg: 'bg-red-500/10' },
@@ -26,10 +29,13 @@ export function AttributeCard({ character, onSync }: AttributeCardProps) {
     { key: 'charisma', label: 'CAR', attr: attributes.charisma, color: 'text-purple-500', bg: 'bg-purple-500/10' },
   ];
 
-  const radarData = items.map((item) => ({
-    subject: item.label,
-    A: item.attr.baseModifier + item.attr.extraBonus,
-  }));
+  const radarData = items.map((item) => {
+    const tempBonus = activeFortalecer.atributos[item.key] || 0;
+    return {
+      subject: item.label,
+      A: item.attr.baseModifier + item.attr.extraBonus + tempBonus,
+    };
+  });
 
   const [localAttributes, setLocalAttributes] = useState({
     strength: { baseValue: attributes.strength.baseValue, extraBonus: attributes.strength.extraBonus },
@@ -113,35 +119,54 @@ export function AttributeCard({ character, onSync }: AttributeCardProps) {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            {items.map((item) => (
-              <button 
-                key={item.label} 
-                onClick={() => setRollingAttribute({ label: item.key === 'strength' ? 'Força' : item.key === 'dexterity' ? 'Destreza' : item.key === 'constitution' ? 'Constituição' : item.key === 'intelligence' ? 'Inteligência' : item.key === 'wisdom' ? 'Sabedoria' : 'Carisma', modifier: item.attr.baseModifier + item.attr.extraBonus })}
-                className="flex flex-col items-center p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800 group relative overflow-hidden transition-all hover:border-indigo-500/50 hover:bg-indigo-50/10 active:scale-95"
-              >
-                <div className={`absolute top-0 left-0 w-1 h-full ${item.bg}`} />
-                <span className={`text-[10px] font-bold ${item.color}`}>{item.label}</span>
-                <div className="flex items-baseline gap-0.5 mt-1">
-                  <span className="text-xl font-black text-gray-900 dark:text-white leading-none">
-                    {item.attr.baseModifier >= 0 ? `+${item.attr.baseModifier}` : item.attr.baseModifier}
+            {items.map((item) => {
+              const tempBonus = activeFortalecer.atributos[item.key] || 0;
+              const labelMap: Record<string, string> = {
+                strength: 'Força',
+                dexterity: 'Destreza',
+                constitution: 'Constituição',
+                intelligence: 'Inteligência',
+                wisdom: 'Sabedoria',
+                charisma: 'Carisma',
+              };
+              return (
+                <button 
+                  key={item.label} 
+                  onClick={() => setRollingAttribute({ 
+                    label: labelMap[item.key] || 'Atributo', 
+                    modifier: item.attr.baseModifier + item.attr.extraBonus + tempBonus 
+                  })}
+                  className="flex flex-col items-center p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800 group relative overflow-hidden transition-all hover:border-indigo-500/50 hover:bg-indigo-50/10 active:scale-95"
+                >
+                  <div className={`absolute top-0 left-0 w-1 h-full ${item.bg}`} />
+                  <span className={`text-[10px] font-bold ${item.color}`}>{item.label}</span>
+                  <div className="flex items-baseline gap-0.5 mt-1">
+                    <span className="text-xl font-black text-gray-900 dark:text-white leading-none">
+                      {item.attr.baseModifier >= 0 ? `+${item.attr.baseModifier}` : item.attr.baseModifier}
+                    </span>
+                    {item.attr.extraBonus > 0 && (
+                      <span className="text-[10px] font-bold text-emerald-500" title="Bônus Extra (Itens/Poderes)">
+                        +{item.attr.extraBonus}
+                      </span>
+                    )}
+                    {item.attr.extraBonus < 0 && (
+                      <span className="text-[10px] font-bold text-red-500" title="Penalidade">
+                        {item.attr.extraBonus}
+                      </span>
+                    )}
+                    {tempBonus > 0 && (
+                      <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 ml-0.5" title="Bônus Temporário de Fortalecer">
+                        (+{tempBonus})
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-bold mt-1">
+                    Base: {item.attr.baseValue}
                   </span>
-                  {item.attr.extraBonus > 0 && (
-                    <span className="text-[10px] font-bold text-emerald-500" title="Bônus Extra (Itens/Poderes)">
-                      +{item.attr.extraBonus}
-                    </span>
-                  )}
-                  {item.attr.extraBonus < 0 && (
-                    <span className="text-[10px] font-bold text-red-500" title="Penalidade">
-                      {item.attr.extraBonus}
-                    </span>
-                  )}
-                </div>
-                <span className="text-[10px] text-gray-400 font-bold mt-1">
-                  Base: {item.attr.baseValue}
-                </span>
-                <Dices className="absolute -right-1 -bottom-1 w-6 h-6 opacity-0 group-hover:opacity-10 transition-opacity text-indigo-500" />
-              </button>
-            ))}
+                  <Dices className="absolute -right-1 -bottom-1 w-6 h-6 opacity-0 group-hover:opacity-10 transition-opacity text-indigo-500" />
+                </button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

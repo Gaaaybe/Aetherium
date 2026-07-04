@@ -17,9 +17,14 @@ export function executeDano(
   grau: number,
   context: PowerUseContext,
   basedOnAttribute = false,
+  dadoModularizado?: string,
+  isDanoAcoplado = false,
 ): GameMutation[] {
   const row = UNIVERSAL_TABLE.find((r) => r.grau === grau);
-  let formula = behavior.formula ?? row?.dano ?? '1d6';
+  const baseDano = isDanoAcoplado
+    ? `1d${4 * Math.pow(2, Math.max(1, grau) - 1)}`
+    : (row?.dano ?? '1d6');
+  let formula = dadoModularizado ?? behavior.formula ?? baseDano;
 
   if (basedOnAttribute) {
     const mod = context.casterState.keyPhysicalModifier;

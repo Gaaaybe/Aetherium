@@ -67,6 +67,8 @@ export const charactersService = {
       hasCare?: boolean;
       useGastronomicRule?: boolean;
       consumedMeal?: boolean;
+      customMaxPV?: number;
+      customMaxPE?: number;
     }
   ): Promise<CharacterResponse & { restChange?: { pvChange: number; peChange: number } }> {
     const { data } = await api.post<CharacterResponse & { restChange?: { pvChange: number; peChange: number } }>(`/characters/${id}/rest`, payload);

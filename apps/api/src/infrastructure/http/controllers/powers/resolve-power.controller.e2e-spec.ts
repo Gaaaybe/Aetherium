@@ -141,6 +141,7 @@ describe('ResolvePowerController (e2e)', () => {
               {
                 modificationBaseId: 'area',
                 grau: 2,
+                scope: 'local',
               },
             ],
           },
@@ -174,6 +175,7 @@ describe('ResolvePowerController (e2e)', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
       resolutionMode: 'ON_USE',
+      isDanoAcoplado: false,
       mutations: [
         {
           type: 'DEAL_DAMAGE',
@@ -208,6 +210,85 @@ describe('ResolvePowerController (e2e)', () => {
     expect(response.statusCode).toBe(401);
   });
 
+  test('Dano Acoplado logic resolution', async () => {
+    const user = await prisma.user.findFirst({ where: { email: 'resolveuser@example.com' } });
+    if (!user) throw new Error('User not found');
+
+    // 1. Create a weapon item
+    const weapon = await prisma.item.create({
+      data: {
+        userId: user.id,
+        nome: 'Espada Lendaria de Teste',
+        descricao: 'Uma espada de teste.',
+        tipo: 'WEAPON',
+        custoBase: 10,
+        nivelItem: 1,
+        critMargin: 19,
+        critMultiplier: 2,
+        alcance: 'ADJACENTE',
+        domains: ['ARMA_BRANCA'],
+        domainPeculiarIds: [],
+      },
+    });
+
+    // 2. Create a weapon-based power (domain: 'arma-branca', which is non-spiritual)
+    const powerResponse = await request(app.getHttpServer())
+      .post('/powers')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        nome: 'Golpe Acoplado Físico',
+        descricao: 'Ataque físico acoplado à arma.',
+        dominio: { name: 'arma-branca' },
+        parametros: { acao: 1, alcance: 0, duracao: 0 },
+        effects: [
+          {
+            effectBaseId: 'dano',
+            grau: 1,
+          },
+        ],
+        globalModifications: [],
+        isPublic: false,
+      });
+
+    const physicalPowerId = powerResponse.body.id;
+
+    // Link the power to the weapon
+    await prisma.itemPower.create({
+      data: {
+        itemId: weapon.id,
+        powerId: physicalPowerId,
+      },
+    });
+
+    // Resolve the weapon power
+    const response = await request(app.getHttpServer())
+      .post(`/powers/${physicalPowerId}/resolve`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        sceneId: 'scene-test-acoplado',
+        candidateTargetIds: ['target-dummy-1'],
+        casterState: {
+          id: 'caster-dummy-1',
+          keyPhysicalModifier: 2,
+          keyMentalModifier: 1,
+          level: 4,
+        },
+      });
+
+    expect(response.statusCode).toBe(200);
+    // Since it's from a weapon, non-spiritual domain, it should have isDanoAcoplado: true
+    // And its formula should scale according to weapon scale: grau 1 -> 1d4
+    expect(response.body.isDanoAcoplado).toBe(true);
+    expect(response.body.mutations[0]).toMatchObject({
+      type: 'DEAL_DAMAGE',
+      formula: '1d4', // Grau 1 weapon scale
+    });
+
+    // Clean up
+    await prisma.itemPower.deleteMany({ where: { itemId: weapon.id } });
+    await prisma.item.delete({ where: { id: weapon.id } });
+  });
+
   test('Fase 2 — CombatEventListener & Agonia Reatividade Flow', async () => {
     const user = await prisma.user.findFirst({ where: { email: 'resolveuser@example.com' } });
     if (!user) throw new Error('User not found');
@@ -217,7 +298,7 @@ describe('ResolvePowerController (e2e)', () => {
       data: {
         userId: user.id,
         level: 5,
-        attributes: { constitution: { baseValue: 12 }, strength: { baseValue: 10 }, intelligence: { baseValue: 10 } },
+        attributes: { constitution: { baseValue: 12 }, strength: { baseValue: 14 }, intelligence: { baseValue: 12 } },
         narrativeProfile: {},
         skills: { Fortitude: { proficiencyState: 'UNTRAINED' }, Reflexos: { proficiencyState: 'UNTRAINED' } },
         pdaState: { extraPda: 0, spentPda: 0 },
@@ -285,6 +366,8 @@ describe('ResolvePowerController (e2e)', () => {
       },
     ]);
 
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
     // 5. Verifica se o defensor tomou dano
     const updatedDefender = await prisma.character.findUnique({ where: { id: defender.id } });
     // Dano base de 10
@@ -296,7 +379,6 @@ describe('ResolvePowerController (e2e)', () => {
     const updatedAttacker = await prisma.character.findUnique({ where: { id: attacker.id } });
     const healthState = updatedAttacker?.healthState as { currentPV: number };
     const energyState = updatedAttacker?.energyState as { currentPE: number };
-
     expect(healthState.currentPV).toBeGreaterThan(10);
     expect(energyState.currentPE).toBe(9); // 5 base + 4 recuperados
 

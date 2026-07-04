@@ -11,11 +11,16 @@ interface ResumoItemProps {
   nome: string;
   icone?: string;
   descricao: string;
-  dominio: {
+  dominio?: {
     name: DomainName;
     areaConhecimento?: string;
     peculiarId?: string;
   };
+  dominios?: {
+    name: DomainName;
+    areaConhecimento?: string;
+    peculiarId?: string;
+  }[];
   custoBase: number;
   nivelCalculado: number;
   custoRealCalculado: number;
@@ -48,14 +53,22 @@ function tipoIconFallback(tipo: string) {
   return <Package className="w-16 h-16 text-white/80" />;
 }
 
-function dominioLabel(dominio: ResumoItemProps['dominio']): string {
-  const base = DOMINIOS.find((d) => d.id === dominio.name)?.nome ?? dominio.name;
+function dominiosLabel(dominios?: ResumoItemProps['dominios'], singleDominio?: ResumoItemProps['dominio']): string {
+  const doms = dominios !== undefined
+    ? dominios
+    : singleDominio
+      ? [singleDominio]
+      : [];
 
-  if (dominio.name === 'cientifico' && dominio.areaConhecimento) {
-    return `${base} - ${dominio.areaConhecimento}`;
-  }
+  if (doms.length === 0) return 'Sem domínio';
 
-  return base;
+  return doms.map(d => {
+    const base = DOMINIOS.find((dom) => dom.id === d.name)?.nome ?? d.name;
+    if (d.name === 'cientifico' && d.areaConhecimento) {
+      return `${base} - ${d.areaConhecimento}`;
+    }
+    return base;
+  }).join(', ');
 }
 
 function alcanceLabel(alcance: WeaponRange): string {
@@ -236,6 +249,7 @@ export function ResumoItem({
   icone,
   descricao,
   dominio,
+  dominios,
   custoBase,
   nivelCalculado,
   custoRealCalculado,
@@ -253,7 +267,7 @@ export function ResumoItem({
     const linhas = [
       `=== ${nome || 'Item sem nome'} ===`,
       `Tipo: ${tipoLabel(tipo)}`,
-      `Domínio: ${dominioLabel(dominio)}`,
+      `Domínio: ${dominiosLabel(dominios, dominio)}`,
       `Descrição: ${descricao || 'Sem descrição'}`,
       `Custo Base: ${custoBase} | Nível: ${nivelCalculado} | Custo Real: ${custoRealCalculado} | Preço Venda: ${precoVendaCalculado}`,
     ];
@@ -315,7 +329,7 @@ export function ResumoItem({
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="text-3xl font-bold break-words">{nome || 'Item sem nome'}</h2>
-                  <p className="mt-1 text-sm opacity-90">{tipoLabel(tipo)} · {dominioLabel(dominio)}</p>
+                  <p className="mt-1 text-sm opacity-90">{tipoLabel(tipo)} · {dominiosLabel(dominios, dominio)}</p>
                   {itemData && (
                     <span
                       className={`inline-flex items-center gap-1 mt-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${

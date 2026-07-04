@@ -726,6 +726,8 @@ export class CharactersService {
     hasCare: boolean,
     useGastronomicRule = false,
     consumedMeal = false,
+    customMaxPV?: number,
+    customMaxPE?: number,
   ) {
     const character = await this.getCharacterOrThrow(characterId, userId);
 
@@ -820,7 +822,19 @@ export class CharactersService {
       if (peChange > 0) peChange = 0;
     }
 
+    const baseCurrentPV = character.healthState.currentPV;
+    const baseCurrentPE = character.energyState.currentPE;
+
     runRules(() => applyRestResult(character, pvChange, peChange));
+
+    if (pvChange > 0 && customMaxPV !== undefined) {
+      const expectedPV = baseCurrentPV + pvChange;
+      character.healthState.currentPV = Math.min(customMaxPV, expectedPV);
+    }
+    if (peChange > 0 && customMaxPE !== undefined) {
+      const expectedPE = baseCurrentPE + peChange;
+      character.energyState.currentPE = Math.min(customMaxPE, expectedPE);
+    }
 
     await this.saveCharacter(this.prisma, character);
 
@@ -884,7 +898,19 @@ export class CharactersService {
       }
 
       if (data.pvChange !== undefined || data.peChange !== undefined) {
+        const baseCurrentPV = character.healthState.currentPV;
+        const baseCurrentPE = character.energyState.currentPE;
+
         applyRestResult(character, data.pvChange ?? 0, data.peChange ?? 0);
+
+        if (data.pvChange !== undefined && data.pvChange > 0 && data.customMaxPV !== undefined) {
+          const expectedPV = baseCurrentPV + data.pvChange;
+          character.healthState.currentPV = Math.min(data.customMaxPV, expectedPV);
+        }
+        if (data.peChange !== undefined && data.peChange > 0 && data.customMaxPE !== undefined) {
+          const expectedPE = baseCurrentPE + data.peChange;
+          character.energyState.currentPE = Math.min(data.customMaxPE, expectedPE);
+        }
       }
 
       if (data.tempPvChange !== undefined && data.tempPvChange > 0) {

@@ -9,14 +9,15 @@ import { PassiveStatsCard } from './Sidebar/PassiveStatsCard';
 interface SidebarColumnProps {
   character: CharacterResponse;
   onSync: (data: SyncCharacterData) => Promise<void>;
+  activePowers: any[];
 }
 
-export function SidebarColumn({ character, onSync }: SidebarColumnProps) {
+export function SidebarColumn({ character, onSync, activePowers }: SidebarColumnProps) {
   return (
     <div className="flex flex-col gap-6">
-      <AttributeCard character={character} onSync={onSync} />
-      <VitalsCard health={character.health} energy={character.energy} onSync={onSync} />
-      <DefenseCard character={character} />
+      <AttributeCard character={character} onSync={onSync} activePowers={activePowers} />
+      <VitalsCard health={character.health} energy={character.energy} onSync={onSync} activePowers={activePowers} character={character} />
+      <DefenseCard character={character} activePowers={activePowers} onSync={onSync} />
       <ConditionsCard conditions={character.conditions} />
       <InspirationPdACard inspiration={character.inspiration} pda={character.pda} onSync={onSync} />
       <PassiveStatsCard character={character} />

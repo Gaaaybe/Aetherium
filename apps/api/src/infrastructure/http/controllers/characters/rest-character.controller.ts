@@ -26,6 +26,8 @@ const restBodySchema = z.object({
   hasCare: z.boolean().default(false),
   useGastronomicRule: z.boolean().default(false),
   consumedMeal: z.boolean().default(false),
+  customMaxPV: z.number().int().min(1).optional(),
+  customMaxPE: z.number().int().min(1).optional(),
 });
 
 type RestBodySchema = z.infer<typeof restBodySchema>;
@@ -50,6 +52,8 @@ export class RestCharacterController {
         body.hasCare,
         body.useGastronomicRule,
         body.consumedMeal,
+        body.customMaxPV,
+        body.customMaxPE,
       );
 
       const httpCharacter = CharacterPresenter.toHTTP(character);

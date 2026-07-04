@@ -36,6 +36,13 @@ interface MainAreaProps {
   onAcquireBenefit: (benefitName: string, targetDegree: number) => Promise<void>;
   onRemoveBenefit: (benefitId: string) => void;
   onUpdateUnarmedMastery: (mastery: any) => Promise<void>;
+  activePowers: any[];
+  isPowerResolving: boolean;
+  isPowerConfirming: boolean;
+  previewPower: any;
+  confirmUsePower: any;
+  maintainPower: any;
+  deactivatePower: any;
 }
 
 export function MainArea({ 
@@ -65,6 +72,13 @@ export function MainArea({
   onAcquireBenefit,
   onRemoveBenefit,
   onUpdateUnarmedMastery,
+  activePowers,
+  isPowerResolving,
+  isPowerConfirming,
+  previewPower,
+  confirmUsePower,
+  maintainPower,
+  deactivatePower,
 }: MainAreaProps) {
   const tabs = [
     { id: 'acoes', label: 'Ações', icon: <Sword className="w-4 h-4" /> },
@@ -110,6 +124,13 @@ export function MainArea({
             character={character} 
             onUpdateUnarmedMastery={onUpdateUnarmedMastery} 
             onSync={onSync}
+            activePowers={activePowers}
+            isResolving={isPowerResolving}
+            isConfirming={isPowerConfirming}
+            previewPower={previewPower}
+            confirmUsePower={confirmUsePower}
+            maintainPower={maintainPower}
+            deactivatePower={deactivatePower}
           />
         )}
         {activeTab === 'poderes' && (
@@ -126,6 +147,7 @@ export function MainArea({
             onUnequipPowerArray={onUnequipPowerArray}
             onRemovePower={onRemovePower}
             onRemovePowerArray={onRemovePowerArray}
+            activePowers={activePowers}
           />
         )}
         {activeTab === 'beneficios' && <BeneficiosTab character={character} onAcquireBenefit={onAcquireBenefit} onRemoveBenefit={onRemoveBenefit} />}

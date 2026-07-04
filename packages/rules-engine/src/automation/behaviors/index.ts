@@ -18,10 +18,12 @@ export function executeBehavior(
   context: PowerUseContext,
   sourcePowerId: string,
   basedOnAttribute = false,
+  dadoModularizado?: string,
+  isDanoAcoplado = false,
 ): GameMutation[] {
   switch (behavior.kind) {
     case 'DANO':
-      return executeDano(behavior, targets, grau, context, basedOnAttribute);
+      return executeDano(behavior, targets, grau, context, basedOnAttribute, dadoModularizado, isDanoAcoplado);
 
     case 'RECUPERACAO':
       return executeRecuperacao(behavior, targets);
@@ -33,7 +35,7 @@ export function executeBehavior(
       return executeGatilho(behavior, targets, sourcePowerId);
 
     case 'FORTALECER':
-      return executeFortalecer(behavior, targets, grau);
+      return executeFortalecer(behavior, targets, grau, context, basedOnAttribute);
 
     case 'APLICAR_CONDICAO':
       return executeAfligir(behavior, targets);

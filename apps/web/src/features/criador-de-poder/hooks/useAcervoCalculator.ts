@@ -62,7 +62,7 @@ export function useAcervoCalculator(
     // Verificar poderes com duração permanente
     let temPoderPermanente = false;
     poderesComDetalhes.forEach(({ poder }) => {
-      if (poder.duracao === 5) { // Permanente = valor 5
+      if (poder.duracao === 4) { // Permanente = valor 4
         temPoderPermanente = true;
         erros.push(`Poder "${poder.nome}" tem duração Permanente (não permitido em acervos)`);
       }

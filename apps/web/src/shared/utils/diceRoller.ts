@@ -75,16 +75,19 @@ export function rollDice(numDice: number, diceSides: number): number {
  * Rola dano (ex: "2d6+5", "1d8 + 1d6 + 5") com suporte a multiplicador de crítico.
  * O multiplicador afeta o resultado final do dano (soma total).
  */
-export function rollDamage(damageFormula: string, multiplier: number = 1): { total: number; rolls: number[]; modifier: number; baseTotal: number } {
-  const cleanFormula = damageFormula.replace(/\s+/g, '').toLowerCase();
+export function rollDamage(damageFormula: string, multiplier: number = 1): { total: number; rolls: number[]; modifier: number; baseTotal: number; components: Array<{ value: number; label: string }> } {
+  const cleanFormula = damageFormula.replace(/\s+/g, ' ');
   const parts = cleanFormula.split(/([+-])/);
   
   let currentSign = 1;
   let baseTotal = 0;
+  let finalTotal = 0;
   let modifier = 0;
   const allRolls: number[] = [];
+  const components: Array<{ value: number; label: string }> = [];
 
-  for (const part of parts) {
+  for (const rawPart of parts) {
+    const part = rawPart.trim();
     if (part === '+') {
       currentSign = 1;
       continue;
@@ -95,31 +98,63 @@ export function rollDamage(damageFormula: string, multiplier: number = 1): { tot
     }
     if (!part) continue;
 
-    const diceMatch = part.match(/^(\d+)d(\d+)$/);
+    const annotations: string[] = [];
+    const annotationRegex = /\[([^\]]*)\]/g;
+    let match;
+    while ((match = annotationRegex.exec(part)) !== null) {
+      annotations.push(match[1].trim());
+    }
+    const annotation = annotations.join('] [');
+    
+    const cleanPart = part.replace(/\[[^\]]*\]/g, '').trim().toLowerCase();
+    const isAcopladoComponent = part.toLowerCase().includes('acoplado');
+
+    const diceMatch = cleanPart.match(/^(\d+)d(\d+)$/);
     if (diceMatch) {
-      const numDice = parseInt(diceMatch[1]);
-      const diceSides = parseInt(diceMatch[2]);
+      const numDice = parseInt(diceMatch[1], 10);
+      const diceSides = parseInt(diceMatch[2], 10);
+      const rolls: number[] = [];
+      let partSum = 0;
       for (let i = 0; i < numDice; i++) {
         const roll = Math.floor(Math.random() * diceSides) + 1;
         allRolls.push(roll);
-        baseTotal += roll * currentSign;
+        rolls.push(roll);
+        partSum += roll;
       }
+      const val = partSum * currentSign;
+      baseTotal += val;
+      
+      const componentMultiplier = isAcopladoComponent ? 1 : multiplier;
+      finalTotal += val * componentMultiplier;
+
+      components.push({
+        value: val * componentMultiplier,
+        label: `${numDice}d${diceSides}${annotation ? ` [${annotation}]` : ''} (${rolls.join('+')})${componentMultiplier > 1 ? ` x${componentMultiplier}` : ''}`
+      });
     } else {
-      const flatValue = parseInt(part);
+      const flatValue = parseInt(cleanPart, 10);
       if (!isNaN(flatValue)) {
-        baseTotal += flatValue * currentSign;
-        modifier += flatValue * currentSign;
+        const val = flatValue * currentSign;
+        baseTotal += val;
+        modifier += val;
+
+        const componentMultiplier = isAcopladoComponent ? 1 : multiplier;
+        finalTotal += val * componentMultiplier;
+
+        components.push({
+          value: val * componentMultiplier,
+          label: annotation ? `${flatValue} [${annotation}]${componentMultiplier > 1 ? ` x${componentMultiplier}` : ''}` : `${flatValue}${componentMultiplier > 1 ? ` x${componentMultiplier}` : ''}`
+        });
       }
     }
   }
 
-  const finalTotal = baseTotal * multiplier;
-  
   return { 
     total: finalTotal, 
     rolls: allRolls, 
     modifier, 
-    baseTotal 
+    baseTotal,
+    components
   };
 }
 

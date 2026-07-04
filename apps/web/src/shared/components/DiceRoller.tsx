@@ -18,6 +18,11 @@ interface DiceRollerProps {
   initialApplyEfficiency?: boolean;
   isModular?: boolean;
   referenceCDs?: { label: string; value: number }[];
+  onlyDamage?: boolean;
+  onApply?: (value: number) => void;
+  applyLabel?: string;
+  onRoll?: () => void;
+  isDanoAcoplado?: boolean;
 }
 
 export function DiceRoller({ 
@@ -35,9 +40,14 @@ export function DiceRoller({
   initialApplyEfficiency = false,
   isModular = false,
   referenceCDs = [],
+  onlyDamage = false,
+  onApply,
+  applyLabel,
+  onRoll,
+  isDanoAcoplado = false,
 }: DiceRollerProps) {
   const [attackRoll, setAttackRoll] = useState<(RollResult & { efficiency?: number, manual?: number }) | null>(null);
-  const [damageRoll, setDamageRoll] = useState<{ total: number; rolls: number[]; modifier: number; multiplier: number } | null>(null);
+  const [damageRoll, setDamageRoll] = useState<{ total: number; rolls: number[]; modifier: number; multiplier: number; components?: Array<{ value: number; label: string }> } | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   
   const [extraDice, setExtraDice] = useState(0);
@@ -45,6 +55,7 @@ export function DiceRoller({
 
   const [applyEfficiency, setApplyEfficiency] = useState(initialApplyEfficiency);
   const [manualModifier, setManualModifier] = useState(0);
+  const [manualDamageModifier, setManualDamageModifier] = useState(0);
 
   // Estados locais para modo modular
   const [localFormula, setLocalFormula] = useState(damageFormula);
@@ -58,6 +69,7 @@ export function DiceRoller({
       setDamageRoll(null);
       setApplyEfficiency(initialApplyEfficiency);
       setManualModifier(0);
+      setManualDamageModifier(0);
       setLocalFormula(damageFormula);
       setLocalDamageMod(damageModifier);
     }
@@ -74,6 +86,7 @@ export function DiceRoller({
         manual: manualModifier !== 0 ? manualModifier : undefined
       });
       setIsRolling(false);
+      onRoll?.();
     }, 400);
   };
 
@@ -82,21 +95,37 @@ export function DiceRoller({
     if (!formulaToUse) return;
     
     setIsRolling(true);
-    const multiplier = attackRoll?.isCritical ? critMultiplier : 1;
-    const bonusToUse = isModular ? localDamageMod : damageModifier;
+    const multiplier = (attackRoll?.isCritical && !isDanoAcoplado) ? critMultiplier : 1;
+    const baseMod = isModular ? localDamageMod : damageModifier;
+    const bonusToUse = baseMod + manualDamageModifier;
     
     setTimeout(() => {
-      const result = rollDamage(formulaToUse);
-      const baseTotalWithBonus = result.total + bonusToUse; 
-      const finalTotal = baseTotalWithBonus * multiplier;
+      const result = rollDamage(formulaToUse, multiplier);
+      const finalTotal = result.total + (bonusToUse * multiplier);
+      
+      const finalComponents = [...result.components];
+      if (baseMod !== 0) {
+        finalComponents.push({
+          value: baseMod * multiplier,
+          label: `${Math.abs(baseMod)}${multiplier > 1 ? ` x${multiplier}` : ''}`
+        });
+      }
+      if (manualDamageModifier !== 0) {
+        finalComponents.push({
+          value: manualDamageModifier * multiplier,
+          label: `${Math.abs(manualDamageModifier)}${multiplier > 1 ? ` x${multiplier}` : ''}`
+        });
+      }
       
       setDamageRoll({
         ...result,
         total: finalTotal,
-        modifier: result.modifier + bonusToUse,
+        modifier: result.modifier + (bonusToUse * multiplier),
+        components: finalComponents,
         multiplier
       });
       setIsRolling(false);
+      onRoll?.();
     }, 400);
   };
 
@@ -115,32 +144,46 @@ export function DiceRoller({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50/50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-           {efficiencyBonus > 0 && (
-             <div className="flex items-center gap-2">
-               <input 
-                 id="applyEfficiency"
-                 type="checkbox" 
-                 checked={applyEfficiency} 
-                 onChange={(e) => setApplyEfficiency(e.target.checked)}
-                 className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-               />
-               <label htmlFor="applyEfficiency" className="text-[10px] font-black uppercase text-gray-500 cursor-pointer select-none">
-                 Eficiência (+{efficiencyBonus})
-               </label>
+        {!onlyDamage && (
+          <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50/50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+             {efficiencyBonus > 0 && (
+               <div className="flex items-center gap-2">
+                 <input 
+                   id="applyEfficiency"
+                   type="checkbox" 
+                   checked={applyEfficiency} 
+                   onChange={(e) => setApplyEfficiency(e.target.checked)}
+                   className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                 />
+                 <label htmlFor="applyEfficiency" className="text-[10px] font-black uppercase text-gray-500 cursor-pointer select-none">
+                   Eficiência (+{efficiencyBonus})
+                 </label>
+               </div>
+             )}
+             <div className="flex items-center gap-2 px-1">
+                <span className="text-[10px] font-black uppercase text-gray-500 whitespace-nowrap">Teste Extra:</span>
+                <input 
+                  type="number" 
+                  value={manualModifier || ''} 
+                  placeholder="0"
+                  onChange={(e) => setManualModifier(parseInt(e.target.value) || 0)}
+                  className="w-full h-6 text-center text-xs font-black bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none"
+                />
              </div>
-           )}
-           <div className="flex items-center gap-2 px-1">
-              <span className="text-[10px] font-black uppercase text-gray-500 whitespace-nowrap">Extra:</span>
-              <input 
-                type="number" 
-                value={manualModifier || ''} 
-                placeholder="0"
-                onChange={(e) => setManualModifier(parseInt(e.target.value) || 0)}
-                className="w-full h-6 text-center text-xs font-black bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded focus:ring-1 focus:ring-indigo-500 outline-none"
-              />
-           </div>
-        </div>
+             {(damageFormula || isModular) && (
+               <div className="flex items-center gap-2 px-1 col-span-2 border-t border-dashed border-gray-200 dark:border-gray-700 pt-2 mt-1">
+                  <span className="text-[10px] font-black uppercase text-amber-500 whitespace-nowrap">Dano/Cura Extra:</span>
+                  <input 
+                    type="number" 
+                    value={manualDamageModifier || ''} 
+                    placeholder="0"
+                    onChange={(e) => setManualDamageModifier(parseInt(e.target.value) || 0)}
+                    className="w-full h-6 text-center text-xs font-black bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-900/50 rounded focus:ring-1 focus:ring-amber-500 outline-none text-amber-600 dark:text-amber-400"
+                  />
+               </div>
+             )}
+          </div>
+        )}
 
         {/* Configurações Modulares de Efeito */}
         {isModular && (
@@ -176,69 +219,105 @@ export function DiceRoller({
           </div>
         )}
 
-        <div className="space-y-3">
-          <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 font-bold">
-            {(['disadvantage', 'normal', 'advantage'] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => setRule(r)}
-                className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${
-                  rule === r 
-                    ? (r === 'advantage' ? 'bg-emerald-500 text-white shadow-sm' : r === 'disadvantage' ? 'bg-red-500 text-white shadow-sm' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm')
-                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
-                }`}
-              >
-                {r === 'advantage' ? 'Vantagem' : r === 'disadvantage' ? 'Desvantagem' : 'Normal'}
-              </button>
-            ))}
-          </div>
-
-          {rule !== 'normal' && (
-            <div className="flex items-center justify-between px-2 animate-in slide-in-from-top-2 duration-200">
-              <span className="text-[10px] uppercase font-black text-gray-400 tracking-tighter">Dados Extras (+{extraDice})</span>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5, 6].map(num => (
-                  <button
-                    key={num}
-                    onClick={() => setExtraDice(num)}
-                    className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold border transition-all ${
-                      extraDice === num 
-                        ? 'bg-indigo-500 border-indigo-600 text-white' 
-                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400'
-                    }`}
-                  >
-                    {num}
-                  </button>
-                ))}
-              </div>
+        {!onlyDamage && (
+          <div className="space-y-3">
+            <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 font-bold">
+              {(['disadvantage', 'normal', 'advantage'] as const).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRule(r)}
+                  className={`flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${
+                    rule === r 
+                      ? (r === 'advantage' ? 'bg-emerald-500 text-white shadow-sm' : r === 'disadvantage' ? 'bg-red-500 text-white shadow-sm' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm')
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-200'
+                  }`}
+                >
+                  {r === 'advantage' ? 'Vantagem' : r === 'disadvantage' ? 'Desvantagem' : 'Normal'}
+                </button>
+              ))}
             </div>
-          )}
-        </div>
 
-        <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 shadow-inner">
-           <div className="flex flex-col items-center">
-             <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest">{modifierLabel}</span>
-             <span className="text-sm font-black text-gray-500">{modifier >= 0 ? `+${modifier}` : modifier}</span>
-           </div>
-           
-           <div className="flex flex-col items-center px-4 py-1.5 bg-white dark:bg-gray-900 rounded-lg border border-indigo-100 dark:border-indigo-900 shadow-sm scale-110">
-             <span className="text-[9px] uppercase font-black text-indigo-500 tracking-widest mb-0.5">Bônus Total</span>
-             <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 transition-all">
-               {currentTotalModifier >= 0 ? `+${currentTotalModifier}` : currentTotalModifier}
-             </span>
-           </div>
+            {rule !== 'normal' && (
+              <div className="flex items-center justify-between px-2 animate-in slide-in-from-top-2 duration-200">
+                <span className="text-[10px] uppercase font-black text-gray-400 tracking-tighter">Dados Extras (+{extraDice})</span>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5, 6].map(num => (
+                    <button
+                      key={num}
+                      onClick={() => setExtraDice(num)}
+                      className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold border transition-all ${
+                        extraDice === num 
+                          ? 'bg-indigo-500 border-indigo-600 text-white' 
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400'
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
-           <div className="flex flex-col items-center">
-             <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest">Crítico</span>
-             <Badge variant="secondary" className="font-black text-[10px] h-5">{critMargin}+ / x{critMultiplier}</Badge>
-           </div>
-        </div>
+        {!onlyDamage && (
+          <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 shadow-inner">
+             <div className="flex flex-col items-center">
+               <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest">{modifierLabel}</span>
+               <span className="text-sm font-black text-gray-500">{modifier >= 0 ? `+${modifier}` : modifier}</span>
+             </div>
+             
+             <div className="flex flex-col items-center px-4 py-1.5 bg-white dark:bg-gray-900 rounded-lg border border-indigo-100 dark:border-indigo-900 shadow-sm scale-110">
+               <span className="text-[9px] uppercase font-black text-indigo-500 tracking-widest mb-0.5">Bônus Total</span>
+               <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 transition-all">
+                 {currentTotalModifier >= 0 ? `+${currentTotalModifier}` : currentTotalModifier}
+               </span>
+             </div>
+
+             <div className="flex flex-col items-center">
+               <span className="text-[10px] uppercase font-black text-gray-400 tracking-widest">Crítico</span>
+               <Badge variant="secondary" className="font-black text-[10px] h-5">{critMargin}+ / x{critMultiplier}</Badge>
+             </div>
+          </div>
+        )}
+
+        {onlyDamage && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100/50 dark:border-amber-900/30 shadow-inner">
+               <div className="flex flex-col items-center">
+                 <span className="text-[10px] uppercase font-black text-amber-500 tracking-widest">Fórmula</span>
+                 <span className="text-sm font-black text-gray-500 dark:text-gray-400">{damageFormula}</span>
+               </div>
+               {damageModifier !== 0 && (
+                 <div className="flex flex-col items-center">
+                   <span className="text-[10px] uppercase font-black text-amber-500 tracking-widest">Bônus</span>
+                   <span className="text-sm font-black text-gray-500 dark:text-gray-400">{damageModifier >= 0 ? `+${damageModifier}` : damageModifier}</span>
+                 </div>
+               )}
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 p-3 bg-gray-50/50 dark:bg-gray-800/50 rounded-xl border border-dashed border-amber-200 dark:border-amber-900/50">
+               <div className="flex items-center justify-between gap-2 px-1">
+                  <span className="text-[10px] font-black uppercase text-amber-500 whitespace-nowrap">Dano/Cura Extra:</span>
+                  <input 
+                    type="number" 
+                    value={manualDamageModifier || ''} 
+                    placeholder="0"
+                    onChange={(e) => setManualDamageModifier(parseInt(e.target.value) || 0)}
+                    className="w-24 h-6 text-center text-xs font-black bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-900/50 rounded focus:ring-1 focus:ring-amber-500 outline-none text-amber-600 dark:text-amber-400"
+                  />
+               </div>
+            </div>
+          </div>
+        )}
 
         <div className="min-h-[140px] flex flex-col gap-4">
           {!attackRoll && !damageRoll && !isRolling && (
             <div className="flex-1 min-h-[140px] flex flex-col items-center justify-center text-gray-400 gap-2 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-2xl">
               <Dices className="w-8 h-8 opacity-20" />
-              <p className="text-xs font-bold uppercase tracking-tighter">Aguardando Rolagem...</p>
+              <p className="text-xs font-bold uppercase tracking-tighter">
+                {onlyDamage ? 'Aguardando Rolagem de Dano...' : 'Aguardando Rolagem...'}
+              </p>
             </div>
           )}
 
@@ -248,7 +327,9 @@ export function DiceRoller({
                  <Dices className="w-12 h-12 text-indigo-500 animate-bounce" />
                  <Sparkles className="absolute -top-2 -right-2 w-6 h-6 text-amber-500 animate-pulse" />
                </div>
-               <p className="text-sm font-black text-indigo-600 animate-pulse uppercase tracking-widest">Rolando {rule !== 'normal' ? 1 + extraDice : 1} Dados...</p>
+               <p className="text-sm font-black text-indigo-600 animate-pulse uppercase tracking-widest">
+                 {onlyDamage ? 'Rolando Dano...' : `Rolando ${rule !== 'normal' ? 1 + extraDice : 1} Dados...`}
+               </p>
              </div>
           )}
 
@@ -294,8 +375,8 @@ export function DiceRoller({
           )}
 
           {damageRoll && !isRolling && (
-            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-500 shadow-lg shadow-amber-500/10 animate-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between mb-2">
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-500 shadow-lg shadow-amber-500/10 animate-in zoom-in-95 duration-200 space-y-3">
+              <div className="flex items-center justify-between">
                 <div className="flex gap-2">
                   <Badge className="bg-amber-500 text-white border-none text-[10px] font-black uppercase">Dano Causado</Badge>
                   {damageRoll.multiplier > 1 && (
@@ -304,42 +385,87 @@ export function DiceRoller({
                 </div>
                 <Zap className="w-4 h-4 text-amber-500" />
               </div>
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="text-4xl font-black text-amber-600 leading-none">💥 {damageRoll.total}</span>
-                <span className="text-xs font-bold text-amber-700/60">
-                  Dados: [{damageRoll.rolls.join(', ')}] {damageRoll.modifier !== 0 ? `${damageRoll.modifier >= 0 ? '+' : ''}${damageRoll.modifier}` : ''}
-                  {damageRoll.multiplier > 1 ? ` x ${damageRoll.multiplier}` : ''}
+                <span className="text-xs font-bold text-amber-700/60 flex flex-wrap gap-1 items-center">
+                  ( {damageRoll.components && damageRoll.components.length > 0 ? (
+                    damageRoll.components.map((comp, idx) => {
+                      const sign = comp.value >= 0 ? '+' : '-';
+                      const cleanLabel = comp.label.replace(/^[+-]/, '').trim();
+                      return (
+                        <span key={idx} className="inline-flex items-center">
+                          {idx > 0 ? (
+                            <span className="mx-1 text-amber-700/40">{sign}</span>
+                          ) : (
+                            comp.value < 0 ? <span className="mr-1 text-amber-700/40">-</span> : null
+                          )}
+                          <span className={cleanLabel.includes('[') ? 'text-amber-600 dark:text-amber-400 font-extrabold border border-amber-200 dark:border-amber-900/50 bg-amber-100/30 dark:bg-amber-950/20 px-1 rounded' : ''}>
+                            {cleanLabel}
+                          </span>
+                        </span>
+                      );
+                    })
+                  ) : (
+                    `Dados: [${damageRoll.rolls.join(', ')}] ${damageRoll.modifier !== 0 ? `${damageRoll.modifier >= 0 ? '+' : ''}${damageRoll.modifier}` : ''}`
+                  )} {damageRoll.multiplier > 1 ? `) x ${damageRoll.multiplier}` : ')'}
                 </span>
               </div>
+              <div className="pt-2 border-t border-dashed border-amber-200 dark:border-amber-900/50 flex items-center justify-between text-xs font-bold text-amber-700/80 dark:text-amber-400">
+                <span>Dano Parcial (Metade):</span>
+                <span className="font-black text-amber-600 dark:text-amber-300">💥 {Math.floor(damageRoll.total / 2)}</span>
+              </div>
+              {onApply && (
+                <Button
+                  onClick={() => {
+                    onApply(damageRoll.total);
+                    onClose();
+                  }}
+                  className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black h-9 rounded-xl shadow-md gap-2"
+                >
+                  <Sparkles className="w-4 h-4" /> {applyLabel || 'Aplicar na Ficha'}
+                </Button>
+              )}
             </div>
           )}
         </div>
 
         <div className="flex gap-3">
-          <Button
-            onClick={handleRollAttack}
-            disabled={isRolling}
-            className={`flex-1 font-black h-12 rounded-xl shadow-lg gap-2 transition-all ${
-              rule === 'advantage' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' : 
-              rule === 'disadvantage' ? 'bg-red-600 hover:bg-red-700 shadow-red-600/20' : 
-              'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
-            } text-white`}
-          >
-            <Dices className="w-5 h-5" />
-            {attackRoll ? 'Rolar Novamente' : rollButtonLabel}
-          </Button>
-          
-          {(isModular || damageFormula) && attackRoll && !isRolling && (
+          {onlyDamage ? (
             <Button
               onClick={handleRollDamage}
-              className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-black h-12 rounded-xl shadow-lg shadow-amber-500/20 gap-2 animate-in slide-in-from-left-4"
+              disabled={isRolling}
+              className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-black h-12 rounded-xl shadow-lg shadow-amber-500/20 gap-2"
             >
-              <Zap className="w-5 h-5" /> {isModular ? 'Rolar Efeito' : 'Rolar Dano'}
+              <Zap className="w-5 h-5" /> {damageRoll ? 'Rolar Novamente' : (rollButtonLabel || 'Rolar Dano')}
             </Button>
+          ) : (
+            <>
+              <Button
+                onClick={handleRollAttack}
+                disabled={isRolling}
+                className={`flex-1 font-black h-12 rounded-xl shadow-lg gap-2 transition-all ${
+                  rule === 'advantage' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' : 
+                  rule === 'disadvantage' ? 'bg-red-600 hover:bg-red-700 shadow-red-600/20' : 
+                  'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
+                } text-white`}
+              >
+                <Dices className="w-5 h-5" />
+                {attackRoll ? 'Rolar Novamente' : rollButtonLabel}
+              </Button>
+              
+              {(isModular || damageFormula) && attackRoll && !isRolling && (
+                <Button
+                  onClick={handleRollDamage}
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-black h-12 rounded-xl shadow-lg shadow-amber-500/20 gap-2 animate-in slide-in-from-left-4"
+                >
+                  <Zap className="w-5 h-5" /> {isModular ? 'Rolar Efeito' : 'Rolar Dano'}
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
-      
+
       <ModalFooter className="justify-center border-none pt-0">
         {(attackRoll || damageRoll) && (
           <Button

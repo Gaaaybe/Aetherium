@@ -215,11 +215,11 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
             <span className="text-sm">Bônus Ativos</span>
           </Button>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-9 w-9 md:h-10 md:w-10 p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-              <Settings className="w-5 h-5 text-gray-500" />
+            <Button variant="ghost" size="sm" className="h-9 w-9 md:h-10 md:w-10 !p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+              <Settings className="w-4 h-4 text-gray-500" />
             </Button>
-            <Button variant="ghost" size="sm" className="h-9 w-9 md:h-10 md:w-10 p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
-              <MoreHorizontal className="w-5 h-5 text-gray-500" />
+            <Button variant="ghost" size="sm" className="h-9 w-9 md:h-10 md:w-10 !p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+              <MoreHorizontal className="w-4 h-4 text-gray-500" />
             </Button>
           </div>
         </div>
