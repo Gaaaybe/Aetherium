@@ -185,7 +185,7 @@ export function formatarInputCustomizado(
       if (g >= 10) bonus = 3;
       else if (g >= 6) bonus = 2;
       else if (g >= 2) bonus = 1;
-      return `+${bonus} Ação${bonus !== 1 ? 'es' : ''}`;
+      return `+${bonus} ${bonus !== 1 ? 'Ações' : 'Ação'}`;
     }
     if (configId === 'rd') {
       const bonus = 2 * Math.pow(2, g - 1);

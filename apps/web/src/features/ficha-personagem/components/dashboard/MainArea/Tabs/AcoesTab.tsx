@@ -105,12 +105,23 @@ export function AcoesTab({
     localStorage.setItem(`character_${character.id}_movement`, movement.toString());
   }, [movement, character.id]);
 
+  // Load from localStorage on character change
   useEffect(() => {
     const storedActions = localStorage.getItem(`character_${character.id}_actions`);
     const storedMovement = localStorage.getItem(`character_${character.id}_movement`);
     setActions(storedActions ? parseInt(storedActions) : defaultActions);
     setMovement(storedMovement ? parseInt(storedMovement) : 1);
-  }, [character.id, defaultActions]);
+  }, [character.id]);
+
+  // Adjust actions based on changes in defaultActions (fortalecer powers turning on/off)
+  const [prevDefaultActions, setPrevDefaultActions] = useState(defaultActions);
+  useEffect(() => {
+    const diff = defaultActions - prevDefaultActions;
+    if (diff !== 0) {
+      setActions(prev => Math.max(0, prev + diff));
+      setPrevDefaultActions(defaultActions);
+    }
+  }, [defaultActions, prevDefaultActions]);
 
 
   // Busca e Filtro de Ações de Combate

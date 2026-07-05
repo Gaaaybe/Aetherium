@@ -3,7 +3,8 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - refactor/api  # Dispara o deploy ao fazer push no refactor/api
+      - refactor/api
+      - refactor/api-v2  # Dispara o deploy ao fazer push no refactor/api-v2
 
   # Permite executar manualmente da aba Actions
   workflow_dispatch:
@@ -43,9 +44,17 @@ jobs:
       - name: Build packages
         run: pnpm --filter @aetherium/rules-engine build
 
-      - name: Run tests
+      - name: Run unit tests
         working-directory: apps/web
         run: pnpm test --run
+
+      - name: Install Playwright Browsers
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        working-directory: apps/web
+        run: npx playwright test
 
       - name: Build
         working-directory: apps/web
