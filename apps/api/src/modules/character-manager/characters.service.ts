@@ -365,6 +365,7 @@ export class CharactersService {
         origin: body.narrative.origin,
         motivations: body.narrative.motivations || [],
         complications: body.narrative.complications || [],
+        generalNotes: '',
       },
       attributes: {
         strength: { baseValue: body.attributes.strength, extraBonus: 0 },
@@ -552,15 +553,7 @@ export class CharactersService {
     const character = await this.getCharacterOrThrow(characterId, userId);
 
     const currentCost = getUnarmedMasteryTotalPdaCost(character.unarmedMastery);
-
-    let newCost = 0;
-    newCost += masteryProps.degree * 7;
-    const improvementUnitCost = masteryProps.degree > 0 ? masteryProps.degree : 1;
-    newCost += masteryProps.marginImprovements * improvementUnitCost;
-    newCost += masteryProps.multiplierImprovements * improvementUnitCost;
-    if (masteryProps.damageType.toLowerCase() !== 'impacto' && masteryProps.damageType !== '') {
-      newCost += 1;
-    }
+    const newCost = getUnarmedMasteryTotalPdaCost(masteryProps);
 
     const pdaDiff = newCost - currentCost;
 
@@ -876,6 +869,7 @@ export class CharactersService {
           origin: data.narrative.origin,
           motivations: data.narrative.motivations || [],
           complications: data.narrative.complications || [],
+          generalNotes: data.narrative.generalNotes !== undefined ? data.narrative.generalNotes : character.narrativeProfile.generalNotes,
         };
       }
 
@@ -897,6 +891,20 @@ export class CharactersService {
         character.pdaState.extraPda = data.extraPda;
       }
 
+      if (data.limitMaxPV !== undefined) {
+        character.healthState.limitMaxPV = data.limitMaxPV;
+        if (data.limitMaxPV !== null && data.limitMaxPV !== undefined) {
+          character.healthState.currentPV = Math.min(data.limitMaxPV, character.healthState.currentPV);
+        }
+      }
+
+      if (data.limitMaxPE !== undefined) {
+        character.energyState.limitMaxPE = data.limitMaxPE;
+        if (data.limitMaxPE !== null && data.limitMaxPE !== undefined) {
+          character.energyState.currentPE = Math.min(data.limitMaxPE, character.energyState.currentPE);
+        }
+      }
+
       if (data.pvChange !== undefined || data.peChange !== undefined) {
         const baseCurrentPV = character.healthState.currentPV;
         const baseCurrentPE = character.energyState.currentPE;
@@ -905,11 +913,15 @@ export class CharactersService {
 
         if (data.pvChange !== undefined && data.pvChange > 0 && data.customMaxPV !== undefined) {
           const expectedPV = baseCurrentPV + data.pvChange;
-          character.healthState.currentPV = Math.min(data.customMaxPV, expectedPV);
+          const limit = character.healthState.limitMaxPV;
+          const cap = limit !== null && limit !== undefined ? Math.min(data.customMaxPV, limit) : data.customMaxPV;
+          character.healthState.currentPV = Math.min(cap, expectedPV);
         }
         if (data.peChange !== undefined && data.peChange > 0 && data.customMaxPE !== undefined) {
           const expectedPE = baseCurrentPE + data.peChange;
-          character.energyState.currentPE = Math.min(data.customMaxPE, expectedPE);
+          const limit = character.energyState.limitMaxPE;
+          const cap = limit !== null && limit !== undefined ? Math.min(data.customMaxPE, limit) : data.customMaxPE;
+          character.energyState.currentPE = Math.min(cap, expectedPE);
         }
       }
 

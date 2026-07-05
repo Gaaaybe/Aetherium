@@ -1,8 +1,50 @@
 import { useState, useEffect, useRef } from 'react';
 import { CharacterResponse, SyncCharacterData } from '@/services/characters.types';
-import { Badge, Button, DynamicIcon, Modal, Input, ModalFooter } from '@/shared/ui';
+import { Badge, Button, DynamicIcon, Modal, Input, ModalFooter, toast } from '@/shared/ui';
 import { User, Settings, Shield, MoreHorizontal, Camera, Sparkles, Save, X, Edit2, ArrowUpCircle, Dices, Moon } from 'lucide-react';
 import { FreeDiceRollerModal } from '@/shared/components/FreeDiceRollerModal';
+import { FichaPropertiesModal } from './FichaPropertiesModal';
+
+export const parseArtUrl = (url: string | null) => {
+  if (!url) return { cleanUrl: '', zoom: 1, x: 0, y: 0 };
+  const hashIndex = url.indexOf('#crop=');
+  if (hashIndex === -1) {
+    return { cleanUrl: url, zoom: 1, x: 0, y: 0 };
+  }
+  const cleanUrl = url.substring(0, hashIndex);
+  const cropStr = url.substring(hashIndex + 6);
+  const [zoomStr, xStr, yStr] = cropStr.split(',');
+  return {
+    cleanUrl,
+    zoom: parseFloat(zoomStr) || 1,
+    x: parseFloat(xStr) || 0,
+    y: parseFloat(yStr) || 0,
+  };
+};
+
+export function CroppedImage({ src, alt, className, style, onError }: { src: string, alt: string, className?: string, style?: React.CSSProperties, onError?: (e: React.SyntheticEvent<HTMLImageElement>) => void }) {
+  const [aspectRatio, setAspectRatio] = useState(1);
+  const { cleanUrl, zoom, x, y } = parseArtUrl(src);
+
+  return (
+    <div className={`relative overflow-hidden w-full h-full ${className || ''}`} style={style}>
+      <img
+        src={cleanUrl}
+        alt={alt}
+        className="absolute pointer-events-none select-none max-w-none max-h-none origin-center"
+        style={{
+          width: aspectRatio > 1 ? 'auto' : '100%',
+          height: aspectRatio > 1 ? '100%' : 'auto',
+          transform: `translate(calc(-50% + ${x}%), calc(-50% + ${y}%)) scale(${zoom})`,
+          left: '50%',
+          top: '50%',
+        }}
+        onLoad={(e) => setAspectRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
+        onError={onError}
+      />
+    </div>
+  );
+}
 
 interface CharacterHeaderProps {
   character: CharacterResponse;
@@ -16,7 +58,17 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
   const [isArtModalOpen, setIsArtModalOpen] = useState(false);
   const [isSymbolModalOpen, setIsSymbolModalOpen] = useState(false);
   const [isDiceModalOpen, setIsDiceModalOpen] = useState(false);
+  const [isPropertiesModalOpen, setIsPropertiesModalOpen] = useState(false);
+  const [isSavingProperties, setIsSavingProperties] = useState(false);
   const [tempUrl, setTempUrl] = useState('');
+
+  // Estados para Enquadramento de Arte
+  const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isSavingArt, setIsSavingArt] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState(1);
+  const dragStart = useRef({ x: 0, y: 0 });
 
   // Estados para Edição de Nome
   const [isEditingName, setIsEditingName] = useState(false);
@@ -54,8 +106,50 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
     setIsEditingName(false);
   };
 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    dragStart.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setPosition({
+      x: e.clientX - dragStart.current.x,
+      y: e.clientY - dragStart.current.y,
+    });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      dragStart.current = { 
+        x: e.touches[0].clientX - position.x, 
+        y: e.touches[0].clientY - position.y 
+      };
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    setPosition({
+      x: e.touches[0].clientX - dragStart.current.x,
+      y: e.touches[0].clientY - dragStart.current.y,
+    });
+  };
+
   const openArtModal = () => {
-    setTempUrl(character.art || '');
+    const { cleanUrl, zoom: savedZoom, x: savedX, y: savedY } = parseArtUrl(character.art);
+    setTempUrl(cleanUrl);
+    setZoom(savedZoom);
+    setAspectRatio(1);
+    // Convert back from percentages to pixels based on 192px crop box
+    setPosition({
+      x: (savedX / 100) * 192,
+      y: (savedY / 100) * 192,
+    });
     setIsArtModalOpen(true);
   };
 
@@ -65,8 +159,30 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
   };
 
   const handleSyncArt = async () => {
-    await onSync({ art: tempUrl || null });
-    setIsArtModalOpen(false);
+    if (!tempUrl) {
+      await onSync({ art: null });
+      setIsArtModalOpen(false);
+      return;
+    }
+
+    setIsSavingArt(true);
+    try {
+      const hashIndex = tempUrl.indexOf('#crop=');
+      const cleanUrl = hashIndex === -1 ? tempUrl : tempUrl.substring(0, hashIndex);
+
+      // Convert position from pixels to percentages of 192px crop box
+      const pctX = (position.x / 192) * 100;
+      const pctY = (position.y / 192) * 100;
+
+      const croppedUrl = `${cleanUrl}#crop=${zoom},${pctX.toFixed(2)},${pctY.toFixed(2)}`;
+      
+      await onSync({ art: croppedUrl });
+      setIsArtModalOpen(false);
+    } catch (err) {
+      toast.error('Erro ao salvar arte.');
+    } finally {
+      setIsSavingArt(false);
+    }
   };
 
   const handleSyncSymbol = async () => {
@@ -85,10 +201,9 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
               onClick={openArtModal}
             >
               {character.art ? (
-                <img 
+                <CroppedImage 
                   src={character.art} 
                   alt={character.narrative.identity} 
-                  className="w-full h-full object-cover" 
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + character.narrative.identity;
                   }}
@@ -215,7 +330,13 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
             <span className="text-sm">Bônus Ativos</span>
           </Button>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-9 w-9 md:h-10 md:w-10 !p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsPropertiesModalOpen(true)}
+              className="h-9 w-9 md:h-10 md:w-10 !p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              title="Propriedades da Ficha"
+            >
               <Settings className="w-4 h-4 text-gray-500" />
             </Button>
             <Button variant="ghost" size="sm" className="h-9 w-9 md:h-10 md:w-10 !p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
@@ -225,30 +346,132 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
         </div>
       </div>
 
+      {/* Mobile Actions Row */}
+      <div className="flex lg:hidden items-center gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800 overflow-x-auto no-scrollbar">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setIsDiceModalOpen(true)}
+          className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg shrink-0 border-indigo-200 dark:border-indigo-800 bg-indigo-50/30 dark:bg-indigo-900/10 text-indigo-700 dark:text-indigo-400 text-xs font-bold"
+        >
+          <Dices className="w-3.5 h-3.5" />
+          <span>Dados</span>
+        </Button>
+
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onOpenRest}
+          className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg shrink-0 border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-900/10 text-purple-700 dark:text-purple-400 text-xs font-bold"
+        >
+          <Moon className="w-3.5 h-3.5" />
+          <span>Descansar</span>
+        </Button>
+
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setIsPropertiesModalOpen(true)}
+          className="h-8 w-8 !p-0 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 ml-auto shrink-0"
+          title="Propriedades da Ficha"
+        >
+          <Settings className="w-4 h-4 text-gray-500" />
+        </Button>
+      </div>
+
       {/* Diceroller Livre */}
       <FreeDiceRollerModal 
         isOpen={isDiceModalOpen} 
         onClose={() => setIsDiceModalOpen(false)} 
       />
 
+      {/* Propriedades da Ficha */}
+      <FichaPropertiesModal
+        isOpen={isPropertiesModalOpen}
+        onClose={() => setIsPropertiesModalOpen(false)}
+        character={character}
+        onSync={async (data) => {
+          setIsSavingProperties(true);
+          try {
+            await onSync(data);
+          } finally {
+            setIsSavingProperties(false);
+          }
+        }}
+        isProcessing={isSavingProperties}
+      />
+
       {/* Modais de Edição */}
       <Modal isOpen={isArtModalOpen} onClose={() => setIsArtModalOpen(false)} title="Editar Arte do Personagem">
         <div className="space-y-4 py-4">
           <Input 
-            label="URL da Imagem" 
+            label="URL da Imagem de Referência" 
             placeholder="https://..." 
             value={tempUrl} 
-            onChange={(e) => setTempUrl(e.target.value)}
+            onChange={(e) => {
+              setTempUrl(e.target.value);
+              setZoom(1);
+              setPosition({ x: 0, y: 0 });
+              setAspectRatio(1);
+            }}
           />
+
           {tempUrl && (
-            <div className="w-32 h-32 mx-auto rounded-lg overflow-hidden border-2 border-purple-500">
-              <img src={tempUrl} alt="Preview" className="w-full h-full object-cover" />
+            <div className="space-y-4">
+              <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                Arraste a imagem para enquadrar e use o controle de zoom abaixo.
+              </div>
+              
+              <div 
+                className="w-48 h-48 mx-auto relative overflow-hidden rounded-lg border-2 border-purple-500 cursor-move bg-gray-100 dark:bg-gray-800 shadow-inner select-none"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleMouseUp}
+              >
+                <img
+                  src={tempUrl}
+                  alt="Preview"
+                  className="absolute pointer-events-none select-none max-w-none max-h-none origin-center"
+                  style={{
+                    width: aspectRatio > 1 ? 'auto' : '100%',
+                    height: aspectRatio > 1 ? '100%' : 'auto',
+                    transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px)) scale(${zoom})`,
+                    left: '50%',
+                    top: '50%',
+                  }}
+                  onLoad={(e) => setAspectRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
+                />
+              </div>
+
+              <div className="space-y-1 max-w-xs mx-auto">
+                <div className="flex justify-between text-xs text-gray-500 font-medium">
+                  <span>Zoom</span>
+                  <span>{Math.round(zoom * 100)}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="1" 
+                  max="4" 
+                  step="0.05"
+                  value={zoom} 
+                  onChange={(e) => setZoom(parseFloat(e.target.value))}
+                  className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                />
+              </div>
+              
+              <p className="text-[10px] text-gray-400 text-center max-w-xs mx-auto">
+                Nota: As coordenadas de enquadramento serão salvas diretamente na URL da imagem de referência.
+              </p>
             </div>
           )}
         </div>
         <ModalFooter>
           <Button variant="ghost" onClick={() => setIsArtModalOpen(false)}>Cancelar</Button>
-          <Button onClick={handleSyncArt}>Salvar Arte</Button>
+          <Button onClick={handleSyncArt} loading={isSavingArt}>Salvar Arte</Button>
         </ModalFooter>
       </Modal>
 

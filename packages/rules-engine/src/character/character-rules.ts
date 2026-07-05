@@ -196,12 +196,11 @@ export function getUnarmedMasteryCriticalMultiplier(multiplierImprovements: numb
 
 export function getUnarmedMasteryTotalPdaCost(mastery: any): number {
   if (!mastery) return 0;
-  let cost = mastery.degree * 7;
-  const improvementUnitCost = mastery.degree > 0 ? mastery.degree : 1;
-  cost += (mastery.marginImprovements ?? 0) * improvementUnitCost;
-  cost += (mastery.multiplierImprovements ?? 0) * improvementUnitCost;
+  let cost = mastery.degree * 7;               // 7 PdA per degree
+  cost += (mastery.marginImprovements ?? 0) * 2;      // +2 PdA per margin improvement
+  cost += (mastery.multiplierImprovements ?? 0) * 2;  // +2 PdA per multiplier improvement
   if (mastery.damageType && mastery.damageType.toLowerCase() !== 'impacto' && mastery.damageType !== '') {
-    cost += 1;
+    cost += 1;                                 // +1 PdA for custom damage type
   }
   return cost;
 }
@@ -233,7 +232,10 @@ export function applyLevelUp(character: any): void {
   if (character.level >= 250) return;
   character.level += 1;
   const constMod = getAttributeModifier(character.attributes.constitution.baseValue);
-  character.healthState.currentPV = calculateMaxPV(character.level, constMod);
+  const maxPV = calculateMaxPV(character.level, constMod);
+  const limit = character.healthState.limitMaxPV;
+  const effectiveMax = limit !== null && limit !== undefined ? Math.min(maxPV, limit) : maxPV;
+  character.healthState.currentPV = effectiveMax;
 }
 
 export function applyChangeLevel(character: any, newLevel: number): void {
@@ -283,7 +285,9 @@ export function applyHeal(character: any, amount: number): void {
   if (amount < 0) throw new RulesValidationError('A cura não pode ser negativa.', 'heal');
   const constMod = getAttributeModifier(character.attributes.constitution.baseValue);
   const maxPV = calculateMaxPV(character.level, constMod);
-  character.healthState.currentPV = Math.min(maxPV, character.healthState.currentPV + amount);
+  const limit = character.healthState.limitMaxPV;
+  const effectiveMax = limit !== null && limit !== undefined ? Math.min(maxPV, limit) : maxPV;
+  character.healthState.currentPV = Math.min(effectiveMax, character.healthState.currentPV + amount);
 
   if (character.healthState.currentPV > 0 && character.deathState === 'DYING') {
     character.deathState = 'ALIVE';
@@ -354,7 +358,9 @@ export function applyRecoverEnergy(character: any, amount: number): void {
   const keyPhysicalMod = getAttributeRollModifier(keyPhysicalAttr);
   const keyMentalMod = getAttributeRollModifier(keyMentalAttr);
   const maxPE = calculateMaxPE(keyPhysicalMod, keyMentalMod);
-  character.energyState.currentPE = Math.min(maxPE, character.energyState.currentPE + amount);
+  const limit = character.energyState.limitMaxPE;
+  const effectiveMax = limit !== null && limit !== undefined ? Math.min(maxPE, limit) : maxPE;
+  character.energyState.currentPE = Math.min(effectiveMax, character.energyState.currentPE + amount);
 }
 
 export function applyAddTemporaryPV(character: any, amount: number): void {

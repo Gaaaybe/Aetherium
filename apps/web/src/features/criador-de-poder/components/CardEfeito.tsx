@@ -13,7 +13,7 @@ interface CardEfeitoProps {
   efeitoDetalhado: EfeitoDetalhado;
   onRemover: (id: string) => void;
   onAtualizarGrau: (id: string, grau: number) => void;
-  onAdicionarModificacao: (efeitoId: string, modId: string, parametros?: Record<string, any>) => void;
+  onAdicionarModificacao: (efeitoId: string, modId: string, parametros?: Record<string, any>, modificacaoId?: string) => void;
   onRemoverModificacao: (efeitoId: string, modId: string) => void;
   onAtualizarInputCustomizado?: (id: string, valor: string) => void;
   onAtualizarConfiguracao?: (id: string, configuracaoId: string) => void;
@@ -185,7 +185,7 @@ export function formatarInputCustomizado(
       if (g >= 10) bonus = 3;
       else if (g >= 6) bonus = 2;
       else if (g >= 2) bonus = 1;
-      return `+${bonus} Ação${bonus !== 1 ? 'es' : ''}`;
+      return `+${bonus} ${bonus !== 1 ? 'Ações' : 'Ação'}`;
     }
     if (configId === 'rd') {
       const bonus = 2 * Math.pow(2, g - 1);
@@ -258,6 +258,7 @@ export function CardEfeito({
   
   const { efeito, efeitoBase, custoPorGrau, custoFixo, custoTotal } = efeitoDetalhado;
   const [modalModificacao, setModalModificacao] = useState(false);
+  const [modificacaoEditando, setModificacaoEditando] = useState<any | null>(null);
   const [isExpanded, setIsExpanded] = useState(true);
   const [showDetails, setShowDetails] = useState(false);
   const [alvoInput, setAlvoInput] = useState('');
@@ -924,7 +925,11 @@ export function CardEfeito({
                     <Badge 
                       key={mod.id}
                       variant={modBase?.tipo === 'extra' ? 'success' : 'warning'}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity"
+                      onClick={() => {
+                        setModificacaoEditando(mod);
+                        setModalModificacao(true);
+                      }}
                     >
                       <span>
                         {modBase?.nome || mod.modificacaoBaseId}
@@ -938,8 +943,12 @@ export function CardEfeito({
                         <span className="text-xs opacity-75">({mod.parametros.opcao})</span>
                       )}
                       <button
-                        onClick={() => onRemoverModificacao(efeito.id, mod.id)}
-                        className="hover:text-red-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onRemoverModificacao(efeito.id, mod.id);
+                        }}
+                        className="hover:text-red-600 p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10"
+                        title="Remover modificação"
                       >
                         <X className="w-3 h-3" />
                       </button>
@@ -970,10 +979,15 @@ export function CardEfeito({
 
       <SeletorModificacao
         isOpen={modalModificacao}
-        onClose={() => setModalModificacao(false)}
-        onSelecionar={(modId: string, parametros?: Record<string, any>) => {
-          onAdicionarModificacao(efeito.id, modId, parametros);
+        onClose={() => {
           setModalModificacao(false);
+          setModificacaoEditando(null);
+        }}
+        modificacaoEdicao={modificacaoEditando}
+        onSelecionar={(modId: string, parametros?: Record<string, any>, modificacaoId?: string) => {
+          onAdicionarModificacao(efeito.id, modId, parametros, modificacaoId);
+          setModalModificacao(false);
+          setModificacaoEditando(null);
         }}
         titulo="Modificações Locais do Efeito"
       />

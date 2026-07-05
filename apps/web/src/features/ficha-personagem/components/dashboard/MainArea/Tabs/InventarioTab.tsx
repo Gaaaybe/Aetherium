@@ -413,7 +413,10 @@ export function InventarioTab({
   const renderEquipmentSlot = (label: string, icon: React.ReactNode, itemId: string | null | undefined, slot: EquipSlot, colorClass: string) => {
     const detail = itemId ? detailedItems[itemId] : null;
     return (
-      <Card className={`border relative transition-all overflow-hidden hover:shadow-sm group ${detail ? colorClass : 'border-gray-100 dark:border-gray-800 border-dashed bg-gray-50/50 dark:bg-gray-800/10'}`}>
+      <Card 
+        onClick={() => detail && setViewingItem(detail)}
+        className={`border relative transition-all overflow-hidden hover:shadow-sm group ${detail ? 'cursor-pointer' : ''} ${detail ? colorClass : 'border-gray-100 dark:border-gray-800 border-dashed bg-gray-50/50 dark:bg-gray-800/10'}`}
+      >
         <CardContent className="p-3 space-y-2">
           <div className="flex items-start justify-between w-full">
             <div className={`w-10 h-10 shrink-0 rounded-xl flex items-center justify-center border overflow-hidden ${detail && detail.tipo ? TYPE_ICON_COLORS[detail.tipo] : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-400'}`}>

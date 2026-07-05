@@ -249,7 +249,14 @@ export function PoderesTab({
             ? (isPassive ? 'border-blue-200 dark:border-blue-900/50' : 'border-purple-200 dark:border-purple-900/50')
             : 'border-gray-200 dark:border-gray-700 grayscale hover:grayscale-0 opacity-80 hover:opacity-100'
         } ${isNested ? 'bg-white/50 dark:bg-black/20 shadow-none border-dashed' : ''} ${isActive ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-gray-900 border-indigo-500' : ''}`}
-        onClick={() => isNested && arrayId && selectActivePowerInArray(arrayId, detail.id)}
+        onClick={(e) => {
+          if (isNested && arrayId) {
+            e.stopPropagation();
+            selectActivePowerInArray(arrayId, detail.id);
+          } else {
+            setViewingPower(poderResponseToPoder(detail));
+          }
+        }}
       >
         <CardContent className="p-4 flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -280,10 +287,10 @@ export function PoderesTab({
             
             {!isNested && (
               <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-gray-100 dark:border-gray-800 mt-1 sm:mt-0">
-                <Button variant="ghost" size="sm" onClick={() => setViewingPower(poderResponseToPoder(detail))} className="h-9 w-9 !p-0 text-gray-400 hover:text-indigo-500">
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setViewingPower(poderResponseToPoder(detail)); }} className="h-9 w-9 !p-0 text-gray-400 hover:text-indigo-500">
                   <Info className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setEditingPower(poderResponseToPoder(detail))} className="h-9 w-9 !p-0 text-gray-400 hover:text-emerald-500" title="Editar">
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setEditingPower(poderResponseToPoder(detail)); }} className="h-9 w-9 !p-0 text-gray-400 hover:text-emerald-500" title="Editar">
                   <Edit2 className="w-4 h-4" />
                 </Button>
                 <Button
@@ -308,15 +315,15 @@ export function PoderesTab({
                   <Bookmark className="w-4 h-4" />
                 </Button>
                 {isEquipped ? (
-                  <Button variant="ghost" size="sm" onClick={() => onUnequipPower(power.powerId)} className="h-9 w-9 !p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onUnequipPower(power.powerId); }} className="h-9 w-9 !p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
                     <Package className="w-4 h-4" />
                   </Button>
                 ) : (
-                  <Button variant="ghost" size="sm" onClick={() => onEquipPower(power.powerId)} className="h-8 px-2 text-[10px] font-bold border text-gray-600 hover:text-purple-600 hover:border-purple-600" title="Equipar">
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onEquipPower(power.powerId); }} className="h-8 px-2 text-[10px] font-bold border text-gray-600 hover:text-purple-600 hover:border-purple-600" title="Equipar">
                     Equipar
                   </Button>
                 )}
-                <Button variant="ghost" size="sm" onClick={() => onRemovePower(power.powerId)} className="h-9 w-9 !p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onRemovePower(power.powerId); }} className="h-9 w-9 !p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -366,11 +373,15 @@ export function PoderesTab({
     const peCostValue = detail?.custoTotal?.pe || detail?.peCost || 0;
     
     return (
-      <Card key={array.id} className={`border-2 transition-all ${
-        isEquipped 
-          ? 'border-indigo-500/30 bg-indigo-50/10 dark:bg-indigo-900/5 shadow-md' 
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 opacity-90 grayscale hover:grayscale-0 hover:opacity-100'
-      } relative overflow-hidden`}>
+      <Card 
+        key={array.id} 
+        onClick={() => detail && setViewingArray(detail)}
+        className={`border-2 transition-all cursor-pointer ${
+          isEquipped 
+            ? 'border-indigo-500/30 bg-indigo-50/10 dark:bg-indigo-900/5 shadow-md' 
+            : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 opacity-90 grayscale hover:grayscale-0 hover:opacity-100'
+        } relative overflow-hidden`}
+      >
         {isEquipped && <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />}
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -391,10 +402,10 @@ export function PoderesTab({
             </div>
             
             <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-gray-100 dark:border-gray-800 mt-1 sm:mt-0">
-              <Button variant="ghost" size="sm" onClick={() => detail && setViewingArray(detail)} className="h-9 w-9 !p-0 text-gray-400 hover:text-indigo-500">
+              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); detail && setViewingArray(detail); }} className="h-9 w-9 !p-0 text-gray-400 hover:text-indigo-500">
                 <Info className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => detail && setEditingArray(detail)} className="h-9 w-9 !p-0 text-gray-400 hover:text-emerald-500" title="Editar">
+              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); detail && setEditingArray(detail); }} className="h-9 w-9 !p-0 text-gray-400 hover:text-emerald-500" title="Editar">
                 <Edit2 className="w-4 h-4" />
               </Button>
               <Button
@@ -420,15 +431,15 @@ export function PoderesTab({
                 <Bookmark className="w-4 h-4" />
               </Button>
               {isEquipped ? (
-                <Button variant="ghost" size="sm" onClick={() => onUnequipPowerArray(array.powerArrayId)} className="h-9 w-9 !p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onUnequipPowerArray(array.powerArrayId); }} className="h-9 w-9 !p-0 text-amber-500 hover:bg-amber-50 hover:text-amber-600" title="Desequipar">
                   <Package className="w-4 h-4" />
                 </Button>
               ) : (
-                <Button variant="ghost" size="sm" onClick={() => onEquipPowerArray(array.powerArrayId)} className="h-8 px-2 text-[10px] font-bold border text-gray-600 hover:text-indigo-600 hover:border-indigo-600" title="Equipar">
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onEquipPowerArray(array.powerArrayId); }} className="h-8 px-2 text-[10px] font-bold border text-gray-600 hover:text-indigo-600 hover:border-indigo-600" title="Equipar">
                   Equipar
                 </Button>
               )}
-              <Button variant="ghost" size="sm" onClick={() => onRemovePowerArray(array.powerArrayId)} className="h-9 w-9 !p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
+              <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onRemovePowerArray(array.powerArrayId); }} className="h-9 w-9 !p-0 text-red-400 hover:bg-red-50 hover:text-red-600" title="Excluir">
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
@@ -442,7 +453,7 @@ export function PoderesTab({
 
           <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
             <button 
-              onClick={() => toggleArrayExpansion(array.id)}
+              onClick={(e) => { e.stopPropagation(); toggleArrayExpansion(array.id); }}
               className="w-full flex items-center justify-between py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-[10px] font-bold text-gray-500 transition-colors"
             >
               <span className="flex items-center gap-2">

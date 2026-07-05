@@ -24,6 +24,7 @@ export const NarrativeProfileSchema = z.object({
   origin: z.string(),
   motivations: z.array(z.string()),
   complications: z.array(z.string()),
+  generalNotes: z.string().default(''),
 });
 
 export const SkillEntrySchema = z.object({
@@ -42,11 +43,13 @@ export const PdaStateSchema = z.object({
 export const HealthStateSchema = z.object({
   currentPV: z.number().int(),
   temporaryPV: z.number().int().default(0),
+  limitMaxPV: z.number().int().nullable().optional(),
 });
 
 export const EnergyStateSchema = z.object({
   currentPE: z.number().int(),
   temporaryPE: z.number().int().default(0),
+  limitMaxPE: z.number().int().nullable().optional(),
 });
 
 export const SpiritualStageSchema = z.enum(['NORMAL', 'DIVINE']);

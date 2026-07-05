@@ -3,6 +3,7 @@ import { User, Trash2, ShieldAlert, Sparkles, LayoutDashboard } from 'lucide-rea
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, EmptyState, Badge, ConfirmDialog } from '@/shared/ui';
 import { useAdminCharacters } from '../features/ficha-personagem/hooks/useAdminCharacters';
+import { CroppedImage } from '../features/ficha-personagem/components/dashboard/CharacterHeader';
 
 export function MasterDashboardPage() {
   const { characters, isLoading, error, deleteCharacter } = useAdminCharacters();
@@ -70,7 +71,11 @@ export function MasterDashboardPage() {
               {/* Arte de Fundo com Zoom */}
               <div className="absolute inset-0 z-0 bg-black">
                 {character.art ? (
-                  <img src={character.art} alt={character.narrative.identity} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 dark:opacity-80" />
+                  <CroppedImage 
+                    src={character.art} 
+                    alt={character.narrative.identity} 
+                    className="w-full h-full opacity-60 dark:opacity-80 group-hover:opacity-75 transition-all duration-700" 
+                  />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-red-900 via-rose-900 to-slate-900 transition-transform duration-700 group-hover:scale-110 flex items-center justify-center">
                     <User className="w-24 h-24 text-white/5" />

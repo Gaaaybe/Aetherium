@@ -23,7 +23,7 @@ const DOMAIN_THEMES: Record<string, SummaryTheme> = {
   sagrado: {
     id: 'sagrado',
     name: 'Sagrado',
-    bgGradient: 'from-amber-400 to-yellow-700',
+    bgGradient: 'from-amber-600 via-amber-700 to-yellow-900',
     accentColor: 'text-amber-100',
     textColor: 'text-white',
     pattern: 'diamonds',

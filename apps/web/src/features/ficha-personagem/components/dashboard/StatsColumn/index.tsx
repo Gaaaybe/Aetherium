@@ -176,7 +176,7 @@ export function StatsColumn({ character, onSync, activePowers = [], deactivatePo
   const resistances = [
     { name: 'Fortitude', icon: <ShieldCheck className="w-4 h-4 text-red-500" />, attribute: 'CON' },
     { name: 'Reflexos', icon: <ShieldCheck className="w-4 h-4 text-orange-500" />, attribute: 'DES' },
-    { name: 'Vontade', icon: <ShieldCheck className="w-4 h-4 text-blue-500" />, attribute: 'SAB' },
+    { name: 'Vontade', icon: <ShieldCheck className="w-4 h-4 text-purple-500" />, attribute: 'CAR' },
   ];
 
   const keyPhysicalAttr = character.attributes[character.attributes.keyPhysical] as any;

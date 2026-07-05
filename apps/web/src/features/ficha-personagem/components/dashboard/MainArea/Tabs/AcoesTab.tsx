@@ -13,6 +13,12 @@ import { type ActivePower } from '@/features/ficha-personagem/hooks/usePowerUsag
 import { PowerUsageModal } from './PowerUsageModal';
 import { ActivePowersTracker } from './ActivePowersTracker';
 import type { ResolvePowerResponse } from '@/services/powers.service';
+import { ResumoItem } from '@/features/criador-de-item/components/ResumoItem';
+import { ResumoPoder } from '@/features/criador-de-poder/components/ResumoPoder';
+import { ResumoAcervo } from '@/features/criador-de-poder/components/ResumoAcervo';
+import { calcularDetalhesPoder } from '@/features/criador-de-poder/regras/calculadoraCusto';
+import { poderResponseToPoder, acervoResponseToAcervo } from '@/features/criador-de-poder/utils/poderApiConverter';
+import { useCatalog } from '@/context/useCatalog';
 import {
   obterBonusFortalecerDanoRecuperacao,
   obterBonusFortalecerCaracteristicasItem,
@@ -49,6 +55,11 @@ export function AcoesTab({
   const [detailedItems, setDetailedItems] = useState<Record<string, ItemResponse>>({});
   const [detailedPowers, setDetailedPowers] = useState<Record<string, PoderResponse>>({});
   const [detailedArrays, setDetailedArrays] = useState<Record<string, AcervoResponse>>({});
+  
+  const [viewingItem, setViewingItem] = useState<ItemResponse | null>(null);
+  const [viewingPower, setViewingPower] = useState<any | null>(null);
+  const [viewingArray, setViewingArray] = useState<any | null>(null);
+  const { efeitos: catalogEfeitos, modificacoes: catalogModificacoes } = useCatalog();
   
   const [usingPower, setUsingPower] = useState<(PoderResponse & { originItemId?: string }) | null>(null);
   const [usingPowerFromActive, setUsingPowerFromActive] = useState<boolean>(false);
@@ -105,12 +116,23 @@ export function AcoesTab({
     localStorage.setItem(`character_${character.id}_movement`, movement.toString());
   }, [movement, character.id]);
 
+  // Load from localStorage on character change
   useEffect(() => {
     const storedActions = localStorage.getItem(`character_${character.id}_actions`);
     const storedMovement = localStorage.getItem(`character_${character.id}_movement`);
     setActions(storedActions ? parseInt(storedActions) : defaultActions);
     setMovement(storedMovement ? parseInt(storedMovement) : 1);
-  }, [character.id, defaultActions]);
+  }, [character.id]);
+
+  // Adjust actions based on changes in defaultActions (fortalecer powers turning on/off)
+  const [prevDefaultActions, setPrevDefaultActions] = useState(defaultActions);
+  useEffect(() => {
+    const diff = defaultActions - prevDefaultActions;
+    if (diff !== 0) {
+      setActions(prev => Math.max(0, prev + diff));
+      setPrevDefaultActions(defaultActions);
+    }
+  }, [defaultActions, prevDefaultActions]);
 
 
   // Busca e Filtro de Ações de Combate
@@ -518,7 +540,11 @@ export function AcoesTab({
 
                   return (
                     <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 group hover:border-indigo-500/30 transition-all">
-                      <div className="flex items-center gap-3">
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity"
+                        onClick={() => itemDetail && setViewingItem(itemDetail)}
+                        title="Ver detalhes do equipamento"
+                      >
                         <div className="p-1 rounded-lg bg-white dark:bg-gray-900 border-[0.5px] border-gray-200 dark:border-gray-800 shadow-sm group-hover:scale-110 transition-transform flex items-center justify-center overflow-hidden">
                           {itemDetail?.icone ? (
                             <DynamicIcon name={itemDetail.icone} className="w-7 h-7 text-gray-400 group-hover:text-purple-500 transition-colors" />
@@ -687,7 +713,11 @@ export function AcoesTab({
                   activeEquippedPowers.map((powerDetail: any) => {
                     return (
                       <div key={powerDetail.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 group hover:border-purple-500/30 transition-all">
-                        <div className="flex items-center gap-3">
+                        <div 
+                          className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity"
+                          onClick={() => setViewingPower(powerDetail)}
+                          title="Ver detalhes do poder"
+                        >
                           <div className="p-1 rounded-lg bg-white dark:bg-gray-900 border-[0.5px] border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-center overflow-hidden">
                             {powerDetail.icone ? (
                               <DynamicIcon name={powerDetail.icone} className="w-7 h-7 text-purple-400" />
@@ -844,11 +874,13 @@ export function AcoesTab({
                         return (
                           <div 
                             key={p.id} 
-                            className={`p-3 rounded-lg border group transition-colors ${
+                            className={`p-3 rounded-lg border group transition-colors cursor-pointer hover:opacity-85 ${
                               isAtivado 
                                 ? 'bg-purple-50/30 dark:bg-purple-900/10 border-purple-100 dark:border-purple-900/20' 
                                 : 'bg-emerald-50/30 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/20'
                             }`}
+                            onClick={() => detail && setViewingPower(detail)}
+                            title="Ver detalhes do efeito passivo"
                           >
                             <div className="flex items-center gap-3">
                               <div className="p-1 rounded-lg bg-white dark:bg-gray-900 border-[0.5px] border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-center overflow-hidden">
@@ -1067,6 +1099,55 @@ export function AcoesTab({
           }}
         />
       )}
+
+      {viewingItem && (
+        <ResumoItem
+          isOpen={!!viewingItem}
+          onClose={() => setViewingItem(null)}
+          tipo={viewingItem.tipo}
+          nome={viewingItem.nome}
+          icone={viewingItem.icone ?? undefined}
+          descricao={viewingItem.descricao}
+          dominio={{ name: viewingItem.dominio.name, peculiarId: viewingItem.dominio.peculiarId ?? undefined }}
+          dominios={viewingItem.dominios?.map(d => ({
+            name: d.name,
+            areaConhecimento: d.areaConhecimento ?? undefined,
+            peculiarId: d.peculiarId ?? undefined,
+          }))}
+          custoBase={viewingItem.valorBase}
+          nivelCalculado={viewingItem.nivelItem}
+          custoRealCalculado={viewingItem.valorBase}
+          precoVendaCalculado={Math.floor(viewingItem.valorBase / 2)}
+          selectedPowers={viewingItem.powerIds?.map(id => detailedPowers[id]).filter(Boolean) || []}
+          selectedPowerArrays={viewingItem.powerArrayIds?.map(id => detailedArrays[id]).filter(Boolean) || []}
+          onOpenPowerDetails={(id) => setViewingPower(detailedPowers[id] || null)}
+          onOpenPowerArrayDetails={(id) => setViewingArray(detailedArrays[id] || null)}
+          itemData={viewingItem}
+        />
+      )}
+
+      {viewingPower && (() => {
+        const pCon = (viewingPower as any).efeitos ? viewingPower : poderResponseToPoder(viewingPower);
+        return (
+          <ResumoPoder
+            isOpen={!!viewingPower}
+            onClose={() => setViewingPower(null)}
+            poder={pCon}
+            detalhes={calcularDetalhesPoder(pCon, catalogEfeitos, catalogModificacoes)}
+          />
+        );
+      })()}
+
+      {viewingArray && (() => {
+        const aCon = (viewingArray as any).poderes ? viewingArray : acervoResponseToAcervo(viewingArray as AcervoResponse);
+        return (
+          <ResumoAcervo
+            isOpen={!!viewingArray}
+            onClose={() => setViewingArray(null)}
+            acervo={aCon as any}
+          />
+        );
+      })()}
     </div>
   );
 }

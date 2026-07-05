@@ -148,4 +148,33 @@ describe('SyncCharacterController (e2e)', () => {
     expect(response.body.conditions).toContain('Abalado');
     expect(response.body.conditions).toContain('Caído');
   });
+
+  test('[PATCH] /characters/:id/sync — should sync limitMaxPV and limitMaxPE and cap current values', async () => {
+    const response = await request(app.getHttpServer())
+      .patch(`/characters/${characterId}/sync`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        limitMaxPV: 4,
+        limitMaxPE: 2,
+      });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.health.limitMaxPV).toBe(4);
+    expect(response.body.energy.limitMaxPE).toBe(2);
+    expect(response.body.health.currentPV).toBeLessThanOrEqual(4);
+    expect(response.body.energy.currentPE).toBeLessThanOrEqual(2);
+
+    // Reset limits to null
+    const resetResponse = await request(app.getHttpServer())
+      .patch(`/characters/${characterId}/sync`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        limitMaxPV: null,
+        limitMaxPE: null,
+      });
+
+    expect(resetResponse.statusCode).toBe(200);
+    expect(resetResponse.body.health.limitMaxPV).toBeNull();
+    expect(resetResponse.body.energy.limitMaxPE).toBeNull();
+  });
 });

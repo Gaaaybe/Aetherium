@@ -92,6 +92,7 @@ export class CharacterPresenter {
         origin: character.narrativeProfile.origin,
         motivations: character.narrativeProfile.motivations || [],
         complications: character.narrativeProfile.complications || [],
+        generalNotes: character.narrativeProfile.generalNotes || '',
       },
       attributes: {
         strength: {
@@ -162,11 +163,13 @@ export class CharacterPresenter {
         maxPV: calculateMaxPV(character.level, constMod),
         currentPV: character.healthState.currentPV,
         temporaryPV: character.healthState.temporaryPV ?? 0,
+        limitMaxPV: character.healthState.limitMaxPV ?? null,
       },
       energy: {
         maxPE: calculateMaxPE(keyPhysicalMod, keyMentalMod),
         currentPE: character.energyState.currentPE,
         temporaryPE: character.energyState.temporaryPE ?? 0,
+        limitMaxPE: character.energyState.limitMaxPE ?? null,
       },
       slots: {
         maxSlots,

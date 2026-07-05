@@ -166,7 +166,7 @@ export function MainArea({
           />
         )}
         {activeTab === 'narrativa' && <NarrativeTab character={character} _onSync={onSync} />}
-        {activeTab === 'anotacoes' && <AnotacoesTab />}
+        {activeTab === 'anotacoes' && <AnotacoesTab character={character} onSync={onSync} />}
       </div>
     </div>
   );

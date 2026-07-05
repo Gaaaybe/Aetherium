@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Save, Sparkles, FileText, Zap, Library } from 'lucide-react';
+import { Save, Sparkles, FileText, Zap, Library, Edit3, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button, Card, CardHeader, CardTitle, CardContent, Badge, Input, Textarea, Select, toast, HelpIcon, Tooltip, ConfirmDialog, InlineHelp, EmptyState } from '../../../shared/ui';
+import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Input, Textarea, Select, toast, HelpIcon, Tooltip, ConfirmDialog, InlineHelp, EmptyState } from '../../../shared/ui';
 import { usePoderCalculator } from '../hooks/usePoderCalculator';
 import { usePoderValidation } from '../hooks/usePoderValidation';
 import { usePoderes } from '../hooks/usePoderes';
@@ -40,8 +40,10 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
     atualizarConfiguracaoEfeito,
     atualizarDadoModularizado,
     adicionarModificacaoLocal,
+    atualizarModificacaoLocal,
     removerModificacaoLocal,
     adicionarModificacaoGlobal,
+    atualizarModificacaoGlobal,
     removerModificacaoGlobal,
     atualizarInfoPoder,
     atualizarCustoAlternativo,
@@ -55,6 +57,7 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
 
   const [modalSeletorEfeito, setModalSeletorEfeito] = useState(false);
   const [modalSeletorModificacao, setModalSeletorModificacao] = useState(false);
+  const [globalModificacaoEditando, setGlobalModificacaoEditando] = useState<any | null>(null);
   const [modalResumoAberto, setModalResumoAberto] = useState(false);
   const [modalConfirmarReset, setModalConfirmarReset] = useState(false);
   const [mostrarAtalhos, setMostrarAtalhos] = useState(false);
@@ -687,52 +690,78 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
       </Card>
 
       {/* Modificações Globais */}
-      {poder.modificacoesGlobais.length > 0 && (
+      {poder.efeitos.length > 0 && (
         <Card className="rounded-lg sm:rounded-xl">
-          <CardHeader>
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle>Modificações Globais (aplicadas a todo o poder)</CardTitle>
+              <CardTitle className="text-lg font-semibold">Modificações Globais (aplicadas a todo o poder)</CardTitle>
               <HelpIcon tooltip="Modificações globais afetam todos os efeitos do poder simultaneamente" />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {poder.modificacoesGlobais.map((mod) => {
-                const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
-                if (!modBase) return null;
-                const custoTexto = formatarCustoModificacao(mod, modBase);
+            {poder.modificacoesGlobais.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Nenhuma modificação global aplicada a este poder.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {poder.modificacoesGlobais.map((mod) => {
+                  const modBase = todasModificacoes.find(m => m.id === mod.modificacaoBaseId);
+                  if (!modBase) return null;
+                  const custoTexto = formatarCustoModificacao(mod, modBase);
 
-                const descricaoParam = mod.parametros?.descricao as string | undefined;
-                const opcaoParam = mod.parametros?.opcao as string | undefined;
+                  const descricaoParam = mod.parametros?.descricao as string | undefined;
+                  const opcaoParam = mod.parametros?.opcao as string | undefined;
 
-                return (
-                  <Badge
-                    key={mod.id}
-                    variant={modBase.tipo === 'extra' ? 'success' : 'warning'}
-                    className="flex items-center gap-2"
-                  >
-                    <span>
-                      {modBase.nome}
-                      {mod.grauModificacao && ` ${mod.grauModificacao}`}
-                      <span className="font-bold ml-1">{custoTexto}</span>
-                    </span>
-                    {descricaoParam && (
-                      <span className="text-xs opacity-75">: {descricaoParam}</span>
-                    )}
-                    {opcaoParam && (
-                      <span className="text-xs opacity-75">({opcaoParam})</span>
-                    )}
-                    <button
-                      onClick={() => removerModificacaoGlobal(mod.id)}
-                      className="hover:text-red-600"
+                  return (
+                    <Badge
+                      key={mod.id}
+                      variant={modBase.tipo === 'extra' ? 'success' : 'warning'}
+                      className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity"
+                      onClick={() => {
+                        setGlobalModificacaoEditando(mod);
+                        setModalSeletorModificacao(true);
+                      }}
                     >
-                      ×
-                    </button>
-                  </Badge>
-                );
-              })}
-            </div>
+                      <span>
+                        {modBase.nome}
+                        {mod.grauModificacao && ` ${mod.grauModificacao}`}
+                        <span className="font-bold ml-1">{custoTexto}</span>
+                      </span>
+                      {descricaoParam && (
+                        <span className="text-xs opacity-75">: {descricaoParam}</span>
+                      )}
+                      {opcaoParam && (
+                        <span className="text-xs opacity-75">({opcaoParam})</span>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removerModificacaoGlobal(mod.id);
+                        }}
+                        className="hover:text-red-600 p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10"
+                        title="Remover modificação"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  );
+                })}
+              </div>
+            )}
           </CardContent>
+          <CardFooter className="pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              fullWidth
+              onClick={() => setModalSeletorModificacao(true)}
+              className="hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 dark:hover:from-purple-950/20 dark:hover:to-indigo-950/20 transition-all duration-200 group"
+            >
+              <Sparkles className="w-4 h-4 mr-2 group-hover:animate-spin text-purple-500" />
+              Adicionar Modificação Global
+            </Button>
+          </CardFooter>
         </Card>
       )}
 
@@ -788,7 +817,13 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
                 efeitoDetalhado={efeitoDetalhado!}
                 onRemover={removerEfeito}
                 onAtualizarGrau={atualizarGrauEfeito}
-                onAdicionarModificacao={adicionarModificacaoLocal}
+                onAdicionarModificacao={(efeitoId: string, modId: string, parametros?: Record<string, any>, modificacaoId?: string) => {
+                  if (modificacaoId) {
+                    atualizarModificacaoLocal(efeitoId, modificacaoId, parametros);
+                  } else {
+                    adicionarModificacaoLocal(efeitoId, modId, parametros);
+                  }
+                }}
                 onRemoverModificacao={removerModificacaoLocal}
                 onAtualizarInputCustomizado={atualizarInputCustomizado}
                 onAtualizarConfiguracao={atualizarConfiguracaoEfeito}
@@ -807,17 +842,6 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
         )}
       </div>
 
-      {/* Botões de Ação */}
-      {poder.efeitos.length > 0 && (
-        <Button
-          variant="secondary"
-          fullWidth
-          onClick={() => setModalSeletorModificacao(true)}
-          aria-label="Adicionar modificação global ao poder"
-        >
-          Adicionar Modificação Global
-        </Button>
-      )}
 
       {/* Modals */}
       <SeletorEfeito
@@ -831,10 +855,19 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
 
       <SeletorModificacao
         isOpen={modalSeletorModificacao}
-        onClose={() => setModalSeletorModificacao(false)}
-        onSelecionar={(modId: string, parametros?: Record<string, any>) => {
-          adicionarModificacaoGlobal(modId, parametros);
+        onClose={() => {
           setModalSeletorModificacao(false);
+          setGlobalModificacaoEditando(null);
+        }}
+        modificacaoEdicao={globalModificacaoEditando}
+        onSelecionar={(modId: string, parametros?: Record<string, any>, modificacaoId?: string) => {
+          if (modificacaoId) {
+            atualizarModificacaoGlobal(modificacaoId, parametros);
+          } else {
+            adicionarModificacaoGlobal(modId, parametros);
+          }
+          setModalSeletorModificacao(false);
+          setGlobalModificacaoEditando(null);
         }}
       />
 

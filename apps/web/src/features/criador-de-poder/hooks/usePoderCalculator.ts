@@ -18,8 +18,10 @@ export function usePoderCalculator() {
     atualizarConfiguracaoEfeito,
     atualizarDadoModularizado,
     adicionarModificacaoLocal,
+    atualizarModificacaoLocal,
     removerModificacaoLocal,
     adicionarModificacaoGlobal,
+    atualizarModificacaoGlobal,
     removerModificacaoGlobal,
     atualizarInfoPoder,
     atualizarCustoAlternativo,
@@ -50,8 +52,10 @@ export function usePoderCalculator() {
     atualizarConfiguracaoEfeito,
     atualizarDadoModularizado,
     adicionarModificacaoLocal,
+    atualizarModificacaoLocal,
     removerModificacaoLocal,
     adicionarModificacaoGlobal,
+    atualizarModificacaoGlobal,
     removerModificacaoGlobal,
     // Adaptação para atualizarInfoPoder que aceita múltiplos parâmetros ou objeto
     atualizarInfoPoder: (
