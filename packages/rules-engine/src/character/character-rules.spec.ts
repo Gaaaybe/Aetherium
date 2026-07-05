@@ -48,10 +48,10 @@ import {
   applyUnequipItem,
   applyRestResult,
   RulesValidationError
-} from './character-rules';
+} from './character-rules.js';
 
 // Helper para criar um personagem fake válido para os testes
-function makeFakeCharacter(overrides = {}) {
+function makeFakeCharacter(overrides: any = {}): any {
   return {
     level: 1,
     attributes: {
@@ -462,6 +462,38 @@ describe('Motor de Regras de Personagem - character-rules.ts', () => {
       applyRestResult(char, 2, 2);
       expect(char.healthState.currentPV).toBe(4);
       expect(char.energyState.currentPE).toBe(4);
+    });
+  });
+
+  describe('Limites de Recursos (limitMaxPV e limitMaxPE)', () => {
+    it('deve respeitar o limitMaxPV ao curar', () => {
+      const char = makeFakeCharacter({
+        healthState: { currentPV: 2, temporaryPV: 0, limitMaxPV: 4 },
+        level: 1
+      });
+      // Max PV sem limite é 6. Com limitMaxPV de 4, não pode curar mais de 4.
+      applyHeal(char, 5);
+      expect(char.healthState.currentPV).toBe(4);
+    });
+
+    it('deve respeitar o limitMaxPE ao recuperar energia', () => {
+      const char = makeFakeCharacter({
+        energyState: { currentPE: 1, temporaryPE: 0, limitMaxPE: 2 }
+      });
+      // Max PE sem limite é 4. Com limitMaxPE de 2, não pode recuperar mais de 2.
+      applyRecoverEnergy(char, 10);
+      expect(char.energyState.currentPE).toBe(2);
+    });
+
+    it('deve respeitar o limitMaxPV ao subir de nível', () => {
+      const char = makeFakeCharacter({
+        healthState: { currentPV: 2, temporaryPV: 0, limitMaxPV: 3 },
+        level: 1
+      });
+      applyLevelUp(char);
+      // Nível 2. Max PV sem limite é 6.
+      // Com limitMaxPV de 3, deve capar em 3 PV.
+      expect(char.healthState.currentPV).toBe(3);
     });
   });
 

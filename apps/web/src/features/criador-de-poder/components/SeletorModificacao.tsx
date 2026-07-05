@@ -8,15 +8,17 @@ import { Sparkles, AlertTriangle, Search, Star, BarChart2, RotateCcw, Settings, 
 interface SeletorModificacaoProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelecionar: (modId: string, parametros?: Record<string, string | number>) => void;
+  onSelecionar: (modId: string, parametros?: Record<string, any>, modificacaoId?: string) => void;
   titulo?: string;
+  modificacaoEdicao?: any;
 }
 
 export function SeletorModificacao({
   isOpen,
   onClose,
   onSelecionar,
-  titulo = "Selecionar Modificação"
+  titulo = "Selecionar Modificação",
+  modificacaoEdicao
 }: SeletorModificacaoProps) {
   const { isFavoritoModificacao, toggleFavoritoModificacao } = useFavoritos();
   const { modificacoes: todasModificacoes } = useCatalog();
@@ -41,6 +43,34 @@ export function SeletorModificacao({
   const listaContainerRef = useRef<HTMLDivElement>(null);
 
   const modBase = modSelecionada ? todasModificacoes.find(m => m.id === modSelecionada) : null;
+
+  // Inicializa ou reseta o formulário com base em modificacaoEdicao
+  useEffect(() => {
+    if (isOpen) {
+      if (modificacaoEdicao) {
+        setModSelecionada(modificacaoEdicao.modificacaoBaseId);
+        
+        const params = modificacaoEdicao.parametros ? { ...modificacaoEdicao.parametros } : {};
+        
+        // Se a modificação tem grauModificacao mas não está em parametros, sincroniza
+        if (modificacaoEdicao.grauModificacao !== undefined && params.grau === undefined) {
+          params.grau = modificacaoEdicao.grauModificacao;
+        }
+        
+        setParametros(params as Record<string, string | number>);
+        
+        if (modificacaoEdicao.parametros?.configuracaoSelecionada) {
+          setConfiguracaoSelecionada(modificacaoEdicao.parametros.configuracaoSelecionada as string);
+        } else {
+          setConfiguracaoSelecionada('');
+        }
+      } else {
+        setModSelecionada(null);
+        setParametros({});
+        setConfiguracaoSelecionada('');
+      }
+    }
+  }, [isOpen, modificacaoEdicao]);
 
   // Restaura a posição do scroll quando volta para a lista
   useEffect(() => {
@@ -81,7 +111,7 @@ export function SeletorModificacao({
       ...(configuracaoSelecionada && { configuracaoSelecionada })
     } : undefined;
     
-    onSelecionar(modSelecionada, parametrosFinal);
+    onSelecionar(modSelecionada, parametrosFinal, modificacaoEdicao?.id);
     
     // Reset
     setModSelecionada(null);
@@ -309,18 +339,20 @@ export function SeletorModificacao({
                     {modBase?.tipo === 'extra' ? <><Sparkles className="w-3 h-3" /> Extra</> : <><AlertTriangle className="w-3 h-3" /> Falha</>}
                   </Badge>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setModSelecionada(null);
-                    setConfiguracaoSelecionada('');
-                    setParametros({});
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" /> Voltar
-                </Button>
+                {!modificacaoEdicao && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setModSelecionada(null);
+                      setConfiguracaoSelecionada('');
+                      setParametros({});
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="w-4 h-4" /> Voltar
+                  </Button>
+                )}
               </div>
 
               {/* Card de Informações Principais */}
@@ -539,7 +571,15 @@ export function SeletorModificacao({
                 }
                 className="flex items-center justify-center gap-2"
               >
-                <Sparkles className="w-4 h-4" /> Adicionar Modificação
+                {modificacaoEdicao ? (
+                  <>
+                    <Edit3 className="w-4 h-4" /> Salvar Alterações
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" /> Adicionar Modificação
+                  </>
+                )}
               </Button>
               
               {modBase?.configuracoes && !configuracaoSelecionada && (

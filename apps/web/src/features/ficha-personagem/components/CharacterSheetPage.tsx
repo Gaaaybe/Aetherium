@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Card, EmptyState, Badge, ConfirmDialog } from '@/shared/ui';
 import { useCharacters } from '../hooks/useCharacters';
 import { Charactermancer } from './Charactermancer';
+import { CroppedImage } from './dashboard/CharacterHeader';
 
 export function CharacterSheetPage() {
   const { characters, isLoading, deleteCharacter } = useCharacters();
@@ -63,7 +64,11 @@ export function CharacterSheetPage() {
               {/* Arte de Fundo com Zoom */}
               <div className="absolute inset-0 z-0 bg-black">
                 {character.art ? (
-                  <img src={character.art} alt={character.narrative.identity} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 opacity-60 dark:opacity-80" />
+                  <CroppedImage 
+                    src={character.art} 
+                    alt={character.narrative.identity} 
+                    className="w-full h-full opacity-60 dark:opacity-80 group-hover:opacity-75 transition-all duration-700" 
+                  />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-br from-indigo-900 via-purple-900 to-slate-900 transition-transform duration-700 group-hover:scale-110 flex items-center justify-center">
                     <User className="w-24 h-24 text-white/5" />

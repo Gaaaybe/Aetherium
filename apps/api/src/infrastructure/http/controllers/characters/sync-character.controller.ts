@@ -27,6 +27,7 @@ const syncCharacterBodySchema = z.object({
       origin: z.string().min(1),
       motivations: z.array(z.string().min(1)),
       complications: z.array(z.string().min(1)),
+      generalNotes: z.string().optional(),
     })
     .optional(),
   symbol: z.string().trim().min(1).nullable().optional(),
@@ -40,6 +41,8 @@ const syncCharacterBodySchema = z.object({
   tempPeChange: z.number().int().min(0).optional(),
   customMaxPV: z.number().int().min(1).optional(),
   customMaxPE: z.number().int().min(1).optional(),
+  limitMaxPV: z.number().int().min(0).nullable().optional(),
+  limitMaxPE: z.number().int().min(0).nullable().optional(),
   attributes: z
     .object({
       strength: z.object({

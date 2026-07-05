@@ -29,8 +29,10 @@ interface PowerCreatorStore {
   atualizarConfiguracaoEfeito: (efeitoId: string, configuracaoId: string) => void;
   atualizarDadoModularizado: (efeitoId: string, dado: string) => void;
   adicionarModificacaoLocal: (efeitoId: string, modificacaoBaseId: string, parametros?: Record<string, any>) => void;
+  atualizarModificacaoLocal: (efeitoId: string, modificacaoId: string, parametros?: Record<string, any>) => void;
   removerModificacaoLocal: (efeitoId: string, modificacaoId: string) => void;
   adicionarModificacaoGlobal: (modificacaoBaseId: string, parametros?: Record<string, any>) => void;
+  atualizarModificacaoGlobal: (modificacaoId: string, parametros?: Record<string, any>) => void;
   removerModificacaoGlobal: (modificacaoId: string) => void;
   atualizarInfoPoder: (info: Partial<Omit<Poder, 'id' | 'efeitos' | 'modificacoesGlobais'>>) => void;
   atualizarCustoAlternativo: (custo?: Poder['custoAlternativo']) => void;
@@ -156,7 +158,7 @@ export const usePowerCreatorStore = create<PowerCreatorStore>()(
           modificacaoBaseId,
           escopo: 'local',
           parametros: parametros ?? {},
-          grauModificacao: 1,
+          grauModificacao: parametros?.grau ? Number(parametros.grau) : 1,
         };
 
         return {
@@ -170,6 +172,28 @@ export const usePowerCreatorStore = create<PowerCreatorStore>()(
           },
         };
       }),
+
+      atualizarModificacaoLocal: (efeitoId, modificacaoId, parametros) => set((state) => ({
+        poder: {
+          ...state.poder,
+          efeitos: state.poder.efeitos.map((e) =>
+            e.id === efeitoId
+              ? {
+                  ...e,
+                  modificacoesLocais: e.modificacoesLocais.map((m) =>
+                    m.id === modificacaoId
+                      ? {
+                          ...m,
+                          parametros: parametros ?? {},
+                          grauModificacao: parametros?.grau ? Number(parametros.grau) : 1,
+                        }
+                      : m
+                  ),
+                }
+              : e
+          ),
+        },
+      })),
 
       removerModificacaoLocal: (efeitoId, modificacaoId) => set((state) => ({
         poder: {
@@ -188,7 +212,7 @@ export const usePowerCreatorStore = create<PowerCreatorStore>()(
           modificacaoBaseId,
           escopo: 'global',
           parametros: parametros ?? {},
-          grauModificacao: 1,
+          grauModificacao: parametros?.grau ? Number(parametros.grau) : 1,
         };
 
         return {
@@ -198,6 +222,21 @@ export const usePowerCreatorStore = create<PowerCreatorStore>()(
           },
         };
       }),
+
+      atualizarModificacaoGlobal: (modificacaoId, parametros) => set((state) => ({
+        poder: {
+          ...state.poder,
+          modificacoesGlobais: state.poder.modificacoesGlobais.map((m) =>
+            m.id === modificacaoId
+              ? {
+                  ...m,
+                  parametros: parametros ?? {},
+                  grauModificacao: parametros?.grau ? Number(parametros.grau) : 1,
+                }
+              : m
+          ),
+        },
+      })),
 
       removerModificacaoGlobal: (modificacaoId) => set((state) => ({
         poder: {

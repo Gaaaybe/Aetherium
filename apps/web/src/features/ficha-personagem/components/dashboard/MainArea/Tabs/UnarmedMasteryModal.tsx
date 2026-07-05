@@ -34,16 +34,14 @@ export function UnarmedMasteryModal({
     const criticalMargin = Math.max(10, 20 - marginImprovements);
     const criticalMultiplier = 2 + multiplierImprovements;
     
-    // Cálculo do custo de PdA: Escalonado pelo Grau
+    // Cálculo do custo de PdA conforme as regras
     let cost = 0;
-    cost += degree * 7;
-    
-    const improvementUnitCost = degree > 0 ? degree : 1;
-    cost += marginImprovements * improvementUnitCost;
-    cost += multiplierImprovements * improvementUnitCost;
+    cost += degree * 7;              // 7 PdA por grau
+    cost += marginImprovements * 2;  // +2 PdA por melhoria de margem
+    cost += multiplierImprovements * 2; // +2 PdA por melhoria de multiplicador
     
     if (damageType.toLowerCase() !== 'impacto' && damageType !== '') {
-      cost += 1;
+      cost += 1;                     // +1 PdA para tipo de dano customizado
     }
 
     // Diferença em relação ao atual
@@ -151,7 +149,7 @@ export function UnarmedMasteryModal({
                 </span>
                 <div>
                   <h4 className="text-sm font-black text-gray-900 dark:text-gray-100">Melhoria de Margem</h4>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">1 PdA * Grau cada • Máx 2x por Grau (Teto 10)</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">+2 PdA cada • Máx 2x por Grau (Teto 10)</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -180,7 +178,7 @@ export function UnarmedMasteryModal({
                 <span className="w-8 h-8 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 font-bold">x</span>
                 <div>
                   <h4 className="text-sm font-black text-gray-900 dark:text-gray-100">Melhoria de Multiplicador</h4>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">1 PdA * Grau cada • Grau 3+ • 1x a cada 2 Graus (Teto x5)</p>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">+2 PdA cada • Grau 3+ • 1x a cada 2 Graus (Teto x5)</p>
                 </div>
               </div>
               <div className="flex items-center gap-4">

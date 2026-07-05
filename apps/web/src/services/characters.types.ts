@@ -105,11 +105,13 @@ export interface CharacterResponse {
     maxPV: number;
     currentPV: number;
     temporaryPV: number;
+    limitMaxPV?: number | null;
   };
   energy: {
     maxPE: number;
     currentPE: number;
     temporaryPE: number;
+    limitMaxPE?: number | null;
   };
   slots: {
     maxSlots: number;
@@ -154,6 +156,7 @@ export interface SyncCharacterData {
     origin: string;
     motivations: string[];
     complications: string[];
+    generalNotes?: string;
   };
   symbol?: string | null;
   art?: string | null;
@@ -166,6 +169,8 @@ export interface SyncCharacterData {
   tempPeChange?: number;
   customMaxPV?: number;
   customMaxPE?: number;
+  limitMaxPV?: number | null;
+  limitMaxPE?: number | null;
   attributes?: {
     strength: { baseValue: number; extraBonus?: number };
     dexterity: { baseValue: number; extraBonus?: number };

@@ -21,8 +21,21 @@ export function VitalsCard({ health, energy, onSync, activePowers = [], characte
   const totalMaxPV = health.maxPV + bonuses.maxPV;
   const totalMaxPE = energy.maxPE + bonuses.maxPE;
 
+  // Limites manuais vindos do personagem
+  const effectiveMaxPV = health.limitMaxPV !== null && health.limitMaxPV !== undefined
+    ? Math.min(totalMaxPV, health.limitMaxPV)
+    : totalMaxPV;
+
+  const effectiveMaxPE = energy.limitMaxPE !== null && energy.limitMaxPE !== undefined
+    ? Math.min(totalMaxPE, energy.limitMaxPE)
+    : totalMaxPE;
+
   const hpPercent = Math.min(100, Math.max(0, (health.currentPV / totalMaxPV) * 100));
   const pePercent = Math.min(100, Math.max(0, (energy.currentPE / totalMaxPE) * 100));
+
+  // Percentual bloqueado
+  const blockedHpPercent = ((totalMaxPV - effectiveMaxPV) / totalMaxPV) * 100;
+  const blockedPePercent = ((totalMaxPE - effectiveMaxPE) / totalMaxPE) * 100;
 
   const handleAdjustPV = async (type: 'damage' | 'heal' | 'temp') => {
     const val = parseInt(pvValue);
@@ -30,8 +43,8 @@ export function VitalsCard({ health, energy, onSync, activePowers = [], characte
 
     setIsProcessing(true);
     try {
-      if (type === 'damage') await onSync({ pvChange: -val, customMaxPV: totalMaxPV });
-      if (type === 'heal') await onSync({ pvChange: val, customMaxPV: totalMaxPV });
+      if (type === 'damage') await onSync({ pvChange: -val, customMaxPV: effectiveMaxPV });
+      if (type === 'heal') await onSync({ pvChange: val, customMaxPV: effectiveMaxPV });
       if (type === 'temp') await onSync({ tempPvChange: val });
       setPvValue('');
     } finally {
@@ -45,8 +58,8 @@ export function VitalsCard({ health, energy, onSync, activePowers = [], characte
 
     setIsProcessing(true);
     try {
-      if (type === 'consume') await onSync({ peChange: -val, customMaxPE: totalMaxPE });
-      if (type === 'recover') await onSync({ peChange: val, customMaxPE: totalMaxPE });
+      if (type === 'consume') await onSync({ peChange: -val, customMaxPE: effectiveMaxPE });
+      if (type === 'recover') await onSync({ peChange: val, customMaxPE: effectiveMaxPE });
       if (type === 'temp') await onSync({ tempPeChange: val });
       setPeValue('');
     } finally {
@@ -66,10 +79,15 @@ export function VitalsCard({ health, energy, onSync, activePowers = [], characte
               </div>
               <div>
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Vida (PV)</span>
-                <div className="flex items-baseline gap-1 mt-0.5">
+                <div className="flex items-baseline gap-1.5 mt-0.5">
                   <span className="text-2xl font-black text-gray-900 dark:text-white leading-none">
-                    {health.currentPV} <span className="text-sm font-medium text-gray-400 tracking-tight">/ {totalMaxPV}</span>
+                    {health.currentPV} <span className="text-sm font-medium text-gray-400 tracking-tight">/ {effectiveMaxPV}</span>
                   </span>
+                  {health.limitMaxPV !== null && health.limitMaxPV !== undefined && (
+                    <span className="text-xs line-through text-gray-400 dark:text-gray-500 font-bold" title={`Limite ativo de um total de ${totalMaxPV}`}>
+                      {totalMaxPV}
+                    </span>
+                  )}
                   {bonuses.maxPV > 0 && (
                     <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 ml-0.5 animate-pulse" title="Bônus Temporário de Fortalecer">
                       (+{bonuses.maxPV})
@@ -118,6 +136,16 @@ export function VitalsCard({ health, energy, onSync, activePowers = [], characte
               <div
                 className="absolute top-0 right-0 h-full bg-blue-400/40 border-l border-blue-500/50"
                 style={{ width: `${Math.min(100, (health.temporaryPV / totalMaxPV) * 100)}%` }}
+              />
+            )}
+            {blockedHpPercent > 0 && (
+              <div
+                className="absolute top-0 right-0 h-full bg-red-500/10 border-l border-red-500/30"
+                style={{
+                  width: `${blockedHpPercent}%`,
+                  backgroundImage: 'repeating-linear-gradient(45deg, rgba(239, 68, 68, 0.35), rgba(239, 68, 68, 0.35) 4px, transparent 4px, transparent 8px)'
+                }}
+                title={`Limite de PV Máximo: ${effectiveMaxPV}`}
               />
             )}
           </div>
@@ -172,10 +200,15 @@ export function VitalsCard({ health, energy, onSync, activePowers = [], characte
               </div>
               <div>
                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Energia (PE)</span>
-                <div className="flex items-baseline gap-1 mt-0.5">
+                <div className="flex items-baseline gap-1.5 mt-0.5">
                   <span className="text-2xl font-black text-gray-900 dark:text-white leading-none">
-                    {energy.currentPE} <span className="text-sm font-medium text-gray-400 tracking-tight">/ {totalMaxPE}</span>
+                    {energy.currentPE} <span className="text-sm font-medium text-gray-400 tracking-tight">/ {effectiveMaxPE}</span>
                   </span>
+                  {energy.limitMaxPE !== null && energy.limitMaxPE !== undefined && (
+                    <span className="text-xs line-through text-gray-400 dark:text-gray-500 font-bold" title={`Limite ativo de um total de ${totalMaxPE}`}>
+                      {totalMaxPE}
+                    </span>
+                  )}
                   {bonuses.maxPE > 0 && (
                     <span className="text-[10px] font-black text-amber-600 dark:text-amber-400 ml-0.5 animate-pulse" title="Bônus Temporário de Fortalecer">
                       (+{bonuses.maxPE})
@@ -224,6 +257,16 @@ export function VitalsCard({ health, energy, onSync, activePowers = [], characte
               <div
                 className="absolute top-0 right-0 h-full bg-amber-400/40 border-l border-amber-500/50"
                 style={{ width: `${Math.min(100, ((energy.temporaryPE ?? 0) / totalMaxPE) * 100)}%` }}
+              />
+            )}
+            {blockedPePercent > 0 && (
+              <div
+                className="absolute top-0 right-0 h-full bg-blue-500/10 border-l border-blue-500/30"
+                style={{
+                  width: `${blockedPePercent}%`,
+                  backgroundImage: 'repeating-linear-gradient(45deg, rgba(59, 130, 246, 0.35), rgba(59, 130, 246, 0.35) 4px, transparent 4px, transparent 8px)'
+                }}
+                title={`Limite de PE Máximo: ${effectiveMaxPE}`}
               />
             )}
           </div>
