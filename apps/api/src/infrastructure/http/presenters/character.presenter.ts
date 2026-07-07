@@ -88,8 +88,9 @@ export class CharacterPresenter {
       calamityRank: getCalamityRank(character.level),
       efficiencyBonus: getEfficiencyBonus(character.level),
       narrative: {
-        identity: character.narrativeProfile.identity,
-        origin: character.narrativeProfile.origin,
+        name: character.narrativeProfile.name || character.narrativeProfile.identity || '',
+        identity: character.narrativeProfile.identity || '',
+        origin: character.narrativeProfile.origin || '',
         motivations: character.narrativeProfile.motivations || [],
         complications: character.narrativeProfile.complications || [],
         generalNotes: character.narrativeProfile.generalNotes || '',

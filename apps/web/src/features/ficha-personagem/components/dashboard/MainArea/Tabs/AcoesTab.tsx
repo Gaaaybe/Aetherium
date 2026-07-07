@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { CharacterResponse } from '@/services/characters.types';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button, DynamicIcon, toast } from '@/shared/ui';
 import { Sword, Zap, Shield, Repeat, Package, Activity, Dices, Plus, Minus, RotateCcw, Search } from 'lucide-react';
-import { ACOES_COMBATE, buscarGrauNaTabela } from '@/data';
+import { ACOES_COMBATE, buscarGrauNaTabela, CONDICOES } from '@/data';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { getItemById } from '@/services/items.service';
 import { getPowerById } from '@/services/powers.service';
@@ -25,7 +25,9 @@ import {
   obterBonusFortalecerCaracteristicasDesarmado,
   obterBonusFortalecerAcoes
 } from '../../../../utils/fortalecerHelper';
-import { fortaleceAlvoMatch } from '@aetherium/rules-engine';
+import { fortaleceAlvoMatch, getRollAdvantageDisadvantage } from '@aetherium/rules-engine';
+import { isArmaDistancia, isArmaCorpoACorpo, obterReducaoCriticoParaArma } from '@/features/ficha-personagem/utils/benefitsHelper';
+import { renderDescriptionWithTooltips } from '@/features/ficha-personagem/utils/conditionsHelper';
 
 interface AcoesTabProps {
   character: CharacterResponse;
@@ -150,6 +152,8 @@ export function AcoesTab({
     tipo?: 'ARMA' | 'DESARMADO';
     domains?: string[];
     itemId?: string;
+    initialRule?: 'advantage' | 'disadvantage' | 'normal';
+    initialExtraDice?: number;
   } | null>(null);
 
   const [isUnarmedModalOpen, setIsUnarmedModalOpen] = useState(false);
@@ -500,8 +504,11 @@ export function AcoesTab({
                         }
 
                         const unarmedCritBonus = obterBonusFortalecerCaracteristicasDesarmado(activePowers);
-                        const finalCritMargin = Math.max(1, (character.unarmedMastery?.criticalMargin || 20) - unarmedCritBonus.critMarginBonus);
+                        const criticoAprimoradoDesarmado = obterReducaoCriticoParaArma(character, null, true);
+                        const finalCritMargin = Math.max(1, (character.unarmedMastery?.criticalMargin || 20) - unarmedCritBonus.critMarginBonus - criticoAprimoradoDesarmado);
                         const finalCritMultiplier = (character.unarmedMastery?.criticalMultiplier || 2) + unarmedCritBonus.critMultiplierBonus;
+
+                        const { rule, extraDice } = getRollAdvantageDisadvantage(character, 'attack', { attackType: 'melee' });
 
                         setRollingAction({
                           name: character.unarmedMastery?.customName || 'Ataque Desarmado',
@@ -511,7 +518,9 @@ export function AcoesTab({
                           critMargin: finalCritMargin,
                           critMultiplier: finalCritMultiplier,
                           efficiencyBonus: character.efficiencyBonus,
-                          tipo: 'DESARMADO'
+                          tipo: 'DESARMADO',
+                          initialRule: rule,
+                          initialExtraDice: extraDice
                         });
                       }}
                     >
@@ -643,7 +652,7 @@ export function AcoesTab({
                                   }
 
                                   if (formula) {
-                                    const customDescriptor = eff.inputCustomizado || eff.inputValue;
+                                    const customDescriptor = (eff as any).inputCustomizado || (eff as any).inputValue;
                                     const descriptorVal = customDescriptor ? String(customDescriptor).trim() : domainName;
                                     const descriptor = descriptorVal ? ` [${descriptorVal.toUpperCase()}]` : '';
                                     finalDamage += ` + ${formula}${descriptor}[Acoplado]`;
@@ -653,8 +662,15 @@ export function AcoesTab({
                             }
 
                             const itemFortalecerBonus = obterBonusFortalecerCaracteristicasItem(activePowers, itemDetail?.id);
-                            const finalCritMargin = Math.max(1, (itemDetail?.critMargin || 20) - itemFortalecerBonus.critMarginBonus);
+                            const criticoAprimoradoArma = obterReducaoCriticoParaArma(character, itemDetail || undefined);
+                            const finalCritMargin = Math.max(1, (itemDetail?.critMargin || 20) - itemFortalecerBonus.critMarginBonus - criticoAprimoradoArma);
                             const finalCritMultiplier = (itemDetail?.critMultiplier || 2) + itemFortalecerBonus.critMultiplierBonus;
+
+                            const isDistancia = isArmaDistancia(itemDetail);
+                            const isCorpoACorpo = isArmaCorpoACorpo(itemDetail);
+
+                            const attackType = isDistancia ? 'ranged' : isCorpoACorpo ? 'melee' : undefined;
+                            const { rule, extraDice } = getRollAdvantageDisadvantage(character, 'attack', { attackType });
 
                             setRollingAction({
                               name: itemDetail?.nome || 'Ataque',
@@ -666,7 +682,9 @@ export function AcoesTab({
                               efficiencyBonus: character.efficiencyBonus,
                               tipo: 'ARMA',
                               domains: weaponDomains,
-                              itemId: itemDetail?.id
+                              itemId: itemDetail?.id,
+                              initialRule: rule,
+                              initialExtraDice: extraDice
                             });
                           }}
                         >
@@ -692,6 +710,7 @@ export function AcoesTab({
             <CardContent className="space-y-4">
               <ActivePowersTracker
                 activePowers={activePowers}
+                character={character}
                 onMaintain={async (activeId) => {
                   const ap = activePowers.find(p => p.id === activeId);
                   if (ap && ap.duracao === 1) { // Concentração
@@ -920,15 +939,27 @@ export function AcoesTab({
                       })}
 
                       {/* Condições e Estados */}
-                      {character.conditions.length > 0 ? character.conditions.map((cond) => (
-                        <div key={cond} className="flex items-center gap-3 p-3 rounded-lg bg-indigo-50/30 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/20">
-                          <Activity className="w-4 h-4 text-indigo-500" />
-                          <div>
-                            <h4 className="font-bold text-sm text-indigo-900 dark:text-indigo-100">{cond}</h4>
-                            <p className="text-[10px] text-indigo-600 dark:text-indigo-400 uppercase font-bold tracking-tighter">Condição Ativa</p>
+                      {character.conditions.length > 0 ? character.conditions.map((cond) => {
+                        const condData = CONDICOES.find(c => c.nome.toLowerCase() === cond.toLowerCase());
+                        return (
+                          <div key={cond} className="flex flex-col gap-1 p-3 rounded-lg bg-indigo-50/30 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/20">
+                            <div className="flex items-center gap-3">
+                              <Activity className="w-4 h-4 text-indigo-500 animate-pulse" />
+                              <div>
+                                <h4 className="font-bold text-sm text-indigo-900 dark:text-indigo-100">{cond}</h4>
+                                <p className="text-[10px] text-indigo-600 dark:text-indigo-400 uppercase font-bold tracking-tighter">
+                                  Condição Ativa • {condData?.patamar || 'Geral'}
+                                </p>
+                              </div>
+                            </div>
+                            {condData && (
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 italic font-medium pl-7 mt-1 leading-relaxed">
+                                {renderDescriptionWithTooltips(condData.descricao, condData.nome, 'bottom')}
+                              </p>
+                            )}
                           </div>
-                        </div>
-                      )) : null}
+                        );
+                      }) : null}
 
                       {passiveEffectsToRender.length === 0 && character.conditions.length === 0 && (
                         <p className="text-sm text-gray-500 italic py-2">Nenhum efeito passivo relevante.</p>
@@ -1014,6 +1045,8 @@ export function AcoesTab({
         initialApplyEfficiency={true}
         modifierLabel="Bônus de Ataque"
         rollButtonLabel="Atacar"
+        initialRule={rollingAction?.initialRule}
+        initialExtraDice={rollingAction?.initialExtraDice}
         onRoll={() => {
           if (deactivatePower && activePowers && rollingAction) {
             const isUnarmed = rollingAction.tipo === 'DESARMADO';
@@ -1133,7 +1166,18 @@ export function AcoesTab({
             isOpen={!!viewingPower}
             onClose={() => setViewingPower(null)}
             poder={pCon}
-            detalhes={calcularDetalhesPoder(pCon, catalogEfeitos, catalogModificacoes)}
+            detalhes={(() => {
+              const baseDetails = calcularDetalhesPoder(pCon, catalogEfeitos, catalogModificacoes);
+              const hasAlquebrado = (character?.conditions || []).some((c: string) => {
+                const clean = c.includes('(') ? c.split('(')[0].trim() : c;
+                return clean === 'Alquebrado';
+              });
+              const peCostMultiplier = hasAlquebrado ? 2 : 1;
+              return {
+                ...baseDetails,
+                peTotal: baseDetails.peTotal * peCostMultiplier,
+              };
+            })()}
           />
         );
       })()}

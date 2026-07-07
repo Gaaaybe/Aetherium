@@ -239,7 +239,12 @@ export function PoderesTab({
     const detail = isNested ? power : detailedPowers[power.powerId];
     if (!detail) return null;
 
-    const peCost = calcularDetalhesPoder(poderResponseToPoder(detail as PoderResponse), catalogEfeitos, catalogModificacoes).peTotal;
+    const hasAlquebrado = (character?.conditions || []).some((c: string) => {
+      const clean = c.includes('(') ? c.split('(')[0].trim() : c;
+      return clean === 'Alquebrado';
+    });
+    const peCostMultiplier = hasAlquebrado ? 2 : 1;
+    const peCost = calcularDetalhesPoder(poderResponseToPoder(detail as PoderResponse), catalogEfeitos, catalogModificacoes).peTotal * peCostMultiplier;
 
     return (
       <Card 
@@ -370,7 +375,12 @@ export function PoderesTab({
   const renderPowerArrayCard = (array: any, isEquipped: boolean) => {
     const detail = detailedArrays[array.powerArrayId];
     const isExpanded = expandedArrays.has(array.id);
-    const peCostValue = detail?.custoTotal?.pe || detail?.peCost || 0;
+    const hasAlquebrado = (character?.conditions || []).some((c: string) => {
+      const clean = c.includes('(') ? c.split('(')[0].trim() : c;
+      return clean === 'Alquebrado';
+    });
+    const peCostMultiplier = hasAlquebrado ? 2 : 1;
+    const peCostValue = (detail?.custoTotal?.pe || detail?.peCost || 0) * peCostMultiplier;
     
     return (
       <Card 
@@ -718,7 +728,18 @@ export function PoderesTab({
           isOpen={!!viewingPower}
           onClose={() => setViewingPower(null)}
           poder={viewingPower as PoderCalculo}
-          detalhes={calcularDetalhesPoder(viewingPower as PoderCalculo, catalogEfeitos, catalogModificacoes)}
+          detalhes={(() => {
+            const baseDetails = calcularDetalhesPoder(viewingPower as PoderCalculo, catalogEfeitos, catalogModificacoes);
+            const hasAlquebrado = (character?.conditions || []).some((c: string) => {
+              const clean = c.includes('(') ? c.split('(')[0].trim() : c;
+              return clean === 'Alquebrado';
+            });
+            const peCostMultiplier = hasAlquebrado ? 2 : 1;
+            return {
+              ...baseDetails,
+              peTotal: baseDetails.peTotal * peCostMultiplier,
+            };
+          })()}
         />
       )}
 

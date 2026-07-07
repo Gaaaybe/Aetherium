@@ -15,6 +15,7 @@ import { ResumoAcervo } from '@/features/criador-de-poder/components/ResumoAcerv
 import { calcularDetalhesPoder } from '@/features/criador-de-poder/regras/calculadoraCusto';
 import { poderResponseToPoder, acervoResponseToAcervo } from '@/features/criador-de-poder/utils/poderApiConverter';
 import { useCatalog } from '@/context/useCatalog';
+import { obterGrauBeneficio, isArmaDistancia, isArmaCorpoACorpo, obterReducaoCriticoParaArma } from '@/features/ficha-personagem/utils/benefitsHelper';
 
 const TYPE_LABELS: Record<ItemType, string> = {
   weapon: 'Arma',
@@ -300,6 +301,8 @@ export function InventarioTab({
     critMargin?: number;
     critMultiplier?: number;
     efficiencyBonus?: number;
+    initialRule?: 'advantage' | 'disadvantage' | 'normal';
+    initialExtraDice?: number;
   } | null>(null);
 
   const { efeitos: catalogEfeitos, modificacoes: catalogModificacoes } = useCatalog();
@@ -760,14 +763,39 @@ export function InventarioTab({
                                   const attr = character.attributes[attrKey] as any;
                                   const mod = attr?.rollModifier || 0;
 
+                                  const isDistancia = isArmaDistancia(w);
+                                  const isCorpoACorpo = isArmaCorpoACorpo(w);
+
+                                  let initialRule: 'advantage' | 'disadvantage' | 'normal' = 'normal';
+                                  let initialExtraDice = 0;
+
+                                  if (isDistancia) {
+                                    const grau = obterGrauBeneficio(character, 'Ataque à distância aprimorado');
+                                    if (grau > 0) {
+                                      initialRule = 'advantage';
+                                      initialExtraDice = grau;
+                                    }
+                                  } else if (isCorpoACorpo) {
+                                    const grau = obterGrauBeneficio(character, 'Ataque corpo-a-corpo aprimorado');
+                                    if (grau > 0) {
+                                      initialRule = 'advantage';
+                                      initialExtraDice = grau;
+                                    }
+                                  }
+
+                                  const criticoAprimoradoArma = obterReducaoCriticoParaArma(character, w);
+                                  const finalCritMargin = Math.max(1, (w.critMargin || 20) - criticoAprimoradoArma);
+
                                   setRollingAction({
                                     name: w.nome,
                                     damage: w.danos?.map(d => d.dado).join(' + '),
                                     modifier: mod,
                                     damageModifier: mod,
-                                    critMargin: w.critMargin,
+                                    critMargin: finalCritMargin,
                                     critMultiplier: w.critMultiplier,
-                                    efficiencyBonus: character.efficiencyBonus
+                                    efficiencyBonus: character.efficiencyBonus,
+                                    initialRule,
+                                    initialExtraDice
                                   });
                                 }}
                                 className="h-7 px-3 text-[10px] font-bold border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-900/50 dark:text-indigo-400 dark:hover:bg-indigo-900/30 gap-1.5"
@@ -877,6 +905,8 @@ export function InventarioTab({
           initialApplyEfficiency={true}
           modifierLabel="Bônus de Ataque"
           rollButtonLabel="Atacar"
+          initialRule={rollingAction.initialRule}
+          initialExtraDice={rollingAction.initialExtraDice}
         />
       )}
 
@@ -901,7 +931,18 @@ export function InventarioTab({
             isOpen={!!viewingPower}
             onClose={() => setViewingPower(null)}
             poder={pCon}
-            detalhes={calcularDetalhesPoder(pCon, catalogEfeitos, catalogModificacoes)}
+            detalhes={(() => {
+              const baseDetails = calcularDetalhesPoder(pCon, catalogEfeitos, catalogModificacoes);
+              const hasAlquebrado = (character?.conditions || []).some((c: string) => {
+                const clean = c.includes('(') ? c.split('(')[0].trim() : c;
+                return clean === 'Alquebrado';
+              });
+              const peCostMultiplier = hasAlquebrado ? 2 : 1;
+              return {
+                ...baseDetails,
+                peTotal: baseDetails.peTotal * peCostMultiplier,
+              };
+            })()}
           />
         );
       })()}

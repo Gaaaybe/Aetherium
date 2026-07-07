@@ -7,7 +7,7 @@ import type { ResolvePowerResponse } from '@/services/powers.service';
 import { describeMutations } from '@/features/ficha-personagem/hooks/usePowerUsage';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { obterBonusFortalecerAtivos, obterBonusFortalecerDanoRecuperacao } from '@/features/ficha-personagem/utils/fortalecerHelper';
-import { fortaleceAlvoMatch } from '@aetherium/rules-engine';
+import { fortaleceAlvoMatch, getRollAdvantageDisadvantage } from '@aetherium/rules-engine';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -92,7 +92,13 @@ export function PowerUsageModal({
   const [formulasModularizadas, setFormulasModularizadas] = useState<Record<string, string>>({});
   const [spendPE, setSpendPE] = useState(true);
 
-  const peCost = power.custoTotal?.pe ?? 0;
+  const hasAlquebrado = (character?.conditions || []).some((c: string) => {
+    const clean = c.includes('(') ? c.split('(')[0].trim() : c;
+    return clean === 'Alquebrado';
+  });
+  const peCostMultiplier = hasAlquebrado ? 2 : 1;
+
+  const peCost = (power.custoTotal?.pe ?? 0) * peCostMultiplier;
   const effectivePECost = spendPE ? peCost : 0;
   const duracao = power.parametros.duracao;
   const hasEnoughPE = currentPE >= effectivePECost;
@@ -255,6 +261,10 @@ export function PowerUsageModal({
               size="sm"
               className="h-7 text-[10px] gap-1 px-2 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400"
               onClick={() => {
+                const { rule, extraDice } = getRollAdvantageDisadvantage(character, 'attribute', {
+                  attributeKey: isMental ? keyMental : keyFisico
+                });
+
                 setDiceRollerConfig({
                   label: `Teste de Efeito (${isMental ? 'Mental' : 'Físico'})`,
                   modifier: effTeste,
@@ -263,6 +273,8 @@ export function PowerUsageModal({
                   damageFormula: firstBaseFormula ? firstFormulaSelecionada : undefined,
                   damageModifier: firstHasBaseadoAtributos ? effTeste : 0,
                   isDanoAcoplado,
+                  initialRule: rule,
+                  initialExtraDice: extraDice,
                 });
                 setIsDiceRollerOpen(true);
               }}

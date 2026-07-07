@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { CharacterResponse, SyncCharacterData } from '@/services/characters.types';
 import { Badge, Button, DynamicIcon, Modal, Input, ModalFooter, toast } from '@/shared/ui';
-import { User, Settings, Shield, MoreHorizontal, Camera, Sparkles, Save, X, Edit2, ArrowUpCircle, Dices, Moon } from 'lucide-react';
+import { User, Settings, Shield, MoreHorizontal, Camera, Save, X, Edit2, ArrowUpCircle, Dices, Moon } from 'lucide-react';
 import { FreeDiceRollerModal } from '@/shared/components/FreeDiceRollerModal';
 import { FichaPropertiesModal } from './FichaPropertiesModal';
 
@@ -70,14 +70,30 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
   const [aspectRatio, setAspectRatio] = useState(1);
   const dragStart = useRef({ x: 0, y: 0 });
 
-  // Estados para Edição de Nome
+  // Estados para Edição de Nome e Identidade
   const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState(character.narrative.identity);
+  const [tempName, setTempName] = useState(character.narrative.name || character.narrative.identity);
+  const [isEditingIdentity, setIsEditingIdentity] = useState(false);
+  
+  const hasDistinctIdentity = character.narrative.name && character.narrative.name !== character.narrative.identity;
+  const [tempIdentity, setTempIdentity] = useState(hasDistinctIdentity ? character.narrative.identity : '');
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTempName(character.narrative.name || character.narrative.identity);
+  }, [character.narrative.name, character.narrative.identity]);
+
+  useEffect(() => {
+    const hasIdent = character.narrative.name && character.narrative.name !== character.narrative.identity;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTempIdentity(hasIdent ? character.narrative.identity : '');
+  }, [character.narrative.name, character.narrative.identity]);
 
   const [localLevel, setLocalLevel] = useState(character.level.toString());
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalLevel(character.level.toString());
   }, [character.level]);
 
@@ -92,18 +108,28 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
 
     try {
       await onSync({ level: parsed });
-    } catch (e) {
+    } catch {
       setLocalLevel(character.level.toString());
     }
   };
 
   const handleSaveName = async () => {
-    if (tempName.trim() && tempName !== character.narrative.identity) {
-      await onSync({ narrative: { ...character.narrative, identity: tempName } });
+    const currentName = character.narrative.name || character.narrative.identity;
+    if (tempName.trim() && tempName !== currentName) {
+      await onSync({ narrative: { name: tempName } });
     } else {
-      setTempName(character.narrative.identity);
+      setTempName(currentName);
     }
     setIsEditingName(false);
+  };
+
+  const handleSaveIdentity = async () => {
+    if (tempIdentity !== character.narrative.identity) {
+      await onSync({ narrative: { identity: tempIdentity } });
+    } else {
+      setTempIdentity(character.narrative.identity);
+    }
+    setIsEditingIdentity(false);
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -178,7 +204,7 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
       
       await onSync({ art: croppedUrl });
       setIsArtModalOpen(false);
-    } catch (err) {
+    } catch {
       toast.error('Erro ao salvar arte.');
     } finally {
       setIsSavingArt(false);
@@ -203,9 +229,9 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
               {character.art ? (
                 <CroppedImage 
                   src={character.art} 
-                  alt={character.narrative.identity} 
+                  alt={character.narrative.name || character.narrative.identity} 
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + character.narrative.identity;
+                    (e.target as HTMLImageElement).src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (character.narrative.name || character.narrative.identity);
                   }}
                 />
               ) : (
@@ -267,7 +293,7 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
                     <button onClick={handleSaveName} className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded">
                       <Save className="w-4 h-4 md:w-5 md:h-5" />
                     </button>
-                    <button onClick={() => { setIsEditingName(false); setTempName(character.narrative.identity); }} className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
+                    <button onClick={() => { setIsEditingName(false); setTempName(character.narrative.name || character.narrative.identity); }} className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
                       <X className="w-4 h-4 md:w-5 md:h-5" />
                     </button>
                   </div>
@@ -277,22 +303,51 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
                   className="text-lg md:text-3xl font-black text-gray-900 dark:text-white tracking-tight cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 px-2 rounded -ml-2 transition-colors flex items-center gap-2 group/text truncate"
                   onClick={() => setIsEditingName(true)}
                 >
-                  <span className="truncate">{character.narrative.identity}</span>
+                  <span className="truncate">{character.narrative.name || character.narrative.identity}</span>
                   <Edit2 className="w-4 h-4 text-gray-400 opacity-0 group-hover/text:opacity-100 transition-opacity shrink-0" />
                 </h1>
               )}
             </div>
             
             <div className="flex flex-wrap items-center gap-y-2 gap-x-2 md:gap-x-3 mt-1">
-              <span className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 w-full sm:w-auto">
-                {character.narrative.origin}
-              </span>
+              {isEditingIdentity ? (
+                <div className="flex items-center gap-1.5 animate-in fade-in duration-200">
+                  <input
+                    type="text"
+                    value={tempIdentity}
+                    onChange={(e) => setTempIdentity(e.target.value)}
+                    onBlur={handleSaveIdentity}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSaveIdentity()}
+                    className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 border-none rounded px-2 py-0.5 focus:ring-2 focus:ring-purple-500 outline-none"
+                    placeholder="Identidade (Ex: Detetive Paranormal)"
+                    autoFocus
+                  />
+                  <div className="flex shrink-0">
+                    <button onClick={handleSaveIdentity} className="p-0.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded">
+                      <Save className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => { setIsEditingIdentity(false); setTempIdentity(character.narrative.identity); }} className="p-0.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <span 
+                  className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 px-2 py-0.5 rounded transition-colors flex items-center gap-1 group/ident w-full sm:w-auto"
+                  onClick={() => setIsEditingIdentity(true)}
+                  title="Editar Identidade"
+                >
+                  <span className="truncate">
+                    {(character.narrative.name !== character.narrative.identity && character.narrative.identity) || (
+                      <span className="italic opacity-60">Sem Identidade</span>
+                    )}
+                  </span>
+                  <Edit2 className="w-3 h-3 text-gray-400 opacity-0 group-hover/ident:opacity-100 transition-opacity shrink-0" />
+                </span>
+              )}
               <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
                 <Badge variant="default" className="bg-purple-50/50 dark:bg-purple-900/10 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-400 whitespace-nowrap px-1.5 md:px-2.5">
                   Rank {character.calamityRank}
-                </Badge>
-                <Badge variant="default" className="bg-amber-50/50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 whitespace-nowrap px-1.5 md:px-2.5">
-                  {character.spiritualPrinciple.stage === 'DIVINE' ? 'Desperto' : 'Mortal'}
                 </Badge>
                 
                 <div className="flex items-center gap-1.5 px-1.5 md:px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-xs font-bold whitespace-nowrap">
@@ -325,10 +380,6 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
             <span className="text-sm font-bold">Descansar</span>
           </Button>
 
-          <Button variant="outline" size="sm" className="flex items-center gap-2 h-9 md:h-10 px-3 md:px-4 rounded-lg shrink-0">
-            <Sparkles className="w-4 h-4 text-blue-500" />
-            <span className="text-sm">Bônus Ativos</span>
-          </Button>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"

@@ -47,6 +47,9 @@ import {
   applyEquipItem,
   applyUnequipItem,
   applyRestResult,
+  calculateMovement,
+  getRollAdvantageDisadvantage,
+  getSkillRollBonus,
   RulesValidationError
 } from './character-rules.js';
 
@@ -134,12 +137,37 @@ describe('Motor de Regras de Personagem - character-rules.ts', () => {
       // Agarrado herda Desprevenido e Imóvel
       expect(hasConditionEffectOf(['Agarrado'], 'Desprevenido')).toBe(true);
       expect(hasConditionEffectOf(['Agarrado'], 'Imóvel')).toBe(true);
+
+      // Surpreendido herda Desprevenido
+      expect(hasConditionEffectOf(['Surpreendido'], 'Desprevenido')).toBe(true);
+
+      // Enredado herda Lento e Vulnerável
+      expect(hasConditionEffectOf(['Enredado'], 'Lento')).toBe(true);
+      expect(hasConditionEffectOf(['Enredado'], 'Vulnerável')).toBe(true);
+
+      // Exausto herda Debilitado, Lento e Vulnerável
+      expect(hasConditionEffectOf(['Exausto'], 'Debilitado')).toBe(true);
+      expect(hasConditionEffectOf(['Exausto'], 'Lento')).toBe(true);
+      expect(hasConditionEffectOf(['Exausto'], 'Vulnerável')).toBe(true);
+
+      // Inconsciente herda Indefeso e Desprevenido
+      expect(hasConditionEffectOf(['Inconsciente'], 'Indefeso')).toBe(true);
+      expect(hasConditionEffectOf(['Inconsciente'], 'Desprevenido')).toBe(true);
+
+      // Indefeso herda Desprevenido
+      expect(hasConditionEffectOf(['Indefeso'], 'Desprevenido')).toBe(true);
+
+      // Paralisado herda Imóvel, Indefeso e Desprevenido
+      expect(hasConditionEffectOf(['Paralisado'], 'Imóvel')).toBe(true);
+      expect(hasConditionEffectOf(['Paralisado'], 'Indefeso')).toBe(true);
+      expect(hasConditionEffectOf(['Paralisado'], 'Desprevenido')).toBe(true);
     });
 
     it('deve dobrar o dano recebido se o personagem estiver vulnerável', () => {
       expect(getIncomingDamageMultiplier([])).toBe(1);
       expect(getIncomingDamageMultiplier(['Vulnerável'])).toBe(2);
       expect(getIncomingDamageMultiplier(['Fatigado'])).toBe(2); // Fatigado herda Vulnerável
+      expect(getIncomingDamageMultiplier(['Surpreendido'])).toBe(1); // Surpreendido não herda Vulnerável
     });
 
     it('deve dobrar o custo de PE de perícias se estiver alquebrado', () => {
@@ -497,4 +525,351 @@ describe('Motor de Regras de Personagem - character-rules.ts', () => {
     });
   });
 
+  describe('Cálculo de Deslocamento e Automatizações de Condições', () => {
+    it('deve retornar deslocamento padrão de 9m se não houver condições de movimento', () => {
+      expect(calculateMovement([])).toBe(9);
+    });
+
+    it('deve reduzir o deslocamento para 1.5m se estiver Caído', () => {
+      expect(calculateMovement(['Caído'])).toBe(1.5);
+    });
+
+    it('deve reduzir o deslocamento para 0m se estiver Imóvel', () => {
+      expect(calculateMovement(['Imóvel'])).toBe(0);
+      expect(calculateMovement(['Agarrado'])).toBe(0); // Agarrado herda Imóvel
+    });
+
+    it('deve reduzir o deslocamento pela metade se estiver Lento', () => {
+      expect(calculateMovement(['Lento'])).toBe(4);
+    });
+  });
+
+  describe('Automatização de Testes com Vantagem e Desvantagem', () => {
+    it('deve calcular vantagens de benefícios', () => {
+      const char = makeFakeCharacter({
+        benefits: [
+          { name: 'Iniciativa aprimorada', degree: 2 }
+        ]
+      });
+      const res = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Iniciativa' });
+      expect(res.rule).toBe('advantage');
+      expect(res.extraDice).toBe(2);
+    });
+
+    it('deve calcular desvantagem de Abalado em perícias', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Abalado']
+      });
+      const res = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Atletismo' });
+      expect(res.rule).toBe('disadvantage');
+      expect(res.extraDice).toBe(1);
+    });
+
+    it('deve calcular desvantagem de Apavorado em perícias', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Apavorado']
+      });
+      const res = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Reflexos' });
+      expect(res.rule).toBe('disadvantage');
+      expect(res.extraDice).toBe(3);
+    });
+
+    it('deve calcular desvantagem de Fraco para perícias e atributos físicos', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Fraco'],
+        attributes: {
+          keyPhysical: 'strength',
+          keyMental: 'intelligence'
+        }
+      });
+      // Atletismo é física
+      const resSkillPhy = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Atletismo' });
+      expect(resSkillPhy.rule).toBe('disadvantage');
+      expect(resSkillPhy.extraDice).toBe(1);
+
+      // Conhecimento é mental (Fraco não afeta)
+      const resSkillMen = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Conhecimento' });
+      expect(resSkillMen.rule).toBe('normal');
+
+      // Teste de Atributo Físico (strength)
+      const resAttrPhy = getRollAdvantageDisadvantage(char, 'attribute', { attributeKey: 'strength' });
+      expect(resAttrPhy.rule).toBe('disadvantage');
+      expect(resAttrPhy.extraDice).toBe(1);
+
+      // Teste de Atributo Mental (intelligence)
+      const resAttrMen = getRollAdvantageDisadvantage(char, 'attribute', { attributeKey: 'intelligence' });
+      expect(resAttrMen.rule).toBe('normal');
+    });
+
+    it('deve calcular desvantagem de Frustrado para perícias e atributos mentais', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Frustrado'],
+        attributes: {
+          keyPhysical: 'strength',
+          keyMental: 'intelligence'
+        }
+      });
+      // Vontade é mental
+      const resSkillMen = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Vontade' });
+      expect(resSkillMen.rule).toBe('disadvantage');
+      expect(resSkillMen.extraDice).toBe(1);
+
+      // Teste de Atributo Mental (wisdom)
+      const resAttrMen = getRollAdvantageDisadvantage(char, 'attribute', { attributeKey: 'wisdom' });
+      expect(resAttrMen.rule).toBe('disadvantage');
+      expect(resAttrMen.extraDice).toBe(1);
+    });
+
+    it('deve acumular Abalado e Fraco para perícias físicas', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Abalado', 'Fraco']
+      });
+      const res = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Atletismo' });
+      expect(res.rule).toBe('disadvantage');
+      expect(res.extraDice).toBe(2); // 1 do Abalado + 1 do Fraco
+    });
+
+    it('deve calcular desvantagem de Exausto sem duplicar Fraco e Debilitado em atributos', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Exausto'],
+        attributes: {
+          keyPhysical: 'strength',
+          keyMental: 'intelligence'
+        }
+      });
+      const res = getRollAdvantageDisadvantage(char, 'attribute', { attributeKey: 'strength' });
+      expect(res.rule).toBe('disadvantage');
+      expect(res.extraDice).toBe(2); // Exausto (Debilitado) = 2 desvantagens, não 3
+    });
+
+    it('deve aplicar Apavorado e Abalado a testes de atributos', () => {
+      const charAbalado = makeFakeCharacter({
+        conditions: ['Abalado'],
+        attributes: {
+          keyPhysical: 'strength',
+          keyMental: 'intelligence'
+        }
+      });
+      const resAbalado = getRollAdvantageDisadvantage(charAbalado, 'attribute', { attributeKey: 'strength' });
+      expect(resAbalado.rule).toBe('disadvantage');
+      expect(resAbalado.extraDice).toBe(1);
+
+      const charApavorado = makeFakeCharacter({
+        conditions: ['Apavorado'],
+        attributes: {
+          keyPhysical: 'strength',
+          keyMental: 'intelligence'
+        }
+      });
+      const resApavorado = getRollAdvantageDisadvantage(charApavorado, 'attribute', { attributeKey: 'strength' });
+      expect(resApavorado.rule).toBe('disadvantage');
+      expect(resApavorado.extraDice).toBe(3);
+    });
+
+    it('deve cancelar vantagens e desvantagens', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Abalado'],
+        benefits: [
+          { name: 'Iniciativa aprimorada', degree: 2 }
+        ]
+      });
+      const res = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Iniciativa' });
+      expect(res.rule).toBe('advantage');
+      expect(res.extraDice).toBe(1); // 2 vantagem - 1 desvantagem = 1 vantagem
+    });
+
+    it('deve calcular Caído para ataque corpo-a-corpo', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Caído']
+      });
+      // Corpo a corpo
+      const resMelee = getRollAdvantageDisadvantage(char, 'attack', { attackType: 'melee' });
+      expect(resMelee.rule).toBe('disadvantage');
+      expect(resMelee.extraDice).toBe(2);
+
+      // À distância (Caído não afeta diretamente desvantagem de à distância)
+      const resRanged = getRollAdvantageDisadvantage(char, 'attack', { attackType: 'ranged' });
+      expect(resRanged.rule).toBe('normal');
+    });
+
+    it('deve calcular Ofuscado para testes de ataque e Percepção', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Ofuscado']
+      });
+
+      // Ataque melee
+      const resAttackMelee = getRollAdvantageDisadvantage(char, 'attack', { attackType: 'melee' });
+      expect(resAttackMelee.rule).toBe('disadvantage');
+      expect(resAttackMelee.extraDice).toBe(1);
+
+      // Ataque ranged
+      const resAttackRanged = getRollAdvantageDisadvantage(char, 'attack', { attackType: 'ranged' });
+      expect(resAttackRanged.rule).toBe('disadvantage');
+      expect(resAttackRanged.extraDice).toBe(1);
+
+      // Percepção
+      const resSkillPerc = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Percepção' });
+      expect(resSkillPerc.rule).toBe('disadvantage');
+      expect(resSkillPerc.extraDice).toBe(1);
+
+      // Iniciativa (outra perícia)
+      const resSkillIni = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Iniciativa' });
+      expect(resSkillIni.rule).toBe('normal');
+    });
+
+    it('deve calcular Surdo para testes de Iniciativa', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Surdo']
+      });
+
+      // Iniciativa
+      const resSkillIni = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Iniciativa' });
+      expect(resSkillIni.rule).toBe('disadvantage');
+      expect(resSkillIni.extraDice).toBe(2);
+
+      // Percepção (outra perícia)
+      const resSkillPerc = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Percepção' });
+      expect(resSkillPerc.rule).toBe('normal');
+    });
+
+    it('deve calcular Debilitado para atributos físicos e perícias físicas', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Debilitado']
+      });
+
+      // Atleta (Perícia física baseada em Força)
+      const resSkill = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Atletismo' });
+      expect(resSkill.rule).toBe('disadvantage');
+      expect(resSkill.extraDice).toBe(2);
+
+      // Inteligência (Perícia mental)
+      const resSkillMental = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Conhecimento' });
+      expect(resSkillMental.rule).toBe('normal');
+
+      // Força (Atributo físico)
+      const resAttr = getRollAdvantageDisadvantage(char, 'attribute', { attributeKey: 'strength' });
+      expect(resAttr.rule).toBe('disadvantage');
+      expect(resAttr.extraDice).toBe(2);
+    });
+
+    it('deve calcular Esmorecido para atributos mentais e perícias mentais', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Esmorecido']
+      });
+
+      // Diplomacia (Perícia mental baseada em Carisma)
+      const resSkill = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Diplomacia' });
+      expect(resSkill.rule).toBe('disadvantage');
+      expect(resSkill.extraDice).toBe(2);
+
+      // Atletismo (Perícia física)
+      const resSkillPhys = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Atletismo' });
+      expect(resSkillPhys.rule).toBe('normal');
+
+      // Inteligência (Atributo mental)
+      const resAttr = getRollAdvantageDisadvantage(char, 'attribute', { attributeKey: 'intelligence' });
+      expect(resAttr.rule).toBe('disadvantage');
+      expect(resAttr.extraDice).toBe(2);
+    });
+
+    it('deve limpar parênteses ao verificar condições ativas', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Privado (Olfato)', 'Abalado (Leve)']
+      });
+
+      expect(hasConditionEffectOf(char.conditions, 'Privado')).toBe(true);
+      expect(hasConditionEffectOf(char.conditions, 'Abalado')).toBe(true);
+    });
+
+    it('deve aplicar +2 desvantagens em Percepção se estiver Fascinado', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Fascinado']
+      });
+
+      const res = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Percepção' });
+      expect(res.rule).toBe('disadvantage');
+      expect(res.extraDice).toBe(2);
+    });
+
+    it('deve aplicar +2 desvantagens em perícias baseadas em Força ou Destreza se estiver Cego', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Cego']
+      });
+
+      // Atletismo (Força)
+      const resAth = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Atletismo' });
+      expect(resAth.rule).toBe('disadvantage');
+      expect(resAth.extraDice).toBe(2);
+
+      // Furtividade (Destreza)
+      const resSte = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Furtividade' });
+      expect(resSte.rule).toBe('disadvantage');
+      expect(resSte.extraDice).toBe(2);
+
+      // Cura (Sabedoria - Cego não afeta diretamente)
+      const resHeal = getRollAdvantageDisadvantage(char, 'skill', { skillName: 'Cura' });
+      expect(resHeal.rule).toBe('normal');
+    });
+
+    it('deve aplicar +1 desvantagem em testes de ataque se estiver Agarrado', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Agarrado']
+      });
+
+      const resMelee = getRollAdvantageDisadvantage(char, 'attack', { attackType: 'melee' });
+      expect(resMelee.rule).toBe('disadvantage');
+      expect(resMelee.extraDice).toBe(1);
+
+      const resRanged = getRollAdvantageDisadvantage(char, 'attack', { attackType: 'ranged' });
+      expect(resRanged.rule).toBe('disadvantage');
+      expect(resRanged.extraDice).toBe(1);
+    });
+
+    it('deve aplicar +1 desvantagem em testes de ataque se estiver Enredado', () => {
+      const char = makeFakeCharacter({
+        conditions: ['Enredado']
+      });
+
+      const resMelee = getRollAdvantageDisadvantage(char, 'attack', { attackType: 'melee' });
+      expect(resMelee.rule).toBe('disadvantage');
+      expect(resMelee.extraDice).toBe(1);
+
+      const resRanged = getRollAdvantageDisadvantage(char, 'attack', { attackType: 'ranged' });
+      expect(resRanged.rule).toBe('disadvantage');
+      expect(resRanged.extraDice).toBe(1);
+    });
+
+    it('deve cortar o bônus de Reflexos e Fortitude pela metade se estiver Desprevenido', () => {
+      const char = makeFakeCharacter({
+        level: 5,
+        conditions: ['Desprevenido'],
+        skills: {
+          Reflexos: { proficiencyState: 'TRAINED', trainingBonus: 5, extraBonus: 3 },
+          Fortitude: { proficiencyState: 'TRAINED', trainingBonus: 4, extraBonus: 2 }
+        }
+      });
+
+      // Reflexos base: dex (2) + training (5) + extra (3) = 10. Com Desprevenido: 10 / 2 = 5
+      const reflexosBonus = getSkillRollBonus(
+        char.skills,
+        'Reflexos',
+        char.level,
+        2,
+        char.conditions
+      );
+      expect(reflexosBonus).toBe(5);
+
+      // Fortitude base: con (1) + training (4) + extra (2) = 7. Com Desprevenido: 7 / 2 = 3
+      const fortitudeBonus = getSkillRollBonus(
+        char.skills,
+        'Fortitude',
+        char.level,
+        1,
+        char.conditions
+      );
+      expect(fortitudeBonus).toBe(3);
+    });
+  });
+
 });
+

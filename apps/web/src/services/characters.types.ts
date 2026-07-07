@@ -83,10 +83,12 @@ export interface CharacterResponse {
   calamityRank: string;
   efficiencyBonus: number;
   narrative: {
+    name: string;
     identity: string;
     origin: string;
     motivations: string[];
     complications: string[];
+    generalNotes: string;
   };
   attributes: CharacterAttributesResponse;
   skills: CharacterSkillResponse[];
@@ -152,10 +154,11 @@ export interface CharacterResponse {
 
 export interface SyncCharacterData {
   narrative?: {
-    identity: string;
-    origin: string;
-    motivations: string[];
-    complications: string[];
+    name?: string;
+    identity?: string;
+    origin?: string;
+    motivations?: string[];
+    complications?: string[];
     generalNotes?: string;
   };
   symbol?: string | null;

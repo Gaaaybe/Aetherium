@@ -5,9 +5,10 @@ export const COMPOSITE_CONDITIONS: Record<string, string[]> = {
   Atordoado: ['Desprevenido'],
   Cego: ['Desprevenido', 'Lento'],
   Surpreendido: ['Desprevenido'],
-  Inconsciente: ['Indefeso'],
+  Inconsciente: ['Indefeso', 'Desprevenido'],
   Indefeso: ['Desprevenido'],
-  Paralisado: ['Imóvel', 'Indefeso'],
+  Paralisado: ['Imóvel', 'Indefeso', 'Desprevenido'],
+  Enredado: ['Lento', 'Vulnerável'],
 };
 
 export class RulesValidationError extends Error {
@@ -26,11 +27,14 @@ export function getAttributeRollModifier(attr: { baseValue: number; extraBonus?:
 }
 
 export function hasConditionEffectOf(activeConditions: string[], condition: string): boolean {
-  if (activeConditions.includes(condition)) return true;
+  const cleanCondition = condition.includes('(') ? condition.split('(')[0].trim() : condition;
 
   for (const active of activeConditions) {
-    const inherited = COMPOSITE_CONDITIONS[active];
-    if (inherited && inherited.includes(condition)) {
+    const activeName = active.includes('(') ? active.split('(')[0].trim() : active;
+    if (activeName === cleanCondition) return true;
+
+    const inherited = COMPOSITE_CONDITIONS[activeName];
+    if (inherited && inherited.includes(cleanCondition)) {
       return true;
     }
   }
@@ -51,6 +55,233 @@ export function getGeneralDisadvantageCount(activeConditions: string[]): number 
   return 0;
 }
 
+export const PHYSICAL_ATTRIBUTES = ['strength', 'dexterity', 'constitution'];
+export const MENTAL_ATTRIBUTES = ['intelligence', 'wisdom', 'charisma'];
+
+export const SKILL_TO_ATTRIBUTE_KEY: Record<string, string> = {
+  'Atletismo': 'strength',
+  'Acrobacia': 'dexterity',
+  'Cavalgar': 'dexterity',
+  'Furtividade': 'dexterity',
+  'Iniciativa': 'dexterity',
+  'Ladinagem': 'dexterity',
+  'Pilotar': 'dexterity',
+  'Reflexos': 'dexterity',
+  'Fortitude': 'constitution',
+  'Conhecimento': 'intelligence',
+  'Espiritismo': 'intelligence',
+  'Investigação': 'intelligence',
+  'Adestrar Animais': 'wisdom',
+  'Cura': 'wisdom',
+  'Exploração': 'wisdom',
+  'Intuição': 'wisdom',
+  'Percepção': 'wisdom',
+  'Religião': 'wisdom',
+  'Sobrevivência': 'wisdom',
+  'Atuação': 'charisma',
+  'Diplomacia': 'charisma',
+  'Enganação': 'charisma',
+  'Intimidação': 'charisma',
+  'Vontade': 'charisma',
+};
+
+export function calculateMovement(activeConditions: string[]): number {
+  if (hasConditionEffectOf(activeConditions, 'Imóvel')) {
+    return 0;
+  }
+  if (hasConditionEffectOf(activeConditions, 'Caído')) {
+    return 1.5;
+  }
+  let baseMovement = 9;
+  if (hasConditionEffectOf(activeConditions, 'Lento')) {
+    baseMovement = Math.floor(baseMovement / 2);
+  }
+  return baseMovement;
+}
+
+export function getRollAdvantageDisadvantage(
+  character: any,
+  rollType: 'skill' | 'attribute' | 'attack',
+  options?: {
+    skillName?: string;
+    attributeKey?: string;
+    attackType?: 'melee' | 'ranged';
+  }
+): { rule: 'advantage' | 'disadvantage' | 'normal'; extraDice: number } {
+  let advantages = 0;
+  let disadvantages = 0;
+
+  const conditions = character.conditions || [];
+
+  if (rollType === 'skill' && options?.skillName) {
+    const skillName = options.skillName;
+
+    // 1. Abalado / Apavorado (general skill disadvantages)
+    if (hasConditionEffectOf(conditions, 'Apavorado')) {
+      disadvantages += 3;
+    } else if (hasConditionEffectOf(conditions, 'Abalado')) {
+      disadvantages += 1;
+    }
+
+    // Determine if physical or mental skill
+    let isPhysical = false;
+    let isMental = false;
+
+    if (skillName === 'Atletismo') {
+      isPhysical = true;
+    } else if (skillName === 'Espiritismo') {
+      isMental = true;
+    } else {
+      const attrKey = SKILL_TO_ATTRIBUTE_KEY[skillName];
+      if (attrKey) {
+        if (PHYSICAL_ATTRIBUTES.includes(attrKey)) {
+          isPhysical = true;
+        } else if (MENTAL_ATTRIBUTES.includes(attrKey)) {
+          isMental = true;
+        }
+      }
+    }
+
+    // 2. Fraco (physical skills)
+    if (isPhysical) {
+      if (hasConditionEffectOf(conditions, 'Debilitado')) {
+        disadvantages += 2;
+      } else if (hasConditionEffectOf(conditions, 'Fraco')) {
+        disadvantages += 1;
+      }
+    }
+
+    // 3. Frustrado (mental skills)
+    if (isMental) {
+      if (hasConditionEffectOf(conditions, 'Esmorecido')) {
+        disadvantages += 2;
+      } else if (hasConditionEffectOf(conditions, 'Frustrado')) {
+        disadvantages += 1;
+      }
+    }
+
+    // 4. Benefits
+    if (skillName === 'Iniciativa') {
+      const benefit = (character.benefits || []).find(
+        (b: any) => b.name.trim().toLowerCase() === 'iniciativa aprimorada'
+      );
+      if (benefit) {
+        advantages += Math.min(5, benefit.degree);
+      }
+    } else if (skillName === 'Reflexos') {
+      const benefit = (character.benefits || []).find(
+        (b: any) => b.name.trim().toLowerCase() === 'rolamento defensivo'
+      );
+      if (benefit) {
+        advantages += Math.min(3, benefit.degree);
+      }
+    }
+
+    // 5. Ofuscado (Percepção)
+    if (skillName === 'Percepção' && hasConditionEffectOf(conditions, 'Ofuscado')) {
+      disadvantages += 1;
+    }
+
+    // 6. Surdo (Iniciativa)
+    if (skillName === 'Iniciativa' && hasConditionEffectOf(conditions, 'Surdo')) {
+      disadvantages += 2;
+    }
+
+    // 7. Fascinado (Percepção)
+    if (skillName === 'Percepção' && hasConditionEffectOf(conditions, 'Fascinado')) {
+      disadvantages += 2;
+    }
+
+    // 8. Cego (+2 disadvantages to Strength or Dexterity based skills)
+    const skillAttr = SKILL_TO_ATTRIBUTE_KEY[skillName];
+    if ((skillAttr === 'strength' || skillAttr === 'dexterity') && hasConditionEffectOf(conditions, 'Cego')) {
+      disadvantages += 2;
+    }
+  }
+
+  if (rollType === 'attribute' && options?.attributeKey) {
+    const attrKey = options.attributeKey;
+    const isPhysical = PHYSICAL_ATTRIBUTES.includes(attrKey) || attrKey === character.attributes?.keyPhysical;
+    const isMental = MENTAL_ATTRIBUTES.includes(attrKey) || attrKey === character.attributes?.keyMental;
+
+    // Abalado / Apavorado (general disadvantages apply to attributes too)
+    if (hasConditionEffectOf(conditions, 'Apavorado')) {
+      disadvantages += 3;
+    } else if (hasConditionEffectOf(conditions, 'Abalado')) {
+      disadvantages += 1;
+    }
+
+    // 1. Fraco (physical attributes)
+    if (isPhysical) {
+      if (hasConditionEffectOf(conditions, 'Debilitado')) {
+        disadvantages += 2;
+      } else if (hasConditionEffectOf(conditions, 'Fraco')) {
+        disadvantages += 1;
+      }
+    }
+
+    // 2. Frustrado (mental attributes)
+    if (isMental) {
+      if (hasConditionEffectOf(conditions, 'Esmorecido')) {
+        disadvantages += 2;
+      } else if (hasConditionEffectOf(conditions, 'Frustrado')) {
+        disadvantages += 1;
+      }
+    }
+  }
+
+  if (rollType === 'attack' && options?.attackType) {
+    const attackType = options.attackType;
+
+    // 1. Caído (+2 disadvantages to melee attacks)
+    if (attackType === 'melee' && hasConditionEffectOf(conditions, 'Caído')) {
+      disadvantages += 2;
+    }
+
+    // 2. Ofuscado (+1 disadvantage to all attacks)
+    if (hasConditionEffectOf(conditions, 'Ofuscado')) {
+      disadvantages += 1;
+    }
+
+    // 3. Benefits
+    if (attackType === 'melee') {
+      const benefit = (character.benefits || []).find(
+        (b: any) => b.name.trim().toLowerCase() === 'ataque corpo-a-corpo aprimorado'
+      );
+      if (benefit) {
+        advantages += benefit.degree;
+      }
+    } else if (attackType === 'ranged') {
+      const benefit = (character.benefits || []).find(
+        (b: any) => b.name.trim().toLowerCase() === 'ataque à distância aprimorado'
+      );
+      if (benefit) {
+        advantages += benefit.degree;
+      }
+    }
+
+    // 4. Agarrado (+1 disadvantage to all attacks)
+    if (hasConditionEffectOf(conditions, 'Agarrado')) {
+      disadvantages += 1;
+    }
+
+    // 5. Enredado (+1 disadvantage to all attacks)
+    if (hasConditionEffectOf(conditions, 'Enredado')) {
+      disadvantages += 1;
+    }
+  }
+
+  // Calculate Net
+  const net = advantages - disadvantages;
+  if (net > 0) {
+    return { rule: 'advantage', extraDice: net };
+  } else if (net < 0) {
+    return { rule: 'disadvantage', extraDice: -net };
+  } else {
+    return { rule: 'normal', extraDice: 0 };
+  }
+}
+
 export function getEfficiencyBonus(level: number): number {
   return Math.round(3000 * (level / 250) ** 2) + 1;
 }
@@ -60,7 +291,7 @@ export function getSkillRollBonus(
   skillName: string,
   level: number,
   baseAttributeModifier: number,
-  activeConditions: string[],
+  _activeConditions: string[],
   includeExtraBonus = true,
 ): number {
   const skill = skills[skillName];
@@ -82,7 +313,11 @@ export function getSkillRollBonus(
     finalBonus -= Math.round(effBonus / 2);
   }
 
-  return finalBonus - getGeneralDisadvantageCount(activeConditions);
+  if ((skillName === 'Fortitude' || skillName === 'Reflexos') && hasConditionEffectOf(_activeConditions, 'Desprevenido')) {
+    finalBonus = Math.floor(finalBonus / 2);
+  }
+
+  return finalBonus;
 }
 
 export function calculateTotalPda(level: number, extraPda = 0): number {

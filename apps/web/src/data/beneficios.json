@@ -137,7 +137,7 @@
     "tipo": "combate",
     "graus": "Vários",
     "descricao": "Transforma uma ação padrão ou de movimento específica de combate em uma ação livre, uma vez por rodada.",
-    "regra_custo": "linear"
+    "regra_custo": "dobro_por_grau"
   },
   {
     "nome": "Atraente",
@@ -185,7 +185,7 @@
     "nome": "Crítico aprimorado para",
     "tipo": "combate",
     "graus": 3,
-    "descricao": "Reduz a margem de ameaça de crítico de um domínio específico em -1 por grau, até um máximo de -3.",
+    "descricao": "Aumente sua taxa de crítico para ataques simples de um domínio específico (escolhido ao adquirir) em -1. Cada grau adicional aumenta sua taxa de crítico com um mesmo domínio em -1 (máx. 3 graus/redução de -3).",
     "regra_custo": "linear"
   },
   {

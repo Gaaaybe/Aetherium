@@ -73,7 +73,7 @@ export function MasterDashboardPage() {
                 {character.art ? (
                   <CroppedImage 
                     src={character.art} 
-                    alt={character.narrative.identity} 
+                    alt={character.narrative.name || character.narrative.identity} 
                     className="w-full h-full opacity-60 dark:opacity-80 group-hover:opacity-75 transition-all duration-700" 
                   />
                 ) : (
@@ -116,11 +116,11 @@ export function MasterDashboardPage() {
                 </div>
                 
                 <h3 className="font-extrabold text-2xl md:text-3xl text-white tracking-tight line-clamp-1 drop-shadow-md mb-1">
-                  {character.narrative.identity || "Personagem sem Nome"}
+                  {character.narrative.name || character.narrative.identity || "Personagem sem Nome"}
                 </h3>
                 <div className="text-sm text-gray-300 font-medium mb-4 drop-shadow-sm flex items-center gap-1.5 line-clamp-1">
                    <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.8)]" />
-                   {character.narrative.origin || "Origem Indefinida"}
+                   {character.narrative.identity || "Sem Identidade"}
                 </div>
 
                 <div className="flex gap-2">

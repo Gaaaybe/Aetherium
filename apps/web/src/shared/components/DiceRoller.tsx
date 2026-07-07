@@ -23,6 +23,8 @@ interface DiceRollerProps {
   applyLabel?: string;
   onRoll?: () => void;
   isDanoAcoplado?: boolean;
+  initialRule?: 'advantage' | 'disadvantage' | 'normal';
+  initialExtraDice?: number;
 }
 
 export function DiceRoller({ 
@@ -45,13 +47,15 @@ export function DiceRoller({
   applyLabel,
   onRoll,
   isDanoAcoplado = false,
+  initialRule = 'normal',
+  initialExtraDice = 0,
 }: DiceRollerProps) {
   const [attackRoll, setAttackRoll] = useState<(RollResult & { efficiency?: number, manual?: number }) | null>(null);
   const [damageRoll, setDamageRoll] = useState<{ total: number; rolls: number[]; modifier: number; multiplier: number; components?: Array<{ value: number; label: string }> } | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   
-  const [extraDice, setExtraDice] = useState(0);
-  const [rule, setRule] = useState<'advantage' | 'disadvantage' | 'normal'>('normal');
+  const [extraDice, setExtraDice] = useState(initialExtraDice);
+  const [rule, setRule] = useState<'advantage' | 'disadvantage' | 'normal'>(initialRule);
 
   const [applyEfficiency, setApplyEfficiency] = useState(initialApplyEfficiency);
   const [manualModifier, setManualModifier] = useState(0);
@@ -72,8 +76,10 @@ export function DiceRoller({
       setManualDamageModifier(0);
       setLocalFormula(damageFormula);
       setLocalDamageMod(damageModifier);
+      setRule(initialRule);
+      setExtraDice(initialExtraDice);
     }
-  }, [isOpen, initialApplyEfficiency, label, damageFormula, damageModifier]);
+  }, [isOpen, initialApplyEfficiency, label, damageFormula, damageModifier, initialRule, initialExtraDice]);
 
   const handleRollAttack = () => {
     setIsRolling(true);
