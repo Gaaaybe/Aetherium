@@ -45,7 +45,7 @@ export function AnotacoesTab({ character, onSync }: AnotacoesTabProps) {
     content: character.narrative.generalNotes || '',
     editorProps: {
       attributes: {
-        class: 'prose dark:prose-invert max-w-none focus:outline-none min-h-[400px] p-6 text-gray-700 dark:text-gray-300 custom-scrollbar overflow-y-auto leading-relaxed',
+        class: 'prose dark:prose-invert max-w-none focus:outline-none min-h-[400px] p-6 text-gray-700 dark:text-gray-300 custom-scrollbar overflow-y-auto leading-relaxed break-words',
       },
     },
     onUpdate: () => {

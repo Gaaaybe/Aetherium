@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CharacterResponse } from '@/services/characters.types';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button, DynamicIcon, toast } from '@/shared/ui';
-import { Sword, Zap, Shield, Repeat, Package, Activity, Dices, Plus, Minus, RotateCcw, Search } from 'lucide-react';
+import { Sword, Zap, Shield, Repeat, Package, Activity, Dices, Plus, Minus, RotateCcw, Search, Hand } from 'lucide-react';
 import { ACOES_COMBATE, buscarGrauNaTabela, CONDICOES } from '@/data';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { getItemById } from '@/services/items.service';
@@ -434,7 +434,7 @@ export function AcoesTab({
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* ─── Ações Ativas (Itens e Poderes) ─────────────────────────────── */}
         <div className="space-y-6">
           <Card className="border-none shadow-md bg-white dark:bg-gray-900">
@@ -447,155 +447,140 @@ export function AcoesTab({
             <CardContent>
               <div className="space-y-2">
                 {/* --- ATAQUE DESARMADO (Universal) --- */}
-                <div className="flex items-center justify-between p-3 rounded-lg bg-red-50/10 dark:bg-red-900/10 border border-red-100/50 dark:border-red-900/20 group hover:border-red-500/30 transition-all gap-4">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="p-1.5 rounded-xl bg-white dark:bg-gray-800 border-none shadow-sm group-hover:scale-110 transition-transform flex items-center justify-center overflow-hidden flex-shrink-0">
-                      <DynamicIcon name="Hand" className="w-5 h-5 text-red-500" />
-                    </div>
-                    <div className="flex flex-col justify-center min-w-0">
-                      <div className="flex items-center gap-2 leading-tight">
-                        <h4 className="font-black text-xs text-gray-900 dark:text-gray-100 uppercase tracking-tight truncate">
-                          {character.unarmedMastery?.customName || 'Ataque Desarmado'}
-                        </h4>
-                        <Badge variant="secondary" className="h-3.5 px-1 text-[7px] font-black bg-gray-100 dark:bg-gray-800 text-gray-500 border-none uppercase flex-shrink-0">
-                          Grau {character.unarmedMastery?.degree || 0}
-                        </Badge>
+                {(() => {
+                  const unarmedCritBonus = obterBonusFortalecerCaracteristicasDesarmado(activePowers);
+                  const criticoAprimoradoDesarmado = obterReducaoCriticoParaArma(character, null, true);
+                  const finalCritMargin = Math.max(1, (character.unarmedMastery?.criticalMargin || 20) - unarmedCritBonus.critMarginBonus - criticoAprimoradoDesarmado);
+                  const finalCritMultiplier = (character.unarmedMastery?.criticalMultiplier || 2) + unarmedCritBonus.critMultiplierBonus;
+
+                  return (
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-red-50/10 dark:bg-red-900/10 border border-red-100/50 dark:border-red-900/20 group hover:border-red-500/30 transition-all gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-11 h-11 rounded-xl bg-red-50 dark:bg-red-950/20 shadow-sm group-hover:scale-110 transition-transform flex items-center justify-center overflow-hidden shrink-0">
+                          <Hand className="w-6 h-6 text-red-500" />
+                        </div>
+                        <div className="flex flex-col justify-center min-w-0 flex-1">
+                          <div className="flex items-center gap-2 leading-tight flex-wrap">
+                            <h4 className="font-black text-xs text-gray-900 dark:text-gray-100 uppercase tracking-tight truncate">
+                              {character.unarmedMastery?.customName || 'Ataque Desarmado'}
+                            </h4>
+                          </div>
+                          <div className="flex items-center gap-x-1.5 gap-y-1 flex-wrap mt-0.5 min-w-0">
+                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter truncate shrink-0">
+                              {character.unarmedMastery?.damageDie || '1d2'} {character.unarmedMastery?.damageType || 'Impacto'}
+                            </p>
+                            <Badge className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1.5 shrink-0">
+                              CRIT: {finalCritMargin}+ / x{finalCritMultiplier}
+                            </Badge>
+                            <Badge variant="secondary" className="h-3.5 px-1.5 text-[8px] font-black bg-gray-100 dark:bg-gray-800 text-gray-500 border-none uppercase flex-shrink-0">
+                              Grau {character.unarmedMastery?.degree || 0}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter mt-0.5 truncate">
-                          {character.unarmedMastery?.damageDie || '1d2'} {character.unarmedMastery?.damageType || 'Impacto'}
-                        </p>
-                        {(() => {
-                          const unarmedCritBonus = obterBonusFortalecerCaracteristicasDesarmado(activePowers);
-                          if (unarmedCritBonus.critMarginBonus > 0 || unarmedCritBonus.critMultiplierBonus > 0) {
-                            const finalCritMargin = Math.max(1, (character.unarmedMastery?.criticalMargin || 20) - unarmedCritBonus.critMarginBonus);
-                            const finalCritMultiplier = (character.unarmedMastery?.criticalMultiplier || 2) + unarmedCritBonus.critMultiplierBonus;
-                            return (
-                              <Badge className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1">
-                                CRIT: {finalCritMargin}+ / x{finalCritMultiplier}
-                              </Badge>
-                            );
-                          }
-                          return null;
-                        })()}
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 px-2.5 text-[10px] font-bold border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 gap-1 active:scale-95"
+                          onClick={() => {
+                            const attrKey = character.attributes.keyPhysical || 'strength';
+                            const mod = (character.attributes[attrKey] as any)?.rollModifier || 0;
+
+                            const baseDamage = character.unarmedMastery?.damageDie || '1d2';
+                            const fortalecerBonuses = obterBonusFortalecerDanoRecuperacao(activePowers, {
+                              tipo: 'DESARMADO'
+                            }, character);
+
+                            let finalDamage = baseDamage;
+                            for (const fb of fortalecerBonuses) {
+                              if (fb.configId === 'dano') {
+                                const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
+                                finalDamage += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
+                              }
+                            }
+
+                            const { rule, extraDice } = getRollAdvantageDisadvantage(character, 'attack', { attackType: 'melee' });
+
+                            setRollingAction({
+                              name: character.unarmedMastery?.customName || 'Ataque Desarmado',
+                              damage: finalDamage,
+                              modifier: mod,
+                              damageModifier: mod,
+                              critMargin: finalCritMargin,
+                              critMultiplier: finalCritMultiplier,
+                              efficiencyBonus: character.efficiencyBonus,
+                              tipo: 'DESARMADO',
+                              initialRule: rule,
+                              initialExtraDice: extraDice
+                            });
+                          }}
+                        >
+                          <Dices className="w-3.5 h-3.5" /> Atacar
+                        </Button>
+                        
+                        {/* Só exibe evolução se possuir o domínio */}
+                        {character.domainMasteries?.some(d => d.domainId === 'desarmado' || d.nome?.includes('Desarmado')) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 !p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-90 flex items-center justify-center"
+                            onClick={() => setIsUnarmedModalOpen(true)}
+                            title="Evoluir Domínio Desarmado"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 px-2 text-[9px] font-black border-red-200 dark:border-red-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 gap-1 active:scale-95 uppercase"
-                      onClick={() => {
-                        const attrKey = character.attributes.keyPhysical || 'strength';
-                        const mod = (character.attributes[attrKey] as any)?.rollModifier || 0;
-
-                        const baseDamage = character.unarmedMastery?.damageDie || '1d2';
-                        const fortalecerBonuses = obterBonusFortalecerDanoRecuperacao(activePowers, {
-                          tipo: 'DESARMADO'
-                        }, character);
-
-                        let finalDamage = baseDamage;
-                        for (const fb of fortalecerBonuses) {
-                          if (fb.configId === 'dano') {
-                            const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
-                            finalDamage += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
-                          }
-                        }
-
-                        const unarmedCritBonus = obterBonusFortalecerCaracteristicasDesarmado(activePowers);
-                        const criticoAprimoradoDesarmado = obterReducaoCriticoParaArma(character, null, true);
-                        const finalCritMargin = Math.max(1, (character.unarmedMastery?.criticalMargin || 20) - unarmedCritBonus.critMarginBonus - criticoAprimoradoDesarmado);
-                        const finalCritMultiplier = (character.unarmedMastery?.criticalMultiplier || 2) + unarmedCritBonus.critMultiplierBonus;
-
-                        const { rule, extraDice } = getRollAdvantageDisadvantage(character, 'attack', { attackType: 'melee' });
-
-                        setRollingAction({
-                          name: character.unarmedMastery?.customName || 'Ataque Desarmado',
-                          damage: finalDamage,
-                          modifier: mod,
-                          damageModifier: mod,
-                          critMargin: finalCritMargin,
-                          critMultiplier: finalCritMultiplier,
-                          efficiencyBonus: character.efficiencyBonus,
-                          tipo: 'DESARMADO',
-                          initialRule: rule,
-                          initialExtraDice: extraDice
-                        });
-                      }}
-                    >
-                      <Dices className="w-3 h-3" /> Atacar
-                    </Button>
-                    
-                    {/* Só exibe evolução se possuir o domínio */}
-                    {character.domainMasteries?.some(d => d.domainId === 'desarmado' || d.nome?.includes('Desarmado')) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 !p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-90"
-                        onClick={() => setIsUnarmedModalOpen(true)}
-                        title="Evoluir Domínio Desarmado"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
+                  );
+                })()}
 
                 <div className="h-px bg-gray-100 dark:bg-gray-800 my-2" />
 
                 {equippedItems.length > 0 ? equippedItems.map((item, idx) => {
                   const itemDetail = detailedItems[item.itemId] as WeaponItemResponse | undefined;
+                  if (!itemDetail) return null;
+
+                  const itemFortalecerBonus = obterBonusFortalecerCaracteristicasItem(activePowers, itemDetail.id);
+                  const criticoAprimoradoArma = obterReducaoCriticoParaArma(character, itemDetail);
+                  const finalCritMargin = Math.max(1, (itemDetail.critMargin || 20) - itemFortalecerBonus.critMarginBonus - criticoAprimoradoArma);
+                  const finalCritMultiplier = (itemDetail.critMultiplier || 2) + itemFortalecerBonus.critMultiplierBonus;
 
                   return (
-                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 group hover:border-indigo-500/30 transition-all">
+                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 group hover:border-indigo-500/30 transition-all gap-3">
                       <div 
-                        className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity"
+                        className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer hover:opacity-85 transition-opacity"
                         onClick={() => itemDetail && setViewingItem(itemDetail)}
                         title="Ver detalhes do equipamento"
                       >
-                        <div className="p-1 rounded-lg bg-white dark:bg-gray-900 border-[0.5px] border-gray-200 dark:border-gray-800 shadow-sm group-hover:scale-110 transition-transform flex items-center justify-center overflow-hidden">
-                          {itemDetail?.icone ? (
-                            <DynamicIcon name={itemDetail.icone} className="w-7 h-7 text-gray-400 group-hover:text-purple-500 transition-colors" />
+                        <div className="w-11 h-11 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/80 shadow-sm group-hover:scale-110 transition-transform flex items-center justify-center overflow-hidden shrink-0">
+                          {itemDetail?.icone && (itemDetail.icone.startsWith('http') || itemDetail.icone.startsWith('/')) ? (
+                            <DynamicIcon name={itemDetail.icone} className="w-full h-full object-cover rounded-lg" />
                           ) : (
-                            <Sword className="w-7 h-7 text-gray-400 group-hover:text-purple-500 transition-colors" />
+                            <Sword className="w-6 h-6 text-slate-500 dark:text-slate-400" />
                           )}
                         </div>
-                        <div>
-                          <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100 italic">
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100 italic truncate">
                             {itemDetail?.nome || item.itemId}
                           </h4>
-                          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">
+                          <div className="flex items-center gap-x-1.5 gap-y-1 flex-wrap mt-0.5 min-w-0">
+                            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight shrink-0">
                               {itemDetail?.danos?.map(d => d.dado).join(' + ') || 'Arma Atacante'}
                             </p>
-                            {(() => {
-                              if (!itemDetail) return null;
-                              const itemFortalecerBonus = obterBonusFortalecerCaracteristicasItem(activePowers, itemDetail.id);
-                              const badges = [];
-                              if (itemFortalecerBonus.critMarginBonus > 0 || itemFortalecerBonus.critMultiplierBonus > 0) {
-                                const finalCritMargin = Math.max(1, (itemDetail.critMargin || 20) - itemFortalecerBonus.critMarginBonus);
-                                const finalCritMultiplier = (itemDetail.critMultiplier || 2) + itemFortalecerBonus.critMultiplierBonus;
-                                badges.push(
-                                  <Badge key="crit" className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1">
-                                    CRIT: {finalCritMargin}+ / x{finalCritMultiplier}
-                                  </Badge>
-                                );
-                              }
-                              if (itemFortalecerBonus.alcanceBonus > 0) {
-                                badges.push(
-                                  <Badge key="alcance" className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1">
-                                    ALCANCE: +{itemFortalecerBonus.alcanceBonus}m
-                                  </Badge>
-                                );
-                              }
-                              return badges;
-                            })()}
+                            <Badge className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1.5 shrink-0">
+                              CRIT: {finalCritMargin}+ / x{finalCritMultiplier}
+                            </Badge>
+                            {itemFortalecerBonus.alcanceBonus > 0 && (
+                              <Badge key="alcance" className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1 shrink-0">
+                                ALCANCE: +{itemFortalecerBonus.alcanceBonus}m
+                              </Badge>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-[10px] uppercase font-bold bg-white dark:bg-gray-900 border-none shadow-sm">Padrão</Badge>
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <Button
                           variant="outline"
                           size="sm"
@@ -731,32 +716,34 @@ export function AcoesTab({
                 {activeEquippedPowers.length > 0 ? (
                   activeEquippedPowers.map((powerDetail: any) => {
                     return (
-                      <div key={powerDetail.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 group hover:border-purple-500/30 transition-all">
+                      <div key={powerDetail.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 group hover:border-purple-500/30 transition-all gap-3">
                         <div 
-                          className="flex items-center gap-3 cursor-pointer hover:opacity-85 transition-opacity"
+                          className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer hover:opacity-85 transition-opacity"
                           onClick={() => setViewingPower(powerDetail)}
                           title="Ver detalhes do poder"
                         >
-                          <div className="p-1 rounded-lg bg-white dark:bg-gray-900 border-[0.5px] border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-center overflow-hidden">
-                            {powerDetail.icone ? (
-                              <DynamicIcon name={powerDetail.icone} className="w-7 h-7 text-purple-400" />
+                          <div className="w-11 h-11 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-100/50 dark:border-purple-900/30 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                            {powerDetail.icone && (powerDetail.icone.startsWith('http') || powerDetail.icone.startsWith('/')) ? (
+                              <DynamicIcon name={powerDetail.icone} className="w-full h-full object-cover rounded-lg" />
                             ) : (
-                              <Zap className="w-7 h-7 text-purple-400" />
+                              <Zap className="w-6 h-6 text-purple-500 dark:text-purple-400" />
                             )}
                           </div>
-                          <div>
-                            <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100">
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">
                               {powerDetail.nome}
                             </h4>
-                            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight">
-                              {powerDetail.originItemName ? `Item: ${powerDetail.originItemName}` : 'Poder Ativo'}
-                            </p>
+                            <div className="flex items-center gap-x-1.5 gap-y-1 flex-wrap mt-0.5 min-w-0">
+                              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight truncate shrink-0">
+                                {powerDetail.originItemName ? `Item: ${powerDetail.originItemName}` : 'Poder Ativo'}
+                              </p>
+                              <Badge variant="secondary" className="text-[8px] h-4 px-1.5 uppercase font-black bg-gray-155 dark:bg-gray-800 text-gray-500 border-none shadow-sm shrink-0">
+                                {powerDetail.parametros?.acao === 1 ? 'Padrão' : powerDetail.parametros?.acao === 2 ? 'Livre' : 'Varia'}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-[10px] uppercase font-bold bg-white dark:bg-gray-900 border-none shadow-sm">
-                            {powerDetail.parametros?.acao === 1 ? 'Padrão' : powerDetail.parametros?.acao === 2 ? 'Livre' : 'Varia'}
-                          </Badge>
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           <Button
                             variant="outline"
                             size="sm"
@@ -902,14 +889,18 @@ export function AcoesTab({
                             title="Ver detalhes do efeito passivo"
                           >
                             <div className="flex items-center gap-3">
-                              <div className="p-1 rounded-lg bg-white dark:bg-gray-900 border-[0.5px] border-gray-200 dark:border-gray-800 shadow-sm flex items-center justify-center overflow-hidden">
-                                {detail?.icone ? (
-                                  <DynamicIcon name={detail.icone} className={`w-7 h-7 ${isAtivado ? 'text-purple-500' : 'text-emerald-500'}`} />
+                              <div className={`w-11 h-11 rounded-lg border shadow-sm flex items-center justify-center overflow-hidden shrink-0 ${
+                                isAtivado 
+                                  ? 'bg-purple-50 dark:bg-purple-950/20 border-purple-100/50 dark:border-purple-900/30 text-purple-500 dark:text-purple-400' 
+                                  : 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100/50 dark:border-emerald-900/30 text-emerald-500 dark:text-emerald-400'
+                              }`}>
+                                {detail?.icone && (detail.icone.startsWith('http') || detail.icone.startsWith('/')) ? (
+                                  <DynamicIcon name={detail.icone} className="w-full h-full object-cover rounded-lg" />
                                 ) : (
                                   isAtivado ? (
-                                    <Zap className="w-7 h-7 text-purple-500" />
+                                    <Zap className="w-6 h-6 text-purple-500" />
                                   ) : (
-                                    <Shield className="w-7 h-7 text-emerald-500" />
+                                    <Shield className="w-6 h-6 text-emerald-500" />
                                   )
                                 )}
                               </div>
