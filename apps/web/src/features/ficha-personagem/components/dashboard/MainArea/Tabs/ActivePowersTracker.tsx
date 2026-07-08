@@ -55,35 +55,49 @@ export function ActivePowersTracker({
           return (
             <div
               key={ap.id}
-              className="flex items-center gap-3 p-3 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/5 transition-all"
+              className="flex flex-col gap-3 p-3 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/5 transition-all"
             >
-              {/* Ícone */}
-              <div className="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 overflow-hidden">
-                {ap.icone ? (
-                  <DynamicIcon name={ap.icone} className="w-full h-full object-cover" />
-                ) : (
-                  <Zap className="w-4 h-4 text-indigo-500" />
-                )}
+              {/* Linha Superior: Ícone, Nome/Duracao e Botão de Encerrar */}
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Ícone */}
+                <div className="w-11 h-11 shrink-0 rounded-lg flex items-center justify-center bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 overflow-hidden">
+                  {ap.icone ? (
+                    <DynamicIcon name={ap.icone} className="w-full h-full object-cover" />
+                  ) : (
+                    <Zap className="w-6 h-6 text-indigo-500" />
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-black leading-tight text-gray-900 dark:text-gray-100 break-words whitespace-normal">
+                    {ap.nome}
+                  </p>
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 mt-0.5">
+                    <Timer className="w-3 h-3" />
+                    {DURACAO_LABELS[ap.duracao] ?? 'Ativado'}
+                  </p>
+                </div>
+
+                {/* Botão encerrar */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center shrink-0"
+                  onClick={() => onDeactivate(ap.id)}
+                  title="Encerrar poder"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
               </div>
 
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-black truncate leading-tight text-gray-900 dark:text-gray-100">
-                  {ap.nome}
-                </p>
-                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 mt-0.5">
-                  <Timer className="w-3 h-3" />
-                  {DURACAO_LABELS[ap.duracao] ?? 'Ativado'}
-                </p>
-              </div>
-
-              {/* Ações */}
-              <div className="flex items-center gap-2 shrink-0">
+              {/* Linha Inferior: Botões de Ação (Usar, Manter/Infinito) */}
+              <div className="flex items-center gap-2 pl-14 flex-wrap">
                 {onUse && (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 px-2 text-[10px] font-bold border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 gap-1 active:scale-95"
+                    className="h-8 px-3 text-[10px] font-bold border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 gap-1 active:scale-95"
                     onClick={() => onUse(ap)}
                     disabled={isDisabled}
                   >
@@ -95,7 +109,7 @@ export function ActivePowersTracker({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-8 text-[10px] uppercase font-bold border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400"
+                    className="h-8 px-3 text-[10px] uppercase font-bold border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400"
                     onClick={() => onMaintain(ap.id)}
                     disabled={isDisabled || ap.peCostPerRound <= 0}
                     title={`Manter custa ${effectiveMaintenancePE} PE por rodada`}
@@ -103,22 +117,11 @@ export function ActivePowersTracker({
                     Manter (−{effectiveMaintenancePE} PE)
                   </Button>
                 ) : (
-                  <Badge variant="secondary" className="text-[9px] opacity-70">
+                  <Badge variant="secondary" className="text-[9px] py-1 px-2.5 opacity-70">
                     Infinito
                   </Badge>
                 )}
-
-              {/* Botão encerrar */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                onClick={() => onDeactivate(ap.id)}
-                title="Encerrar poder"
-              >
-                <X className="w-3.5 h-3.5" />
-              </Button>
-            </div>
+              </div>
           </div>
         );
       })}

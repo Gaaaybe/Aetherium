@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CharacterResponse } from '@/services/characters.types';
 import { Card, CardHeader, CardTitle, CardContent, Badge, Button, DynamicIcon, toast } from '@/shared/ui';
-import { Sword, Zap, Shield, Repeat, Package, Activity, Dices, Plus, Minus, RotateCcw, Search, Hand } from 'lucide-react';
+import { Sword, Zap, Shield, Repeat, Package, Activity, Dices, Plus, Minus, RotateCcw, Search, Hand, Edit2 } from 'lucide-react';
 import { ACOES_COMBATE, buscarGrauNaTabela, CONDICOES } from '@/data';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { getItemById } from '@/services/items.service';
@@ -461,20 +461,17 @@ export function AcoesTab({
                         </div>
                         <div className="flex flex-col justify-center min-w-0 flex-1">
                           <div className="flex items-center gap-2 leading-tight flex-wrap">
-                            <h4 className="font-black text-xs text-gray-900 dark:text-gray-100 uppercase tracking-tight truncate">
+                            <h4 className="font-black text-xs text-gray-900 dark:text-gray-100 uppercase tracking-tight break-words whitespace-normal">
                               {character.unarmedMastery?.customName || 'Ataque Desarmado'}
                             </h4>
                           </div>
-                          <div className="flex items-center gap-x-1.5 gap-y-1 flex-wrap mt-0.5 min-w-0">
-                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter truncate shrink-0">
+                          <div className="flex items-center gap-1.5 flex-wrap mt-1 min-w-0 text-[10px]">
+                            <span className="px-1.5 py-0.5 rounded bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-300 font-extrabold border border-red-500/15 whitespace-nowrap">
                               {character.unarmedMastery?.damageDie || '1d2'} {character.unarmedMastery?.damageType || 'Impacto'}
-                            </p>
-                            <Badge className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1.5 shrink-0">
-                              CRIT: {finalCritMargin}+ / x{finalCritMultiplier}
-                            </Badge>
-                            <Badge variant="secondary" className="h-3.5 px-1.5 text-[8px] font-black bg-gray-100 dark:bg-gray-800 text-gray-500 border-none uppercase flex-shrink-0">
-                              Grau {character.unarmedMastery?.degree || 0}
-                            </Badge>
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-extrabold border border-amber-500/15 whitespace-nowrap">
+                              CRIT: {finalCritMargin}+/x{finalCritMultiplier}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -524,11 +521,11 @@ export function AcoesTab({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 !p-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-90 flex items-center justify-center"
+                            className="h-8 w-8 !p-0 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 active:scale-90 flex items-center justify-center"
                             onClick={() => setIsUnarmedModalOpen(true)}
                             title="Evoluir Domínio Desarmado"
                           >
-                            <Plus className="w-4 h-4" />
+                            <Edit2 className="w-3.5 h-3.5" />
                           </Button>
                         )}
                       </div>
@@ -562,20 +559,20 @@ export function AcoesTab({
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100 italic truncate">
+                          <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100 italic break-words whitespace-normal">
                             {itemDetail?.nome || item.itemId}
                           </h4>
-                          <div className="flex items-center gap-x-1.5 gap-y-1 flex-wrap mt-0.5 min-w-0">
-                            <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight shrink-0">
+                          <div className="flex items-center gap-1.5 flex-wrap mt-1 min-w-0 text-[10px]">
+                            <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 font-extrabold border border-indigo-500/15 whitespace-nowrap">
                               {itemDetail?.danos?.map(d => d.dado).join(' + ') || 'Arma Atacante'}
-                            </p>
-                            <Badge className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1.5 shrink-0">
-                              CRIT: {finalCritMargin}+ / x{finalCritMultiplier}
-                            </Badge>
+                            </span>
+                            <span className="px-1.5 py-0.5 rounded bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 font-extrabold border border-amber-500/15 whitespace-nowrap">
+                              CRIT: {finalCritMargin}+/x{finalCritMultiplier}
+                            </span>
                             {itemFortalecerBonus.alcanceBonus > 0 && (
-                              <Badge key="alcance" className="bg-amber-100 hover:bg-amber-100 text-amber-800 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30 text-[8px] font-black h-4 px-1 shrink-0">
-                                ALCANCE: +{itemFortalecerBonus.alcanceBonus}m
-                              </Badge>
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-extrabold border border-emerald-500/15 whitespace-nowrap">
+                                Alcance: +{itemFortalecerBonus.alcanceBonus}m
+                              </span>
                             )}
                           </div>
                         </div>
@@ -713,8 +710,12 @@ export function AcoesTab({
               />
 
               <div className="space-y-2">
-                {activeEquippedPowers.length > 0 ? (
-                  activeEquippedPowers.map((powerDetail: any) => {
+                {(() => {
+                  const padraoPowers = activeEquippedPowers.filter(p => p.parametros?.acao === 1);
+                  const livrePowers = activeEquippedPowers.filter(p => p.parametros?.acao === 2);
+                  const outrasPowers = activeEquippedPowers.filter(p => p.parametros?.acao !== 1 && p.parametros?.acao !== 2);
+
+                  const renderPowerRow = (powerDetail: any) => {
                     return (
                       <div key={powerDetail.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 group hover:border-purple-500/30 transition-all gap-3">
                         <div 
@@ -730,16 +731,18 @@ export function AcoesTab({
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100 truncate">
+                            <h4 className="font-bold text-sm text-gray-900 dark:text-gray-100 break-words whitespace-normal leading-tight">
                               {powerDetail.nome}
                             </h4>
-                            <div className="flex items-center gap-x-1.5 gap-y-1 flex-wrap mt-0.5 min-w-0">
-                              <p className="text-[10px] text-gray-500 uppercase font-bold tracking-tight truncate shrink-0">
-                                {powerDetail.originItemName ? `Item: ${powerDetail.originItemName}` : 'Poder Ativo'}
+                            {powerDetail.originItemName && (
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium mt-0.5 break-words whitespace-normal">
+                                Origem: {powerDetail.originItemName}
                               </p>
-                              <Badge variant="secondary" className="text-[8px] h-4 px-1.5 uppercase font-black bg-gray-155 dark:bg-gray-800 text-gray-500 border-none shadow-sm shrink-0">
-                                {powerDetail.parametros?.acao === 1 ? 'Padrão' : powerDetail.parametros?.acao === 2 ? 'Livre' : 'Varia'}
-                              </Badge>
+                            )}
+                            <div className="flex items-center gap-1.5 flex-wrap mt-1 min-w-0">
+                              <span className="px-1.5 py-0.5 rounded bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 text-[10px] font-extrabold border border-purple-500/15 whitespace-nowrap">
+                                {powerDetail.custoTotal?.pe ? `${powerDetail.custoTotal.pe} PE` : '0 PE'}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -749,7 +752,8 @@ export function AcoesTab({
                             size="sm"
                             className="h-8 px-2 text-[10px] font-bold border-purple-200 text-purple-600 hover:bg-purple-50 gap-1 active:scale-95"
                             disabled={isResolving}
-                            onClick={async () => {
+                            onClick={async (e) => {
+                              e.stopPropagation();
                               setUsingPower(powerDetail);
                               setUsingPowerFromActive(false);
                               setResolution(null);
@@ -774,10 +778,61 @@ export function AcoesTab({
                         </div>
                       </div>
                     );
-                  })
-                ) : (
-                  <p className="text-sm text-gray-500 italic py-2">Nenhum poder ativo equipado.</p>
-                )}
+                  };
+
+                  if (activeEquippedPowers.length === 0) {
+                    return <p className="text-sm text-gray-500 italic py-2">Nenhum poder ativo equipado.</p>;
+                  }
+
+                  return (
+                    <div className="space-y-4">
+                      {/* Ações Padrão */}
+                      {padraoPowers.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 px-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                            <h5 className="text-[10px] font-black text-red-500 dark:text-red-400 uppercase tracking-widest">
+                              Ações Padrão ({padraoPowers.length})
+                            </h5>
+                          </div>
+                          <div className="space-y-2">
+                            {padraoPowers.map(renderPowerRow)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Ações Livres */}
+                      {livrePowers.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 px-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            <h5 className="text-[10px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-widest">
+                              Ações Livres ({livrePowers.length})
+                            </h5>
+                          </div>
+                          <div className="space-y-2">
+                            {livrePowers.map(renderPowerRow)}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Reações / Outras */}
+                      {outrasPowers.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 px-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                            <h5 className="text-[10px] font-black text-blue-500 dark:text-blue-400 uppercase tracking-widest">
+                              Reações / Outras ({outrasPowers.length})
+                            </h5>
+                          </div>
+                          <div className="space-y-2">
+                            {outrasPowers.map(renderPowerRow)}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </CardContent>
           </Card>
