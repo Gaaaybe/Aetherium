@@ -848,169 +848,217 @@ export function AcoesTab({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {/* Poderes Passivos e Ativados Ligados */}
+              <div className="space-y-4">
                 {(() => {
-                  const passiveOrActivatedPowersList: { powerId: string; isEquipped: boolean; id: string; originItemName?: string }[] = [];
+                  const chipClass = (tone: 'emerald' | 'purple' | 'slate' | 'indigo') => {
+                    const toneClasses = {
+                      emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-900/40',
+                      purple: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-300 dark:border-purple-900/40',
+                      slate: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/80 dark:text-slate-200 dark:border-slate-700',
+                      indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-300 dark:border-indigo-900/40',
+                    } as const;
 
-                  character.powers.forEach(p => {
-                    passiveOrActivatedPowersList.push({
-                      powerId: p.powerId,
-                      isEquipped: p.isEquipped,
-                      id: p.id,
+                    return `inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] leading-none ${toneClasses[tone]}`;
+                  };
+
+                  const sectionTitle = (label: string) => (
+                    <div className="flex items-center gap-3">
+                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent" />
+                      <h5 className="shrink-0 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.28em] text-center">
+                        {label}
+                      </h5>
+                      <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent" />
+                    </div>
+                  );
+
+                  const sourceLabel = (originItemName?: string) => {
+                    if (!originItemName) return null;
+                    return <span className={chipClass('slate')}>{originItemName}</span>;
+                  };
+
+                  const entries = new Map<string, { powerId: string; source: 'character' | 'item'; originItemName?: string }>();
+
+                  character.powers.forEach((power) => {
+                    entries.set(`character:${power.powerId}`, {
+                      powerId: power.powerId,
+                      source: 'character',
                     });
                   });
 
                   character.powerArrays
-                    .filter(a => a.isEquipped)
-                    .forEach(a => {
-                      const arrayDetail = detailedArrays[a.powerArrayId];
-                      if (arrayDetail && arrayDetail.powers) {
-                        arrayDetail.powers.forEach(p => {
-                          passiveOrActivatedPowersList.push({
-                            powerId: p.id,
-                            isEquipped: true,
-                            id: p.id,
-                          });
+                    .filter((powerArray) => powerArray.isEquipped)
+                    .forEach((powerArray) => {
+                      const arrayDetail = detailedArrays[powerArray.powerArrayId];
+                      arrayDetail?.powers?.forEach((power) => {
+                        entries.set(`character:${power.id}`, {
+                          powerId: power.id,
+                          source: 'character',
                         });
-                      }
+                      });
                     });
 
-                  equippedItemIdsList.forEach(itemId => {
+                  equippedItemIdsList.forEach((itemId) => {
                     const itemDetail = detailedItems[itemId!];
                     if (!itemDetail) return;
 
-                    if (itemDetail.powerIds) {
-                      itemDetail.powerIds.forEach(pid => {
-                        passiveOrActivatedPowersList.push({
-                          powerId: pid,
-                          isEquipped: true,
-                          id: pid,
-                          originItemName: itemDetail.nome
-                        });
+                    itemDetail.powerIds?.forEach((powerId) => {
+                      entries.set(`item:${powerId}:${itemDetail.id}`, {
+                        powerId,
+                        source: 'item',
+                        originItemName: itemDetail.nome,
                       });
-                    }
-
-                    if (itemDetail.powerArrayIds) {
-                      itemDetail.powerArrayIds.forEach(paid => {
-                        const arrayDetail = detailedArrays[paid];
-                        if (arrayDetail && arrayDetail.powers) {
-                          arrayDetail.powers.forEach(p => {
-                            passiveOrActivatedPowersList.push({
-                              powerId: p.id,
-                              isEquipped: true,
-                              id: p.id,
-                              originItemName: itemDetail.nome
-                            });
-                          });
-                        }
-                      });
-                    }
-                  });
-
-                  const passiveEffectsToRender = passiveOrActivatedPowersList
-                    .filter((p, index, self) => self.findIndex(t => t.powerId === p.powerId) === index)
-                    .filter(p => {
-                      const detail = detailedPowers[p.powerId];
-                      if (!p.isEquipped || !detail) return false;
-                      
-                      // Permanente (duracao = 4)
-                      if (detail.parametros?.duracao === 4) {
-                        return true;
-                      }
-                      
-                      // Ativado (3) e atualmente ligado (presente em activePowers)
-                      if (detail.parametros?.duracao === 3) {
-                        return activePowers.some(ap => ap.powerId === p.powerId);
-                      }
-                      
-                      return false;
                     });
 
-                  return (
-                    <>
-                      {passiveEffectsToRender.map(p => {
-                        const detail = detailedPowers[p.powerId];
-                        const isAtivado = detail?.parametros?.duracao === 3;
-                        return (
-                          <div 
-                            key={p.id} 
-                            className={`p-3 rounded-lg border group transition-colors cursor-pointer hover:opacity-85 ${
-                              isAtivado 
-                                ? 'bg-purple-50/30 dark:bg-purple-900/10 border-purple-100 dark:border-purple-900/20' 
-                                : 'bg-emerald-50/30 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/20'
-                            }`}
-                            onClick={() => detail && setViewingPower(detail)}
-                            title="Ver detalhes do efeito passivo"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className={`w-11 h-11 rounded-lg border shadow-sm flex items-center justify-center overflow-hidden shrink-0 ${
-                                isAtivado 
-                                  ? 'bg-purple-50 dark:bg-purple-950/20 border-purple-100/50 dark:border-purple-900/30 text-purple-500 dark:text-purple-400' 
-                                  : 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100/50 dark:border-emerald-900/30 text-emerald-500 dark:text-emerald-400'
-                              }`}>
-                                {detail?.icone && (detail.icone.startsWith('http') || detail.icone.startsWith('/')) ? (
-                                  <DynamicIcon name={detail.icone} className="w-full h-full object-cover rounded-lg" />
-                                ) : (
-                                  isAtivado ? (
-                                    <Zap className="w-6 h-6 text-purple-500" />
-                                  ) : (
-                                    <Shield className="w-6 h-6 text-emerald-500" />
-                                  )
-                                )}
-                              </div>
-                              <div>
-                                <h4 className={`font-black text-sm ${isAtivado ? 'text-purple-900 dark:text-purple-100' : 'text-emerald-900 dark:text-emerald-100'}`}>
-                                  {detail?.nome || p.powerId}
-                                </h4>
-                                <div className="flex gap-2 items-center mt-0.5">
-                                  {isAtivado && (
-                                    <span className="text-[9px] uppercase font-black tracking-widest text-purple-500">
-                                      Ativado (Ligado)
-                                    </span>
-                                  )}
-                                  {p.originItemName && (
-                                    <Badge variant="secondary" className="h-3.5 px-1.5 text-[8px] font-black bg-gray-100 dark:bg-gray-800 text-gray-500 border-none uppercase">
-                                      {p.originItemName}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <p className={`text-[11px] mt-1 pl-7 italic line-clamp-2 ${isAtivado ? 'text-purple-700/80 dark:text-purple-400/80' : 'text-emerald-700/80 dark:text-emerald-400/80'}`}>
-                              {detail?.descricao}
-                            </p>
-                          </div>
-                        );
-                      })}
+                    itemDetail.powerArrayIds?.forEach((powerArrayId) => {
+                      const arrayDetail = detailedArrays[powerArrayId];
+                      arrayDetail?.powers?.forEach((power) => {
+                        entries.set(`item:${power.id}:${itemDetail.id}`, {
+                          powerId: power.id,
+                          source: 'item',
+                          originItemName: itemDetail.nome,
+                        });
+                      });
+                    });
+                  });
 
-                      {/* Condições e Estados */}
-                      {character.conditions.length > 0 ? character.conditions.map((cond) => {
-                        const condData = CONDICOES.find(c => c.nome.toLowerCase() === cond.toLowerCase());
-                        return (
-                          <div key={cond} className="flex flex-col gap-1 p-3 rounded-lg bg-indigo-50/30 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/20">
-                            <div className="flex items-center gap-3">
-                              <Activity className="w-4 h-4 text-indigo-500 animate-pulse" />
-                              <div>
-                                <h4 className="font-bold text-sm text-indigo-900 dark:text-indigo-100">{cond}</h4>
-                                <p className="text-[10px] text-indigo-600 dark:text-indigo-400 uppercase font-bold tracking-tighter">
-                                  Condição Ativa • {condData?.patamar || 'Geral'}
-                                </p>
-                              </div>
-                            </div>
-                            {condData && (
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400 italic font-medium pl-7 mt-1 leading-relaxed">
-                                {renderDescriptionWithTooltips(condData.descricao, condData.nome, 'bottom')}
-                              </p>
+                  const passiveEntries = Array.from(entries.values())
+                    .map((entry) => ({ ...entry, detail: detailedPowers[entry.powerId] }))
+                    .filter((entry) => {
+                      if (!entry.detail) return false;
+                      return entry.detail.parametros?.duracao === 4 || (entry.detail.parametros?.duracao === 3 && activePowers.some((activePower) => activePower.powerId === entry.powerId));
+                    });
+
+                  const characterPassivePowers = passiveEntries.filter((entry) => entry.source === 'character' && entry.detail.parametros?.duracao === 4);
+                  const characterActivePowers = passiveEntries.filter((entry) => entry.source === 'character' && entry.detail.parametros?.duracao === 3);
+                  const itemPowers = passiveEntries.filter((entry) => entry.source === 'item');
+                  const conditions = character.conditions;
+
+                  const renderPowerRow = (
+                    entry: { powerId: string; source: 'character' | 'item'; originItemName?: string; detail: PoderResponse },
+                    accent: 'emerald' | 'purple' | 'slate',
+                    badgeText: string | null,
+                    badgeTone: 'emerald' | 'purple' | 'slate' | null,
+                  ) => {
+                    const detail = entry.detail;
+                    const isAtivo = detail.parametros?.duracao === 3 && activePowers.some((activePower) => activePower.powerId === entry.powerId);
+                    const iconToneClass = accent === 'emerald'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100/60 dark:border-emerald-900/30 text-emerald-500 dark:text-emerald-400'
+                      : accent === 'purple'
+                        ? 'bg-purple-50 dark:bg-purple-950/20 border-purple-100/60 dark:border-purple-900/30 text-purple-500 dark:text-purple-400'
+                        : 'bg-slate-100 dark:bg-slate-800/70 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-300';
+                    const cardToneClass = accent === 'emerald'
+                      ? 'bg-emerald-50/40 dark:bg-emerald-900/10 border-emerald-100 dark:border-emerald-900/20'
+                      : accent === 'purple'
+                        ? 'bg-purple-50/40 dark:bg-purple-900/10 border-purple-100 dark:border-purple-900/20'
+                        : 'bg-slate-50/80 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800';
+
+                    return (
+                      <div
+                        key={entry.source === 'item' && entry.originItemName ? `${entry.powerId}-${entry.originItemName}` : entry.powerId}
+                        className={`p-3 rounded-xl border group transition-all cursor-pointer hover:opacity-90 ${cardToneClass}`}
+                        onClick={() => detail && setViewingPower(detail)}
+                        title="Ver detalhes do efeito"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-11 h-11 rounded-xl border shadow-sm flex items-center justify-center overflow-hidden shrink-0 ${iconToneClass}`}>
+                            {detail.icone && (detail.icone.startsWith('http') || detail.icone.startsWith('/')) ? (
+                              <DynamicIcon name={detail.icone} className="w-full h-full object-cover rounded-xl" />
+                            ) : accent === 'emerald' ? (
+                              <Shield className="w-6 h-6" />
+                            ) : (
+                              <Zap className="w-6 h-6" />
                             )}
                           </div>
-                        );
-                      }) : null}
 
-                      {passiveEffectsToRender.length === 0 && character.conditions.length === 0 && (
-                        <p className="text-sm text-gray-500 italic py-2">Nenhum efeito passivo relevante.</p>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className={`font-black text-sm leading-tight ${accent === 'emerald' ? 'text-emerald-900 dark:text-emerald-100' : accent === 'purple' ? 'text-purple-900 dark:text-purple-100' : 'text-slate-900 dark:text-slate-100'}`}>
+                                {detail.nome || entry.powerId}
+                              </h4>
+                              {badgeText && badgeTone && <span className={chipClass(badgeTone)}>{badgeText}</span>}
+                              {isAtivo && detail.parametros?.duracao === 3 && <span className={chipClass('purple')}>LIGADO</span>}
+                              {sourceLabel(entry.originItemName)}
+                            </div>
+                            <p className={`text-[11px] mt-1 italic leading-relaxed ${accent === 'emerald' ? 'text-emerald-700/80 dark:text-emerald-300/80' : accent === 'purple' ? 'text-purple-700/80 dark:text-purple-300/80' : 'text-slate-600 dark:text-slate-400'}`}>
+                              {detail.descricao}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  };
+
+                  if (characterPassivePowers.length === 0 && characterActivePowers.length === 0 && itemPowers.length === 0 && conditions.length === 0) {
+                    return <p className="text-sm text-gray-500 italic py-2">Nenhum efeito passivo relevante.</p>;
+                  }
+
+                  return (
+                    <div className="space-y-5">
+                      {characterPassivePowers.length > 0 && (
+                        <div className="space-y-3">
+                          {sectionTitle('Poderes passivos do personagem')}
+                          <div className="space-y-2">
+                            {characterPassivePowers.map((entry) => renderPowerRow(entry, 'emerald', null, null))}
+                          </div>
+                        </div>
                       )}
-                    </>
+
+                      {characterActivePowers.length > 0 && (
+                        <div className="space-y-3">
+                          {sectionTitle('Poderes ativos do personagem')}
+                          <div className="space-y-2">
+                            {characterActivePowers.map((entry) => renderPowerRow(entry, 'purple', 'ATIVO', 'purple'))}
+                          </div>
+                        </div>
+                      )}
+
+                      {itemPowers.length > 0 && (
+                        <div className="space-y-3">
+                          {sectionTitle('Poderes de itens')}
+                          <div className="space-y-2">
+                            {itemPowers.map((entry) => {
+                              const accent = entry.detail.parametros?.duracao === 4 ? 'slate' : 'purple';
+                              const badgeText = entry.detail.parametros?.duracao === 3 ? 'LIGADO' : null;
+                              const badgeTone = entry.detail.parametros?.duracao === 3 ? 'purple' : null;
+                              return renderPowerRow(entry, accent, badgeText, badgeTone);
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {conditions.length > 0 && (
+                        <div className="space-y-3">
+                          {sectionTitle('Condições')}
+                          <div className="space-y-2">
+                            {conditions.map((cond) => {
+                              const condData = CONDICOES.find((c) => c.nome.toLowerCase() === cond.toLowerCase());
+                              return (
+                                <div key={cond} className="p-3 rounded-xl border bg-indigo-50/40 dark:bg-indigo-900/10 border-indigo-100 dark:border-indigo-900/20">
+                                  <div className="flex items-start gap-3">
+                                    <div className="w-11 h-11 rounded-xl border shadow-sm flex items-center justify-center shrink-0 bg-indigo-50 dark:bg-indigo-950/20 border-indigo-100/60 dark:border-indigo-900/30 text-indigo-500 dark:text-indigo-400">
+                                      <Activity className="w-6 h-6" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <h4 className="font-black text-sm text-indigo-900 dark:text-indigo-100 leading-tight">
+                                          {cond}
+                                        </h4>
+                                        <span className={chipClass('slate')}>PATAMAR · {condData?.patamar || 'Geral'}</span>
+                                      </div>
+                                      {condData && (
+                                        <p className="text-[11px] mt-1 italic leading-relaxed text-indigo-700/80 dark:text-indigo-300/80">
+                                          {renderDescriptionWithTooltips(condData.descricao, condData.nome, 'bottom')}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   );
                 })()}
               </div>
