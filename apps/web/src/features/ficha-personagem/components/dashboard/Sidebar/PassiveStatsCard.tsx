@@ -1,6 +1,7 @@
 import { CharacterResponse } from '@/services/characters.types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui';
 import { Eye, Footprints, Clock } from 'lucide-react';
+import { calculateMovement } from '@aetherium/rules-engine';
 
 interface PassiveStatsCardProps {
   character: CharacterResponse;
@@ -33,8 +34,8 @@ export function PassiveStatsCard({ character }: PassiveStatsCardProps) {
     initiativeBonus -= Math.round(character.efficiencyBonus / 2);
   }
 
-  // Movimento Base (Padrão 9m)
-  const movement = 9;
+  // Movimento calculado pelas condições do personagem
+  const movement = calculateMovement(character.conditions);
 
   return (
     <Card className="overflow-hidden border-none shadow-md bg-white dark:bg-gray-900">

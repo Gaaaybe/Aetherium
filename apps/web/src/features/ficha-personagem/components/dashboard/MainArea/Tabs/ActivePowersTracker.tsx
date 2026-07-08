@@ -17,6 +17,7 @@ interface ActivePowersTrackerProps {
   onDeactivate: (id: string) => void;
   onUse?: (ap: ActivePower) => void;
   isDisabled: boolean;
+  character?: any;
 }
 
 export function ActivePowersTracker({
@@ -25,10 +26,17 @@ export function ActivePowersTracker({
   onDeactivate,
   onUse,
   isDisabled,
+  character,
 }: ActivePowersTrackerProps) {
   const displayPowers = (activePowers || []).filter(
     (ap) => ap.duracao !== 4 && ap.duracao !== 5
   );
+
+  const hasAlquebrado = (character?.conditions || []).some((c: string) => {
+    const clean = c.includes('(') ? c.split('(')[0].trim() : c;
+    return clean === 'Alquebrado';
+  });
+  const peCostMultiplier = hasAlquebrado ? 2 : 1;
 
   if (displayPowers.length === 0) return null;
 
@@ -42,76 +50,82 @@ export function ActivePowersTracker({
       </div>
 
       <div className="flex flex-col gap-2">
-        {displayPowers.map(ap => (
-          <div
-            key={ap.id}
-            className="flex items-center gap-3 p-3 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/5 transition-all"
-          >
-            {/* Ícone */}
-            <div className="w-9 h-9 shrink-0 rounded-xl flex items-center justify-center bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 overflow-hidden">
-              {ap.icone ? (
-                <DynamicIcon name={ap.icone} className="w-full h-full object-cover" />
-              ) : (
-                <Zap className="w-4 h-4 text-indigo-500" />
-              )}
-            </div>
+        {displayPowers.map(ap => {
+          const effectiveMaintenancePE = ap.peCostPerRound * peCostMultiplier;
+          return (
+            <div
+              key={ap.id}
+              className="flex flex-col gap-3 p-3 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-900/5 transition-all"
+            >
+              {/* Linha Superior: Ícone, Nome/Duracao e Botão de Encerrar */}
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Ícone */}
+                <div className="w-11 h-11 shrink-0 rounded-lg flex items-center justify-center bg-white dark:bg-gray-900 border border-indigo-100 dark:border-indigo-900 overflow-hidden">
+                  {ap.icone ? (
+                    <DynamicIcon name={ap.icone} className="w-full h-full object-cover" />
+                  ) : (
+                    <Zap className="w-6 h-6 text-indigo-500" />
+                  )}
+                </div>
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-black truncate leading-tight text-gray-900 dark:text-gray-100">
-                {ap.nome}
-              </p>
-              <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 mt-0.5">
-                <Timer className="w-3 h-3" />
-                {DURACAO_LABELS[ap.duracao] ?? 'Ativado'}
-              </p>
-            </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-black leading-tight text-gray-900 dark:text-gray-100 break-words whitespace-normal">
+                    {ap.nome}
+                  </p>
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1 mt-0.5">
+                    <Timer className="w-3 h-3" />
+                    {DURACAO_LABELS[ap.duracao] ?? 'Ativado'}
+                  </p>
+                </div>
 
-            {/* Ações */}
-            <div className="flex items-center gap-2 shrink-0">
-              {onUse && (
+                {/* Botão encerrar */}
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="h-8 px-2 text-[10px] font-bold border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 gap-1 active:scale-95"
-                  onClick={() => onUse(ap)}
-                  disabled={isDisabled}
+                  className="h-8 w-8 p-0 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center shrink-0"
+                  onClick={() => onDeactivate(ap.id)}
+                  title="Encerrar poder"
                 >
-                  <Zap className="w-3.5 h-3.5 text-purple-500 shrink-0" /> Usar
+                  <X className="w-3.5 h-3.5" />
                 </Button>
-              )}
+              </div>
 
-              {(ap.duracao === 1 || ap.duracao === 2) ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-[10px] uppercase font-bold border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400"
-                  onClick={() => onMaintain(ap.id)}
-                  disabled={isDisabled || ap.peCostPerRound <= 0}
-                  title={`Manter custa ${ap.peCostPerRound} PE por rodada`}
-                >
-                  Manter (−{ap.peCostPerRound} PE)
-                </Button>
-              ) : (
-                <Badge variant="secondary" className="text-[9px] opacity-70">
-                  Infinito
-                </Badge>
-              )}
+              {/* Linha Inferior: Botões de Ação (Usar, Manter/Infinito) */}
+              <div className="flex items-center gap-2 pl-14 flex-wrap">
+                {onUse && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-[10px] font-bold border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 gap-1 active:scale-95"
+                    onClick={() => onUse(ap)}
+                    disabled={isDisabled}
+                  >
+                    <Zap className="w-3.5 h-3.5 text-purple-500 shrink-0" /> Usar
+                  </Button>
+                )}
 
-              {/* Botão encerrar */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                onClick={() => onDeactivate(ap.id)}
-                title="Encerrar poder"
-              >
-                <X className="w-3.5 h-3.5" />
-              </Button>
-            </div>
+                {(ap.duracao === 1 || ap.duracao === 2) ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-[10px] uppercase font-bold border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400"
+                    onClick={() => onMaintain(ap.id)}
+                    disabled={isDisabled || ap.peCostPerRound <= 0}
+                    title={`Manter custa ${effectiveMaintenancePE} PE por rodada`}
+                  >
+                    Manter (−{effectiveMaintenancePE} PE)
+                  </Button>
+                ) : (
+                  <Badge variant="secondary" className="text-[9px] py-1 px-2.5 opacity-70">
+                    Infinito
+                  </Badge>
+                )}
+              </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
-  );
+  </div>
+);
 }

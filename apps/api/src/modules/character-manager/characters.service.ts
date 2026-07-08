@@ -361,8 +361,9 @@ export class CharactersService {
       level: 1,
       inspiration: 0,
       narrativeProfile: {
-        identity: body.narrative.identity,
-        origin: body.narrative.origin,
+        name: body.narrative.name || body.narrative.identity || '',
+        identity: body.narrative.identity || '',
+        origin: body.narrative.origin || '',
         motivations: body.narrative.motivations || [],
         complications: body.narrative.complications || [],
         generalNotes: '',
@@ -865,11 +866,12 @@ export class CharactersService {
 
       if (data.narrative) {
         character.narrativeProfile = {
-          identity: data.narrative.identity,
-          origin: data.narrative.origin,
-          motivations: data.narrative.motivations || [],
-          complications: data.narrative.complications || [],
-          generalNotes: data.narrative.generalNotes !== undefined ? data.narrative.generalNotes : character.narrativeProfile.generalNotes,
+          name: data.narrative.name !== undefined ? data.narrative.name : (character.narrativeProfile.name || ''),
+          identity: data.narrative.identity !== undefined ? data.narrative.identity : (character.narrativeProfile.identity || ''),
+          origin: data.narrative.origin !== undefined ? data.narrative.origin : (character.narrativeProfile.origin || ''),
+          motivations: data.narrative.motivations || character.narrativeProfile.motivations || [],
+          complications: data.narrative.complications || character.narrativeProfile.complications || [],
+          generalNotes: data.narrative.generalNotes !== undefined ? data.narrative.generalNotes : (character.narrativeProfile.generalNotes || ''),
         };
       }
 
@@ -1433,7 +1435,9 @@ export class CharactersService {
       throw new ResourceNotFoundError('Benefício não encontrado');
     }
 
-    const currentBenefit = (character.benefits || []).find((b: any) => b.name === benefitInfo.nome);
+    const currentBenefit = (character.benefits || []).find(
+      (b: any) => b.name.trim().toLowerCase() === benefitName.trim().toLowerCase()
+    );
 
     const currentDegree = currentBenefit ? currentBenefit.degree : 0;
 
@@ -1469,12 +1473,14 @@ export class CharactersService {
     runRules(() => applySpendPda(character, costPaid));
 
     if (currentBenefit) {
-      character.benefits = character.benefits!.filter((b: any) => b.name !== benefitInfo.nome);
+      character.benefits = character.benefits!.filter(
+        (b: any) => b.name.trim().toLowerCase() !== benefitName.trim().toLowerCase()
+      );
 
       const updatedBenefit = {
         id: currentBenefit.id.toString(),
         characterId,
-        name: benefitInfo.nome,
+        name: benefitName,
         degree: targetDegree,
         posicao: character.benefits!.length,
         pdaCost: currentBenefit.pdaCost + costPaid,
@@ -1484,7 +1490,7 @@ export class CharactersService {
       const updatedBenefit = {
         id: crypto.randomUUID(),
         characterId,
-        name: benefitInfo.nome,
+        name: benefitName,
         degree: targetDegree,
         posicao: character.benefits!.length,
         pdaCost: costPaid,

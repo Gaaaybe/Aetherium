@@ -9,7 +9,8 @@ import { CharacterPresenter } from '../../presenters/character.presenter';
 const createCharacterBodySchema = z.object({
   narrative: z
     .object({
-      identity: z.string().min(1),
+      name: z.string().optional(),
+      identity: z.string().optional(),
       origin: z.string().min(1),
       motivations: z.array(z.string().min(1)),
       complications: z.array(z.string().min(1)),

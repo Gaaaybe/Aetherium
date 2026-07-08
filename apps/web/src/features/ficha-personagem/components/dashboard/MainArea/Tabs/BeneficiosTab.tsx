@@ -3,6 +3,10 @@ import { Card, CardContent, Button, Badge, Modal, ModalFooter } from '@/shared/u
 import { BENEFICIOS, BenefitCatalogEntry } from '@/data';
 import { useState, useMemo } from 'react';
 import { Star, Calculator, ShoppingBag, Sword, Search, Gift, Trash2, Info, ChevronDown } from 'lucide-react';
+import {
+  CRITICO_APRIMORADO_BASE_NAME,
+  DOMINIOS_CRITICO_APRIMORADO,
+} from '@/features/ficha-personagem/utils/benefitsHelper';
 
 interface BeneficiosTabProps {
   character: CharacterResponse;
@@ -14,12 +18,28 @@ export function BeneficiosTab({ character, onAcquireBenefit, onRemoveBenefit }: 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedBenefit, setSelectedBenefit] = useState<BenefitCatalogEntry | null>(null);
+  const [selectedDomain, setSelectedDomain] = useState<string>('arma-branca');
   const [catalogLimit, setCatalogLimit] = useState(6);
+
+  const handleSelectBenefit = (cat: BenefitCatalogEntry, name?: string) => {
+    setSelectedBenefit(cat);
+    if (cat.nome === CRITICO_APRIMORADO_BASE_NAME && name) {
+      const partes = name.split(' - ');
+      if (partes.length >= 2) {
+        setSelectedDomain(partes[1].trim().toLowerCase());
+      }
+    } else {
+      setSelectedDomain('arma-branca');
+    }
+  };
 
   // Mapeia os benefícios adquiridos para o catálogo para pegar descrições
   const ownedBenefitsWithDetails = useMemo(() => {
     return character.benefits.map(b => {
-      const catalogInfo = BENEFICIOS.find(cat => cat.nome === b.name);
+      const catalogInfo = BENEFICIOS.find(cat =>
+        cat.nome === b.name ||
+        (b.name.startsWith(CRITICO_APRIMORADO_BASE_NAME) && cat.nome === CRITICO_APRIMORADO_BASE_NAME)
+      );
       return { ...b, catalogInfo };
     });
   }, [character.benefits]);
@@ -48,6 +68,26 @@ export function BeneficiosTab({ character, onAcquireBenefit, onRemoveBenefit }: 
     }
     return baseCost * degree;
   };
+
+  const domainSpecificInfo = useMemo(() => {
+    if (!selectedBenefit || selectedBenefit.nome !== CRITICO_APRIMORADO_BASE_NAME) {
+      return null;
+    }
+    const instancedName = `${CRITICO_APRIMORADO_BASE_NAME} - ${selectedDomain}`;
+    const owned = character.benefits.find(b => b.name.toLowerCase() === instancedName.toLowerCase());
+    const currentDegree = owned?.degree || 0;
+    const nextDegree = currentDegree + 1;
+    const cost = calculateCost(selectedBenefit, nextDegree) - (owned?.pdaCost || 0);
+    const isAtMax = currentDegree >= 3;
+    return {
+      instancedName,
+      owned,
+      currentDegree,
+      nextDegree,
+      cost,
+      isAtMax
+    };
+  }, [selectedBenefit, selectedDomain, character.benefits]);
 
   const handleShowMore = () => {
     setCatalogLimit(prev => prev + 6);
@@ -112,7 +152,7 @@ export function BeneficiosTab({ character, onAcquireBenefit, onRemoveBenefit }: 
                       benefit.catalogInfo?.tipo === 'perícia' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/30 text-amber-500' :
                         'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900/30 text-blue-500'
                     }`}
-                  onClick={() => benefit.catalogInfo && setSelectedBenefit(benefit.catalogInfo)}
+                  onClick={() => benefit.catalogInfo && handleSelectBenefit(benefit.catalogInfo, benefit.name)}
                 >
                   {benefit.catalogInfo?.tipo === 'combate' ? <Sword className="w-6 h-6" /> :
                     benefit.catalogInfo?.tipo === 'sorte' ? <Star className="w-6 h-6" /> :
@@ -123,7 +163,7 @@ export function BeneficiosTab({ character, onAcquireBenefit, onRemoveBenefit }: 
                     <div className="flex items-center gap-2 truncate">
                       <h4
                         className="text-sm font-black text-gray-900 dark:text-gray-100 truncate cursor-pointer hover:text-purple-600 transition-colors uppercase tracking-tight"
-                        onClick={() => benefit.catalogInfo && setSelectedBenefit(benefit.catalogInfo)}
+                        onClick={() => benefit.catalogInfo && handleSelectBenefit(benefit.catalogInfo, benefit.name)}
                       >
                         {benefit.name}
                       </h4>
@@ -211,19 +251,20 @@ export function BeneficiosTab({ character, onAcquireBenefit, onRemoveBenefit }: 
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-5 animate-in fade-in duration-500">
           {availableBenefits.map((cat) => {
-            const owned = character.benefits.find(b => b.name === cat.nome);
+            const isCriticoAprimorado = cat.nome === CRITICO_APRIMORADO_BASE_NAME;
+            const owned = isCriticoAprimorado ? undefined : character.benefits.find(b => b.name === cat.nome);
             const currentDegree = owned?.degree || 0;
             const nextDegree = currentDegree + 1;
-            const cost = calculateCost(cat, nextDegree) - (owned?.pdaCost || 0);
+            const cost = isCriticoAprimorado ? 3 : (calculateCost(cat, nextDegree) - (owned?.pdaCost || 0));
             const canAfford = pdaDisponivel >= cost;
-            const isAtMax = typeof cat.graus === 'number' && currentDegree >= cat.graus;
+            const isAtMax = !isCriticoAprimorado && typeof cat.graus === 'number' && currentDegree >= cat.graus;
 
             return (
               <Card
                 key={cat.nome}
                 className={`group border-[1px] transition-all hover:shadow-lg flex flex-col min-h-[200px] rounded-2xl overflow-hidden cursor-pointer ${isAtMax ? 'opacity-70 bg-gray-50 dark:bg-gray-900/20' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'
                   }`}
-                onClick={() => setSelectedBenefit(cat)}
+                onClick={() => handleSelectBenefit(cat)}
               >
                 <CardContent className="p-5 flex flex-col flex-1">
                   <div className="flex items-center justify-between mb-3">
@@ -265,10 +306,10 @@ export function BeneficiosTab({ character, onAcquireBenefit, onRemoveBenefit }: 
                           }`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          onAcquireBenefit(cat.nome, nextDegree);
+                          handleSelectBenefit(cat);
                         }}
                       >
-                        {currentDegree > 0 ? 'Evoluir' : 'Comprar'}
+                        {isCriticoAprimorado ? 'Escolher Domínio' : currentDegree > 0 ? 'Evoluir' : 'Comprar'}
                       </Button>
                     )}
                   </div>
@@ -319,15 +360,39 @@ export function BeneficiosTab({ character, onAcquireBenefit, onRemoveBenefit }: 
               </div>
             </div>
 
+            {selectedBenefit.nome === CRITICO_APRIMORADO_BASE_NAME && (
+              <div className="space-y-2">
+                <h5 className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Escolha o Domínio de Armas</h5>
+                <select
+                  value={selectedDomain}
+                  onChange={(e) => setSelectedDomain(e.target.value)}
+                  className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-900 rounded-xl px-4 py-2 text-xs font-bold text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                >
+                  {DOMINIOS_CRITICO_APRIMORADO.map((d: { value: string; label: string }) => (
+                    <option key={d.value} value={d.value}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
+                {domainSpecificInfo && domainSpecificInfo.currentDegree > 0 && (
+                  <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-bold">
+                    Grau atual neste domínio: {domainSpecificInfo.currentDegree} / 3
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-2xl border border-indigo-100/50 dark:border-indigo-800/20 shadow-sm">
                 <h6 className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1 opacity-80">Preço Unitário</h6>
                 <p className="text-xl font-black text-indigo-700 dark:text-indigo-400">{selectedBenefit.custo_base || 3} PdA</p>
               </div>
               <div className="p-4 bg-purple-50/50 dark:bg-purple-900/10 rounded-2xl border border-purple-100/50 dark:border-purple-800/20 shadow-sm">
-                <h6 className="text-[9px] font-black text-purple-500 uppercase tracking-widest mb-1 opacity-80">Custo Total</h6>
+                <h6 className="text-[9px] font-black text-purple-500 uppercase tracking-widest mb-1 opacity-80">Custo Total / Próximo Nível</h6>
                 <p className="text-sm font-extrabold text-purple-700 dark:text-purple-400 uppercase">
-                  {selectedBenefit.regra_custo === 'dobro_por_grau' ? 'Progressivo (Dobro/Grau)' : 'Linear'}
+                  {selectedBenefit.nome === CRITICO_APRIMORADO_BASE_NAME 
+                    ? (domainSpecificInfo?.isAtMax ? 'Máximo Atingido' : `${domainSpecificInfo?.cost || 3} PdA (Linear)`)
+                    : (selectedBenefit.regra_custo === 'dobro_por_grau' ? 'Progressivo (Dobro/Grau)' : 'Linear')}
                 </p>
               </div>
             </div>
@@ -357,13 +422,23 @@ export function BeneficiosTab({ character, onAcquireBenefit, onRemoveBenefit }: 
           <Button
             onClick={() => {
               if (selectedBenefit) {
-                const owned = character.benefits.find(b => b.name === selectedBenefit.nome);
-                onAcquireBenefit(selectedBenefit.nome, (owned?.degree || 0) + 1);
+                if (selectedBenefit.nome === CRITICO_APRIMORADO_BASE_NAME) {
+                  if (domainSpecificInfo) {
+                    onAcquireBenefit(domainSpecificInfo.instancedName, domainSpecificInfo.nextDegree);
+                  }
+                } else {
+                  const owned = character.benefits.find(b => b.name === selectedBenefit.nome);
+                  onAcquireBenefit(selectedBenefit.nome, (owned?.degree || 0) + 1);
+                }
                 setSelectedBenefit(null);
               }
             }}
             disabled={(() => {
               if (!selectedBenefit) return true;
+              if (selectedBenefit.nome === CRITICO_APRIMORADO_BASE_NAME) {
+                if (!domainSpecificInfo) return true;
+                return pdaDisponivel < domainSpecificInfo.cost || domainSpecificInfo.isAtMax;
+              }
               const owned = character.benefits.find(b => b.name === selectedBenefit.nome);
               const currentDegree = owned?.degree || 0;
               const nextDegree = currentDegree + 1;
@@ -374,6 +449,10 @@ export function BeneficiosTab({ character, onAcquireBenefit, onRemoveBenefit }: 
             className={`font-black uppercase text-[10px] tracking-widest px-8 rounded-xl shadow-lg transition-all ${
               (() => {
                 if (!selectedBenefit) return 'bg-gray-100 text-gray-400';
+                if (selectedBenefit.nome === CRITICO_APRIMORADO_BASE_NAME) {
+                  if (domainSpecificInfo?.isAtMax) return 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 shadow-none border border-emerald-100 dark:border-emerald-900/30 cursor-default';
+                  return 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/15';
+                }
                 const owned = character.benefits.find(b => b.name === selectedBenefit.nome);
                 const isAtMax = typeof selectedBenefit.graus === 'number' && (owned?.degree || 0) >= selectedBenefit.graus;
                 if (isAtMax) return 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 shadow-none border border-emerald-100 dark:border-emerald-900/30 cursor-default';
@@ -383,6 +462,11 @@ export function BeneficiosTab({ character, onAcquireBenefit, onRemoveBenefit }: 
           >
             {(() => {
               if (!selectedBenefit) return 'Adquirir';
+              if (selectedBenefit.nome === CRITICO_APRIMORADO_BASE_NAME) {
+                if (domainSpecificInfo?.isAtMax) return 'Máximo Atingido';
+                if (domainSpecificInfo && domainSpecificInfo.currentDegree > 0) return `Evoluir (Grau ${domainSpecificInfo.currentDegree + 1})`;
+                return 'Adquirir Benefício';
+              }
               const owned = character.benefits.find(b => b.name === selectedBenefit.nome);
               const currentDegree = owned?.degree || 0;
               const isAtMax = typeof selectedBenefit.graus === 'number' && currentDegree >= selectedBenefit.graus;

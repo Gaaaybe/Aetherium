@@ -5,6 +5,7 @@ import { Activity, Edit2, Shield, Brain, Plus, Minus, Info, Dices } from 'lucide
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { obterBonusFortalecerAtivos } from '@/features/ficha-personagem/utils/fortalecerHelper';
+import { getRollAdvantageDisadvantage } from '@aetherium/rules-engine';
 
 interface AttributeCardProps {
   character: CharacterResponse;
@@ -15,7 +16,12 @@ interface AttributeCardProps {
 export function AttributeCard({ character, onSync, activePowers }: AttributeCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [rollingAttribute, setRollingAttribute] = useState<{ label: string; modifier: number } | null>(null);
+  const [rollingAttribute, setRollingAttribute] = useState<{
+    label: string;
+    modifier: number;
+    initialRule?: 'advantage' | 'disadvantage' | 'normal';
+    initialExtraDice?: number;
+  } | null>(null);
 
   const { attributes, level } = character;
   const activeFortalecer = obterBonusFortalecerAtivos(activePowers || [], character);
@@ -132,10 +138,17 @@ export function AttributeCard({ character, onSync, activePowers }: AttributeCard
               return (
                 <button 
                   key={item.label} 
-                  onClick={() => setRollingAttribute({ 
+                  onClick={() => {
+                  const { rule, extraDice } = getRollAdvantageDisadvantage(character, 'attribute', {
+                    attributeKey: item.key
+                  });
+                  setRollingAttribute({ 
                     label: labelMap[item.key] || 'Atributo', 
-                    modifier: item.attr.baseModifier + item.attr.extraBonus + tempBonus 
-                  })}
+                    modifier: item.attr.baseModifier + item.attr.extraBonus + tempBonus,
+                    initialRule: rule,
+                    initialExtraDice: extraDice
+                  });
+                }}
                   className="flex flex-col items-center p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800 group relative overflow-hidden transition-all hover:border-indigo-500/50 hover:bg-indigo-50/10 active:scale-95"
                 >
                   <div className={`absolute top-0 left-0 w-1 h-full ${item.bg}`} />
@@ -172,13 +185,17 @@ export function AttributeCard({ character, onSync, activePowers }: AttributeCard
       </Card>
 
       {/* Roller de Atributo */}
-      <DiceRoller
-        isOpen={!!rollingAttribute}
-        onClose={() => setRollingAttribute(null)}
-        label={`Teste de ${rollingAttribute?.label || ''}`}
-        modifier={rollingAttribute?.modifier || 0}
-        modifierLabel="Bônus de Atributo"
-      />
+      {rollingAttribute && (
+        <DiceRoller
+          isOpen={!!rollingAttribute}
+          onClose={() => setRollingAttribute(null)}
+          label={`Teste de ${rollingAttribute.label}`}
+          modifier={rollingAttribute.modifier}
+          modifierLabel="Bônus de Atributo"
+          initialRule={rollingAttribute.initialRule}
+          initialExtraDice={rollingAttribute.initialExtraDice}
+        />
+      )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Gerenciar Atributos" size="lg">
         <div className="space-y-6 py-4">

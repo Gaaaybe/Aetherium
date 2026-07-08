@@ -4,6 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent, Modal, ModalFooter, Button, I
 import { Brain, Dumbbell, ShieldCheck, ListFilter, Edit2, Shield, Circle, Dices } from 'lucide-react';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { obterBonusFortalecerAtivos } from '@/features/ficha-personagem/utils/fortalecerHelper';
+import { getRollAdvantageDisadvantage, getSkillRollBonus, hasConditionEffectOf } from '@aetherium/rules-engine';
+
 
 interface StatsColumnProps {
   character: CharacterResponse;
@@ -49,6 +51,8 @@ export function StatsColumn({ character, onSync, activePowers = [], deactivatePo
     initialApplyEfficiency?: boolean;
     efficiencyBonus?: number;
     modifierLabel?: string;
+    initialRule?: 'advantage' | 'disadvantage' | 'normal';
+    initialExtraDice?: number;
   } | null>(null);
 
   const activeFortalecer = obterBonusFortalecerAtivos(activePowers, character);
@@ -122,10 +126,21 @@ export function StatsColumn({ character, onSync, activePowers = [], deactivatePo
     
     const skillBonus = includeFortalecer ? (activeFortalecer.pericias[skillName] || 0) : 0;
     
-    let bonus = skill.trainingBonus + (skill.extraBonus || 0) + attributeModifier + skillBonus;
-    if (skill.proficiencyState === 'EFFICIENT') bonus += character.efficiencyBonus;
-    if (skill.proficiencyState === 'INEFFICIENT') bonus -= Math.round(character.efficiencyBonus / 2);
-    
+    const skillsDict: Record<string, any> = {};
+    skillsArray.forEach(s => {
+      skillsDict[s.name] = s;
+    });
+
+    let bonus = getSkillRollBonus(
+      skillsDict,
+      skillName,
+      character.level,
+      attributeModifier,
+      character.conditions || [],
+      true
+    );
+
+    bonus += skillBonus;
     return bonus;
   };
 
@@ -148,12 +163,27 @@ export function StatsColumn({ character, onSync, activePowers = [], deactivatePo
       baseModifier -= Math.round(character.efficiencyBonus / 2);
     }
 
+    const isDesprevenido = (name === 'Fortitude' || name === 'Reflexos') && 
+      hasConditionEffectOf(character.conditions || [], 'Desprevenido');
+
+    let finalBaseModifier = baseModifier;
+    let finalEfficiencyBonus = isInefficient ? 0 : character.efficiencyBonus;
+
+    if (isDesprevenido) {
+      finalBaseModifier = Math.floor(baseModifier / 2);
+      finalEfficiencyBonus = Math.floor(finalEfficiencyBonus / 2);
+    }
+
+    const { rule, extraDice } = getRollAdvantageDisadvantage(character, 'skill', { skillName: name });
+
     setRollingAction({
       name: skill.name,
-      modifier: baseModifier,
+      modifier: finalBaseModifier,
       initialApplyEfficiency: skill.proficiencyState === 'EFFICIENT',
-      efficiencyBonus: isInefficient ? 0 : character.efficiencyBonus,
-      modifierLabel: "Bônus Base"
+      efficiencyBonus: finalEfficiencyBonus,
+      modifierLabel: "Bônus Base",
+      initialRule: rule,
+      initialExtraDice: extraDice
     });
   };
 
@@ -164,12 +194,16 @@ export function StatsColumn({ character, onSync, activePowers = [], deactivatePo
     const attributeBonus = activeFortalecer.atributos[key] || 0;
     const mod = (attr?.rollModifier || 0) + attributeBonus;
     
+    const { rule, extraDice } = getRollAdvantageDisadvantage(character, 'attribute', { attributeKey: key });
+
     setRollingAction({
       name: `Teste de Capacidade ${type === 'physical' ? 'Física' : 'Mental'}`,
       modifier: mod,
       initialApplyEfficiency: false,
       efficiencyBonus: 0,
-      modifierLabel: "Mod. Atributo"
+      modifierLabel: "Mod. Atributo",
+      initialRule: rule,
+      initialExtraDice: extraDice
     });
   };
 
@@ -397,6 +431,8 @@ export function StatsColumn({ character, onSync, activePowers = [], deactivatePo
         efficiencyBonus={rollingAction?.efficiencyBonus}
         initialApplyEfficiency={rollingAction?.initialApplyEfficiency}
         modifierLabel={rollingAction?.modifierLabel}
+        initialRule={rollingAction?.initialRule}
+        initialExtraDice={rollingAction?.initialExtraDice}
         onRoll={() => {
           if (rollingAction && deactivatePower) {
             const rolledName = rollingAction.name;

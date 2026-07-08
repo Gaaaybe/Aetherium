@@ -6,6 +6,7 @@ import escalas from './escalas.json';
 import dominios from './dominios.json';
 import acoesCombate from './acoesCombate.json';
 import beneficios from './beneficios.json';
+import condicoes from './condicoes.json';
 
 // Tipos TypeScript (opcional, para melhor autocompletar)
 export interface ConfiguracaoEfeito {
@@ -136,6 +137,14 @@ export interface BenefitCatalogEntry {
   requisitos?: string[];
 }
 
+export interface Condicao {
+  id: string;
+  nome: string;
+  patamar: 'Fraca' | 'Média' | 'Forte' | 'Extrema';
+  descricao: string;
+  evolucao?: string;
+}
+
 // Exporta os dados
 export const EFEITOS: Efeito[] = efeitos as Efeito[];
 export const MODIFICACOES: Modificacao[] = modificacoes as Modificacao[];
@@ -144,6 +153,7 @@ export const ESCALAS: Escalas = escalas as Escalas;
 export const DOMINIOS: Dominio[] = dominios as Dominio[];
 export const ACOES_COMBATE: AcaoCombate[] = acoesCombate as AcaoCombate[];
 export const BENEFICIOS: BenefitCatalogEntry[] = beneficios as BenefitCatalogEntry[];
+export const CONDICOES: Condicao[] = condicoes as Condicao[];
 
 // Funções auxiliares para busca rápida
 export function buscarEfeito(id: string): Efeito | undefined {

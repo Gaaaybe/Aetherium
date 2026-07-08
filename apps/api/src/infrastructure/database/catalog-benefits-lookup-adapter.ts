@@ -21,7 +21,13 @@ export class CatalogBenefitsLookupAdapter {
     const benefits = JSON.parse(fileContent) as BenefitInfo[];
 
     const normalizedName = name.trim().toLowerCase();
-    const found = benefits.find((benefit) => benefit.nome.trim().toLowerCase() === normalizedName);
+    const found = benefits.find((benefit) => {
+      const benefitNameLower = benefit.nome.trim().toLowerCase();
+      if (normalizedName.startsWith('crítico aprimorado para') && benefitNameLower === 'crítico aprimorado para') {
+        return true;
+      }
+      return benefitNameLower === normalizedName;
+    });
 
     return found ?? null;
   }

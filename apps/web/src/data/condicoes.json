@@ -1,0 +1,194 @@
+[
+  {
+    "id": "abalado",
+    "nome": "Abalado",
+    "patamar": "Fraca",
+    "descricao": "O personagem sofre +1 desvantagem em testes de perícia. Evolução: Se ficar abalado novamente, em vez disso fica Apavorado.",
+    "evolucao": "Apavorado"
+  },
+  {
+    "id": "caido",
+    "nome": "Caído",
+    "patamar": "Fraca",
+    "descricao": "O personagem está deitado no chão. Ele sofre +2 desvantagens em ataques corpo a corpo e seu deslocamento é reduzido a 1,5m. Gastar uma Ação de Movimento o levanta."
+  },
+  {
+    "id": "faminto",
+    "nome": "Faminto",
+    "patamar": "Fraca",
+    "descricao": "O personagem não recupera PE de nenhuma forma até comer uma refeição e descansar."
+  },
+  {
+    "id": "fraco",
+    "nome": "Fraco",
+    "patamar": "Fraca",
+    "descricao": "O personagem sofre +1 desvantagem em testes de atributos físicos (Força, Destreza e Constituição) e de perícias baseadas nesses atributos. Evolução: Se ficar fraco novamente, em vez disso fica Debilitado.",
+    "evolucao": "Debilitado"
+  },
+  {
+    "id": "frustrado",
+    "nome": "Frustrado",
+    "patamar": "Fraca",
+    "descricao": "O personagem sofre +1 desvantagem em testes de atributos mentais (Inteligência, Sabedoria e Carisma) e de perícias baseadas nesses atributos. Evolução: Se ficar frustrado novamente, em vez disso fica Esmorecido.",
+    "evolucao": "Esmorecido"
+  },
+  {
+    "id": "lento",
+    "nome": "Lento",
+    "patamar": "Fraca",
+    "descricao": "Todas as formas de deslocamento do personagem são reduzidas à metade (arredonde para baixo) e ele não pode correr ou fazer investidas."
+  },
+  {
+    "id": "ofuscado",
+    "nome": "Ofuscado",
+    "patamar": "Fraca",
+    "descricao": "O personagem sofre +1 desvantagem em testes de ataque e de Percepção."
+  },
+  {
+    "id": "surdo",
+    "nome": "Surdo",
+    "patamar": "Fraca",
+    "descricao": "O personagem não pode fazer testes de Percepção para ouvir e sofre +2 desvantagens em testes de Iniciativa."
+  },
+  {
+    "id": "privado",
+    "nome": "Privado",
+    "patamar": "Fraca",
+    "descricao": "Você perdeu a capacidade de utilizar um sentido específico (escolhido pela fonte do efeito: Olfato, Paladar, Mental, Rádio etc.). Você falha automaticamente em testes de Percepção baseados neste sentido. Você sofre +2 desvantagens em testes de perícias que dependem primariamente deste sentido."
+  },
+  {
+    "id": "alquebrado",
+    "nome": "Alquebrado",
+    "patamar": "Média",
+    "descricao": "Condição mental. O custo em PE das habilidades do personagem é dobrado."
+  },
+  {
+    "id": "debilitado",
+    "nome": "Debilitado",
+    "patamar": "Média",
+    "descricao": "O personagem sofre +2 desvantagens em testes de atributos físicos (Força, Destreza e Constituição) e de perícias baseadas nesses atributos. Evolução: Se o personagem ficar debilitado novamente, em vez disso fica Inconsciente.",
+    "evolucao": "Inconsciente"
+  },
+  {
+    "id": "esmorecido",
+    "nome": "Esmorecido",
+    "patamar": "Média",
+    "descricao": "O personagem sofre +2 desvantagens em testes de atributos mentais (Inteligência, Sabedoria e Carisma) e de perícias baseadas nesses atributos."
+  },
+  {
+    "id": "enjoado",
+    "nome": "Enjoado",
+    "patamar": "Média",
+    "descricao": "O personagem só pode realizar uma Ação Padrão ou uma Ação de Movimento (não ambas) por rodada."
+  },
+  {
+    "id": "entorpecido",
+    "nome": "Entorpecido",
+    "patamar": "Média",
+    "descricao": "Você perdeu o sentido do tato. Seu corpo não sente dor, temperatura ou pressão. Devido à falta de dor, você ignora penalidades por ferimentos ou dor (como a condição Abalado causada por dor). Você sofre +2 desvantagens em testes de Ladinagem, Atuação (instrumentos) e ataques com armas manuais. Se você sofrer um erro crítico (1 natural) em um ataque ou teste físico, você derruba o item que está segurando sem perceber."
+  },
+  {
+    "id": "fascinado",
+    "nome": "Fascinado",
+    "patamar": "Média",
+    "descricao": "A atenção do personagem está presa. Ele sofre +2 desvantagens em Percepção e não pode fazer ações, exceto observar aquilo que o fascinou. Qualquer ação hostil contra o personagem anula esta condição. Gastar uma Ação Padrão para balançar a criatura também anula o efeito."
+  },
+  {
+    "id": "imovel",
+    "nome": "Imóvel",
+    "patamar": "Média",
+    "descricao": "Todas as formas de deslocamento do personagem são reduzidas a 0m."
+  },
+  {
+    "id": "pasmo",
+    "nome": "Pasmo",
+    "patamar": "Média",
+    "descricao": "O personagem não pode fazer ações, exceto reações."
+  },
+  {
+    "id": "desprevenido",
+    "nome": "Desprevenido",
+    "patamar": "Média",
+    "descricao": "Despreparado, o personagem não pode se esquivar ou aparar. Seus valores de Fortitude e Reflexos são cortados pela metade."
+  },
+  {
+    "id": "agarrado",
+    "nome": "Agarrado",
+    "patamar": "Forte",
+    "descricao": "O personagem fica Desprevenido e Imóvel, sofre desvantagem em testes de ataque e só pode atacar com armas leves. Ataques à Distância: Um ataque à distância contra um alvo envolvido na manobra agarrar tem 50% de chance de acertar o alvo errado."
+  },
+  {
+    "id": "apavorado",
+    "nome": "Apavorado",
+    "patamar": "Forte",
+    "descricao": "O personagem sofre +3 desvantagens em testes de perícia e deve fugir da fonte do medo da maneira mais eficiente possível. Se não puder fugir, poderá agir, mas não poderá se aproximar voluntariamente da fonte do medo."
+  },
+  {
+    "id": "atordoado",
+    "nome": "Atordoado",
+    "patamar": "Forte",
+    "descricao": "O personagem fica Desprevenido e não pode fazer ações. (Se a duração não for especificada, dura apenas pelo seu próximo turno)."
+  },
+  {
+    "id": "cego",
+    "nome": "Cego",
+    "patamar": "Forte",
+    "descricao": "O personagem fica Desprevenido e Lento, não pode fazer testes de Percepção para observar e sofre +2 desvantagens em testes de perícias baseadas em Força ou Destreza. Todos os alvos de seus ataques recebem camuflagem total."
+  },
+  {
+    "id": "confuso",
+    "nome": "Confuso",
+    "patamar": "Forte",
+    "descricao": "O personagem comporta-se de modo aleatório. Role 1d6 no início de seus turnos: 1: Movimenta-se em uma direção aleatória (rolagem de 1d8); 2-3: Não pode fazer ações (exceto reações) e fica balbuciando; 4-5: Ataca a criatura mais próxima (ou a si mesmo, se estiver sozinho); 6: A condição termina e pode agir normalmente."
+  },
+  {
+    "id": "surpreendido",
+    "nome": "Surpreendido",
+    "patamar": "Forte",
+    "descricao": "Não ciente de seus inimigos. O personagem fica Desprevenido e não pode fazer ações."
+  },
+  {
+    "id": "vulneravel",
+    "nome": "Vulnerável",
+    "patamar": "Forte",
+    "descricao": "O personagem sofre 2 vezes mais dano de todas as fontes."
+  },
+  {
+    "id": "fatigado",
+    "nome": "Fatigado",
+    "patamar": "Forte",
+    "descricao": "O personagem fica Fraco e Vulnerável. Evolução: Se o personagem ficar fatigado novamente, em vez disso fica Exausto.",
+    "evolucao": "Exausto"
+  },
+  {
+    "id": "enredado",
+    "nome": "Enredado",
+    "patamar": "Extrema",
+    "descricao": "O personagem fica Lento, Vulnerável e sofre +1 desvantagem em testes de ataque."
+  },
+  {
+    "id": "exausto",
+    "nome": "Exausto",
+    "patamar": "Extrema",
+    "descricao": "O personagem fica Debilitado, Lento e Vulnerável. Evolução: Se ficar exausto novamente, em vez disso fica Inconsciente.",
+    "evolucao": "Inconsciente"
+  },
+  {
+    "id": "inconsciente",
+    "nome": "Inconsciente",
+    "patamar": "Extrema",
+    "descricao": "O personagem fica Indefeso e não pode fazer ações. Acordar uma criatura inconsciente gasta uma Ação Padrão."
+  },
+  {
+    "id": "indefeso",
+    "nome": "Indefeso",
+    "patamar": "Extrema",
+    "descricao": "O personagem é considerado Desprevenido, mas falha automaticamente em testes de Reflexos e Fortitude. Ele pode sofrer golpes de misericórdia."
+  },
+  {
+    "id": "paralisado",
+    "nome": "Paralisado",
+    "patamar": "Extrema",
+    "descricao": "O personagem fica Imóvel, Indefeso e só pode realizar ações puramente mentais."
+  }
+]

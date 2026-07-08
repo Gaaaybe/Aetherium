@@ -242,17 +242,17 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Coluna 1: Sidebar Fixa (Estatísticas vitais) */}
-        <div className={`lg:col-span-3 space-y-6 ${activeMobileSection === 'geral' ? 'block' : 'hidden'} lg:block`}>
+        <div className={`lg:col-span-3 space-y-6 min-w-0 ${activeMobileSection === 'geral' ? 'block' : 'hidden'} lg:block`}>
           <SidebarColumn character={character} onSync={sync} activePowers={allActivePowers} />
         </div>
 
         {/* Coluna 2: Detalhes de Atributos e Perícias */}
-        <div className={`lg:col-span-3 space-y-6 ${activeMobileSection === 'geral' ? 'block' : 'hidden'} lg:block`}>
+        <div className={`lg:col-span-3 space-y-6 min-w-0 ${activeMobileSection === 'geral' ? 'block' : 'hidden'} lg:block`}>
           <StatsColumn character={character} onSync={sync} activePowers={allActivePowers} deactivatePower={deactivatePower} />
         </div>
 
         {/* Coluna 3: Área Principal de Conteúdo Dinâmico */}
-        <div className={`lg:col-span-6 space-y-6 ${activeMobileSection !== 'geral' ? 'block' : 'hidden'} lg:block`}>
+        <div className={`lg:col-span-6 space-y-6 min-w-0 ${activeMobileSection !== 'geral' ? 'block' : 'hidden'} lg:block`}>
           <MainArea 
             character={character} 
             activeTab={activeTab} 

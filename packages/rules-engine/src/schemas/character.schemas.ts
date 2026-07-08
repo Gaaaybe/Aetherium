@@ -20,6 +20,7 @@ export const AttributesSchema = z.object({
 });
 
 export const NarrativeProfileSchema = z.object({
+  name: z.string().optional().default(''),
   identity: z.string(),
   origin: z.string(),
   motivations: z.array(z.string()),

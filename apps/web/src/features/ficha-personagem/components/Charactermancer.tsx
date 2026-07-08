@@ -18,6 +18,7 @@ export function Charactermancer({ isOpen, onClose, onSuccess }: CharactermancerP
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Form State
+  const [name, setName] = useState('');
   const [identity, setIdentity] = useState('');
   const [origin, setOrigin] = useState('');
   const [motivationStr, setMotivationStr] = useState('');
@@ -43,6 +44,7 @@ export function Charactermancer({ isOpen, onClose, onSuccess }: CharactermancerP
   const resetForm = () => {
     setStep(1);
     setApiError(null);
+    setName('');
     setIdentity('');
     setOrigin('');
     setMotivationStr('');
@@ -65,7 +67,7 @@ export function Charactermancer({ isOpen, onClose, onSuccess }: CharactermancerP
   };
 
   const validateStep1 = () => {
-    if (!identity || !origin) return false;
+    if (!name || !origin) return false;
     
     const motivations = motivationStr.split(',').map(s => s.trim()).filter(Boolean);
     const complications = complicationStr.split(',').map(s => s.trim()).filter(Boolean);
@@ -96,6 +98,7 @@ export function Charactermancer({ isOpen, onClose, onSuccess }: CharactermancerP
     try {
       const payload = {
         narrative: {
+          name,
           identity,
           origin,
           motivations: motivationStr.split(',').map(s => s.trim()).filter(Boolean),
@@ -172,15 +175,21 @@ export function Charactermancer({ isOpen, onClose, onSuccess }: CharactermancerP
         {step === 1 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
             <Input
-              label="Identidade / Nome"
-              placeholder="Ex: Sir Galahad, O Implacável"
-              value={identity}
-              onChange={(e) => setIdentity(e.target.value)}
+              label="Nome do Personagem"
+              placeholder="Ex: Arthur Morgan, Sir Galahad"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
             />
             <Input
-              label="Origem"
-              placeholder="Ex: Nascido nas favelas de Kaelen"
+              label="Identidade (Arquétipo / Título)"
+              placeholder="Ex: Detetive Paranormal, Foragido da Guilda"
+              value={identity}
+              onChange={(e) => setIdentity(e.target.value)}
+            />
+            <Input
+              label="Origem (História Base)"
+              placeholder="Ex: Nascido nas favelas de Kaelen..."
               value={origin}
               onChange={(e) => setOrigin(e.target.value)}
               required

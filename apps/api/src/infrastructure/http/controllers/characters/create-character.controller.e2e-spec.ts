@@ -95,6 +95,27 @@ describe('CreateCharacterController (e2e)', () => {
     });
   });
 
+  test('[POST] /characters — should create and return 201 with character when name is provided', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/characters')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        ...validBody,
+        narrative: {
+          ...validBody.narrative,
+          name: 'Arthur Pendragon',
+          identity: 'The True King',
+        }
+      });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.body.narrative).toMatchObject({
+      name: 'Arthur Pendragon',
+      identity: 'The True King',
+      origin: 'From the Mountains',
+    });
+  });
+
   test('[POST] /characters — should return 401 without token', async () => {
     const response = await request(app.getHttpServer()).post('/characters').send(validBody);
 
