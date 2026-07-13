@@ -13,7 +13,7 @@ const INCLUDE = {
   itemDamages: true,
   itemPowers: true,
   itemPowerArrays: true,
-  user: { select: { id: true, name: true } },
+  user: { select: { id: true, name: true, roles: true } },
 } as const;
 
 const EXPORT_INCLUDE = {
@@ -1023,12 +1023,15 @@ export class ItemsService {
   }
 
   async fetchAllItems() {
-    return this.prisma.item.findMany({
+    const items = await this.prisma.item.findMany({
       include: INCLUDE,
-      where: { userId: { not: null } },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    return items.filter(
+      (item) => item.userId !== null && item.characterId === null && !item.user?.roles?.includes('ADMIN'),
+    );
   }
 }

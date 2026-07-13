@@ -67,6 +67,7 @@ const POWER_ARRAY_INCLUDE = {
     select: {
       id: true,
       name: true,
+      roles: true,
     },
   },
 };
@@ -1569,7 +1570,7 @@ export class PowersService {
     });
 
     return powers.filter(
-      (power) => power.userId !== null && !power.user?.roles?.includes('ADMIN'),
+      (power) => power.userId !== null && power.characterId === null && !power.user?.roles?.includes('ADMIN'),
     );
   }
 
@@ -1593,13 +1594,16 @@ export class PowersService {
   }
 
   async fetchAllPowerArrays() {
-    return this.prisma.powerArray.findMany({
+    const arrays = await this.prisma.powerArray.findMany({
       include: POWER_ARRAY_INCLUDE,
-      where: { userId: { not: null } },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    return arrays.filter(
+      (array) => array.userId !== null && array.characterId === null && !array.user?.roles?.includes('ADMIN'),
+    );
   }
 
   async promotePeculiarity(peculiarityId: string) {
@@ -1624,14 +1628,17 @@ export class PowersService {
   }
 
   async fetchAllPeculiarities() {
-    return this.prisma.peculiarity.findMany({
-      where: { userId: { not: null } },
+    const peculiarities = await this.prisma.peculiarity.findMany({
       include: {
-        user: { select: { id: true, name: true } },
+        user: { select: { id: true, name: true, roles: true } },
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    return peculiarities.filter(
+      (pec) => pec.userId !== null && !pec.user?.roles?.includes('ADMIN'),
+    );
   }
 }
