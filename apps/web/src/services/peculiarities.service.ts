@@ -43,3 +43,13 @@ export async function copyPeculiarity(id: string): Promise<PeculiaridadeResponse
   const { data } = await api.post<PeculiaridadeResponse>(`/peculiarities/${id}/copy`);
   return data;
 }
+
+export async function fetchAdminPeculiarities(): Promise<PeculiaridadeResponse[]> {
+  const { data } = await api.get<PeculiaridadeResponse[]>('/admin/peculiarities');
+  return data;
+}
+
+export async function promotePeculiarityToOfficial(id: string): Promise<PeculiaridadeResponse> {
+  const { data } = await api.patch<PeculiaridadeResponse>(`/admin/peculiarities/${id}/promote`);
+  return data;
+}

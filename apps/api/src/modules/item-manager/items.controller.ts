@@ -1,5 +1,5 @@
 import { ItemType } from '@aetherium/rules-engine';
-import { Body, Controller, Delete, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
 import { Public } from '@/infrastructure/auth/public';
@@ -39,14 +39,14 @@ export class ItemsController {
     @Body(new ZodValidationPipe(updateItemBodySchema)) body: UpdateItemBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const raw = await this.itemsService.update(itemId, user.sub, body);
+    const raw = await this.itemsService.update(itemId, user.sub, body, user.isAdmin);
     return formatItemToHTTP(raw);
   }
 
   @Delete('/items/:itemId')
   @HttpCode(204)
   async delete(@Param('itemId') itemId: string, @CurrentUser() user: UserPayload) {
-    await this.itemsService.delete(itemId, user.sub);
+    await this.itemsService.delete(itemId, user.sub, user.isAdmin);
   }
 
   @Post('/items/:itemId/copy')
@@ -93,7 +93,7 @@ export class ItemsController {
 
   @Get('/items/:itemId/export')
   async exportItem(@Param('itemId') itemId: string, @CurrentUser() user: UserPayload) {
-    return this.itemsService.exportItem(itemId, user.sub);
+    return this.itemsService.exportItem(itemId, user.sub, user.isAdmin);
   }
 
   @Post('/items/import')
@@ -103,6 +103,24 @@ export class ItemsController {
     @CurrentUser() user: UserPayload,
   ) {
     const raw = await this.itemsService.importItem(user.sub, body);
+    return formatItemToHTTP(raw);
+  }
+
+  @Get('/admin/items')
+  async fetchAllAdminItems(@CurrentUser() user: UserPayload) {
+    if (!user.isAdmin) {
+      throw new ForbiddenException('Acesso negado');
+    }
+    const raws = await this.itemsService.fetchAllItems();
+    return raws.map(formatItemToHTTP);
+  }
+
+  @Patch('/admin/items/:itemId/promote')
+  async promoteItem(@Param('itemId') itemId: string, @CurrentUser() user: UserPayload) {
+    if (!user.isAdmin) {
+      throw new ForbiddenException('Acesso negado');
+    }
+    const raw = await this.itemsService.promoteItem(itemId);
     return formatItemToHTTP(raw);
   }
 }

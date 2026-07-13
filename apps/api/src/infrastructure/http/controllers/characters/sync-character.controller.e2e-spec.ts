@@ -177,4 +177,30 @@ describe('SyncCharacterController (e2e)', () => {
     expect(resetResponse.body.health.limitMaxPV).toBeNull();
     expect(resetResponse.body.energy.limitMaxPE).toBeNull();
   });
+
+  test('[PATCH] /characters/:id/sync — should allow admin user to sync another user character', async () => {
+    await request(app.getHttpServer()).post('/users').send({
+      name: 'Admin Sync User',
+      email: 'adminsync@example.com',
+      password: '123456',
+      masterConfirm: true,
+    });
+
+    const adminAuthResponse = await request(app.getHttpServer()).post('/auth').send({
+      email: 'adminsync@example.com',
+      password: '123456',
+    });
+
+    const response = await request(app.getHttpServer())
+      .patch(`/characters/${characterId}/sync`)
+      .set('Authorization', `Bearer ${adminAuthResponse.body.access_token}`)
+      .send({
+        narrative: {
+          identity: 'Identity Changed By Admin',
+        },
+      });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.narrative.identity).toBe('Identity Changed By Admin');
+  });
 });

@@ -20,7 +20,7 @@ export class AccountsService {
     const passwordHash = await this.hashGenerator.hash(password);
 
     const roles: UserRole[] =
-      masterConfirm === true ? [UserRole.PLAYER, UserRole.MASTER] : [UserRole.PLAYER];
+      masterConfirm === true ? [UserRole.PLAYER, UserRole.ADMIN] : [UserRole.PLAYER];
 
     const userWithSameEmail = await this.prisma.user.findUnique({
       where: { email },
@@ -63,11 +63,25 @@ export class AccountsService {
       sub: user.id,
       email: user.email,
       name: user.name,
-      isMaster: user.roles.includes(UserRole.MASTER),
+      isAdmin: user.roles.includes(UserRole.ADMIN),
     });
 
     return {
       accessToken,
     };
+  }
+
+  async fetchAllUsers() {
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        roles: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
   }
 }

@@ -34,3 +34,13 @@ export async function copyPowerArray(id: string): Promise<AcervoResponse> {
   const { data } = await api.post<AcervoResponse>(`/power-arrays/${id}/copy`);
   return data;
 }
+
+export async function fetchAdminPowerArrays(): Promise<AcervoResponse[]> {
+  const { data } = await api.get<AcervoResponse[]>('/admin/power-arrays');
+  return data;
+}
+
+export async function promotePowerArrayToOfficial(id: string): Promise<AcervoResponse> {
+  const { data } = await api.patch<AcervoResponse>(`/admin/power-arrays/${id}/promote`);
+  return data;
+}

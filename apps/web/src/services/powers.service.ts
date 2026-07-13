@@ -95,3 +95,13 @@ export async function applyMutations(
 ): Promise<void> {
   await api.post('/powers/apply-mutations', { sceneId, sourceCharacterId, mutations });
 }
+
+export async function fetchAdminPowers(): Promise<PoderResponse[]> {
+  const { data } = await api.get<PoderResponse[]>('/admin/powers');
+  return data;
+}
+
+export async function promotePowerToOfficial(id: string): Promise<PoderResponse> {
+  const { data } = await api.patch<PoderResponse>(`/admin/powers/${id}/promote`);
+  return data;
+}

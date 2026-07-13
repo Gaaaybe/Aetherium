@@ -181,6 +181,7 @@ export interface DamageDescriptorResponse {
   dado: string;
   base: string;
   espiritual: boolean;
+  tipoDano?: string | null;
 }
 
 export interface ItemBaseResponse {
@@ -271,6 +272,7 @@ export interface DamageDescriptorPayload {
   dado: string;
   base: string;
   espiritual: boolean;
+  tipoDano?: string | null;
 }
 
 interface ItemCommonPayload {

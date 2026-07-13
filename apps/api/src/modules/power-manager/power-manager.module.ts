@@ -28,6 +28,12 @@ import { FetchUserPowersController } from '@/infrastructure/http/controllers/pow
 import { GetPowerByIdController } from '@/infrastructure/http/controllers/powers/get-power-by-id.controller';
 import { UpdatePowerController } from '@/infrastructure/http/controllers/powers/update-power.controller';
 import { ResolvePowerController } from '@/infrastructure/http/controllers/powers/resolve-power.controller';
+import { FetchAllPowersController } from '@/infrastructure/http/controllers/powers/fetch-all-powers.controller';
+import { PromotePowerController } from '@/infrastructure/http/controllers/powers/promote-power.controller';
+import { FetchAllPowerArraysController } from '@/infrastructure/http/controllers/power-arrays/fetch-all-power-arrays.controller';
+import { PromotePowerArrayController } from '@/infrastructure/http/controllers/power-arrays/promote-power-array.controller';
+import { FetchAllPeculiaritiesController } from '@/infrastructure/http/controllers/peculiarities/fetch-all-peculiarities.controller';
+import { PromotePeculiarityController } from '@/infrastructure/http/controllers/peculiarities/promote-peculiarity.controller';
 import { PowersService } from './powers.service';
 import { PowerResolutionService } from './power-resolution.service';
 import { OnCharacterPowerArrayDiscarded } from './subscribers/on-character-power-array-discarded';
@@ -45,6 +51,8 @@ import { CombatEventListener } from './listeners/combat-event.listener';
     FetchUserPeculiaritiesController,
     GetPeculiarityByIdController,
     CopyPublicPeculiarityController,
+    FetchAllPeculiaritiesController,
+    PromotePeculiarityController,
     // Powers
     CreatePowerController,
     UpdatePowerController,
@@ -55,6 +63,8 @@ import { CombatEventListener } from './listeners/combat-event.listener';
     CopyPublicPowerController,
     FetchCharacterPowersController,
     ResolvePowerController,
+    FetchAllPowersController,
+    PromotePowerController,
     // PowerArrays
     CreatePowerArrayController,
     UpdatePowerArrayController,
@@ -64,6 +74,8 @@ import { CombatEventListener } from './listeners/combat-event.listener';
     GetPowerArrayByIdController,
     CopyPublicPowerArrayController,
     FetchCharacterPowerArraysController,
+    FetchAllPowerArraysController,
+    PromotePowerArrayController,
   ],
   providers: [
     PowersService,

@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Link, useLocation } from 'react-router-dom';
-import { UserCircle, GitBranch, BookOpen, Moon, Sun, Users, LogIn, LogOut, Globe, ChevronDown, Layers, Zap } from 'lucide-react';
+import { UserCircle, GitBranch, BookOpen, Moon, Sun, Users, LogIn, LogOut, Globe, ChevronDown, Layers, Zap, ShieldAlert } from 'lucide-react';
 import { useDarkMode, useScrollToTop, useMetaTags } from './shared/hooks';
 import { Button, ToastContainer } from './shared/ui';
-import { CriadorPage, BibliotecaPage, SobrePage, GerenciadorPage, LandingPage, LoginPage, PersonagensPage, CharacterSheetDetailPage, CampanhasPage, ComunidadePage, MasterDashboardPage } from './pages';
+import { CriadorPage, BibliotecaPage, SobrePage, GerenciadorPage, LandingPage, LoginPage, PersonagensPage, CharacterSheetDetailPage, CampanhasPage, ComunidadePage, AdminDashboardPage } from './pages';
 import { Breadcrumbs, PrivateRoute } from './shared/components';
 import { useAuth } from './context/useAuth';
 import { MigracaoLocalStorage } from './features/criador-de-poder/components/MigracaoLocalStorage';
@@ -82,6 +82,7 @@ function MinhaColecaoDropdown() {
 }
 
 function Navigation() {
+  const { user } = useAuth();
   return (
     <nav className="flex items-center gap-1 sm:gap-2">
       <NavLink to="/criador" className={({ isActive }) => navClass(isActive)}>
@@ -100,6 +101,13 @@ function Navigation() {
         <BookOpen className="w-4 h-4" />
         <span className="hidden sm:inline">Sobre</span>
       </NavLink>
+
+      {user?.isAdmin && (
+        <NavLink to="/admin" className={({ isActive }) => navClass(isActive)}>
+          <ShieldAlert className="w-4 h-4 text-red-500 dark:text-red-400" />
+          <span className="hidden sm:inline">Admin</span>
+        </NavLink>
+      )}
     </nav>
   );
 }
@@ -212,10 +220,10 @@ function AppContent() {
           <Route path="/comunidade" element={<ComunidadePage />} />
           <Route path="/sobre" element={<SobrePage />} />
           <Route
-            path="/mestre"
+            path="/admin"
             element={
-              <PrivateRoute>
-                <MasterDashboardPage />
+              <PrivateRoute adminOnly>
+                <AdminDashboardPage />
               </PrivateRoute>
             }
           />

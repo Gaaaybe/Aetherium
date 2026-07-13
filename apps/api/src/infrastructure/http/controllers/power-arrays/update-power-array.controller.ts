@@ -19,7 +19,7 @@ export class UpdatePowerArrayController {
     @Body(new ZodValidationPipe(updatePowerArrayBodySchema)) body: UpdatePowerArrayBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const raw = await this.powersService.updatePowerArray(powerArrayId, user.sub, body);
+    const raw = await this.powersService.updatePowerArray(powerArrayId, user.sub, body, user.isAdmin);
     return formatPowerArrayToHTTP(raw);
   }
 }

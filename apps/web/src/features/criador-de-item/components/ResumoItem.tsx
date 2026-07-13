@@ -109,7 +109,10 @@ function TypeSpecificStats({ itemData }: { itemData: ItemResponse }) {
                   {itemData.danos.map((d, i) => (
                     <div key={i} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
                       <span className="font-mono font-bold text-sm text-gray-900 dark:text-gray-100">{d.dado}</span>
-                      <span className="text-xs text-gray-500 flex-1">base: {d.base}</span>
+                      <span className="text-xs text-gray-500 flex-1">
+                        base: {d.base}
+                        {d.tipoDano ? ` · ${d.tipoDano}` : ''}
+                      </span>
                       {d.espiritual && (
                         <span className="inline-flex items-center gap-1 text-[11px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
                           <Zap className="w-3 h-3" /> Espiritual
@@ -274,7 +277,7 @@ export function ResumoItem({
 
     if (itemData && itemData.tipo === 'weapon') {
       linhas.push(
-        `Danos: ${itemData.danos.map((d) => `${d.dado} (${d.base}${d.espiritual ? ', espiritual' : ''})`).join(', ')}`,
+        `Danos: ${itemData.danos.map((d) => `${d.dado} (${d.base}${d.tipoDano ? ` · ${d.tipoDano}` : ''}${d.espiritual ? ', espiritual' : ''})`).join(', ')}`,
         `Alcance: ${alcanceLabel(itemData.alcance)}${itemData.alcanceExtraMetros > 0 ? ` +${itemData.alcanceExtraMetros}m` : ''} | Crítico: ${itemData.critMargin}–20 / ×${itemData.critMultiplier}`,
       );
     } else if (itemData && itemData.tipo === 'defensive-equipment') {

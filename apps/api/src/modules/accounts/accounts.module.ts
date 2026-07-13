@@ -5,11 +5,12 @@ import {
   AuthenticateController,
   RegisterUserController,
 } from '@/infrastructure/http/controllers/accounts/accounts.controller';
+import { FetchAllUsersController } from '@/infrastructure/http/controllers/accounts/fetch-all-users.controller';
 import { AccountsService } from './accounts.service';
 
 @Module({
   imports: [DatabaseModule, CryptographyModule],
-  controllers: [RegisterUserController, AuthenticateController],
+  controllers: [RegisterUserController, AuthenticateController, FetchAllUsersController],
   providers: [AccountsService],
   exports: [AccountsService],
 })

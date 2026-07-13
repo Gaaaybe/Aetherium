@@ -26,7 +26,7 @@ export function useAdminCharacters() {
       setCharacters(data);
     } catch (err: any) {
       if (err?.response?.status === 403 || err?.response?.status === 401) {
-        setError('Acesso negado. Você não tem privilégios de Mestre para ver esta página.');
+        setError('Acesso negado. Você não tem privilégios de Administrador para ver esta página.');
       } else {
         setError(err instanceof Error ? err.message : 'Erro ao carregar fichas de admin');
       }

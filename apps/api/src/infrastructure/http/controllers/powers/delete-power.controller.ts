@@ -10,6 +10,6 @@ export class DeletePowerController {
   @Delete()
   @HttpCode(204)
   async handle(@Param('powerId') powerId: string, @CurrentUser() user: UserPayload) {
-    await this.powersService.deletePower(powerId, user.sub);
+    await this.powersService.deletePower(powerId, user.sub, user.isAdmin);
   }
 }

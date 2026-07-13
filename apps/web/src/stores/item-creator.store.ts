@@ -32,7 +32,7 @@ export interface ItemBuilderState {
   powerArrayIds: string[];
   editingItemId: string | null;
   weapon: {
-    danos: { dado: string; base: string; espiritual: boolean }[];
+    danos: { dado: string; base: string; espiritual: boolean; tipoDano?: string }[];
     critMargin: number;
     critMultiplier: number;
     alcance: 'adjacente' | 'natural' | 'curto' | 'medio' | 'longo';
@@ -71,7 +71,7 @@ const createInitialState = (): ItemBuilderState => ({
   powerArrayIds: [],
   editingItemId: null,
   weapon: {
-    danos: [{ dado: '1d6', base: 'FOR', espiritual: false }],
+    danos: [{ dado: '1d6', base: 'FOR', espiritual: false, tipoDano: '' }],
     critMargin: 20,
     critMultiplier: 2,
     alcance: 'natural',
@@ -106,7 +106,7 @@ interface ItemCreatorStore {
   setTipo: (tipo: ItemType) => void;
   togglePower: (powerId: string) => void;
   togglePowerArray: (powerArrayId: string) => void;
-  updateWeaponDamage: (index: number, key: 'dado' | 'base' | 'espiritual', value: string | boolean) => void;
+  updateWeaponDamage: (index: number, key: 'dado' | 'base' | 'espiritual' | 'tipoDano', value: string | boolean) => void;
   addWeaponDamage: () => void;
   removeWeaponDamage: (index: number) => void;
   updateWeaponField: (
@@ -203,7 +203,7 @@ export const useItemCreatorStore = create<ItemCreatorStore>()(
           ...prev.state,
           weapon: {
             ...prev.state.weapon,
-            danos: [...prev.state.weapon.danos, { dado: '1d6', base: 'FOR', espiritual: false }],
+            danos: [...prev.state.weapon.danos, { dado: '1d6', base: 'FOR', espiritual: false, tipoDano: '' }],
           },
         },
       })),
@@ -301,7 +301,12 @@ export const useItemCreatorStore = create<ItemCreatorStore>()(
         if (item.tipo === 'weapon') {
           const weaponItem = item as any;
           next.weapon = {
-            danos: weaponItem.baseDanos ?? weaponItem.danos ?? [],
+            danos: (weaponItem.baseDanos ?? weaponItem.danos ?? []).map((d: any) => ({
+              dado: d.dado,
+              base: d.base,
+              espiritual: !!d.espiritual,
+              tipoDano: d.tipoDano ?? '',
+            })),
             critMargin: weaponItem.critMargin ?? 20,
             critMultiplier: weaponItem.critMultiplier ?? 2,
             alcance: weaponItem.alcance ?? 'natural',

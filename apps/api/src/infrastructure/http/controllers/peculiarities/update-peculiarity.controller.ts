@@ -19,7 +19,7 @@ export class UpdatePeculiarityController {
     @Body(new ZodValidationPipe(updatePeculiarityBodySchema)) body: UpdatePeculiarityBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const raw = await this.powersService.updatePeculiarity(peculiarityId, user.sub, body);
+    const raw = await this.powersService.updatePeculiarity(peculiarityId, user.sub, body, user.isAdmin);
     return formatPeculiarityToHTTP(raw);
   }
 }

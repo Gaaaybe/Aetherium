@@ -10,6 +10,6 @@ export class DeletePowerArrayController {
   @Delete()
   @HttpCode(204)
   async handle(@Param('powerArrayId') powerArrayId: string, @CurrentUser() user: UserPayload) {
-    await this.powersService.deletePowerArray(powerArrayId, user.sub);
+    await this.powersService.deletePowerArray(powerArrayId, user.sub, user.isAdmin);
   }
 }

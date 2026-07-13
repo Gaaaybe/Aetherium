@@ -223,4 +223,14 @@ export const charactersService = {
     const { data } = await api.post<CharacterResponse>(`/characters/${id}/unarmed-mastery`, payload);
     return data;
   },
+
+  async fetchAllUsers(): Promise<{ id: string; name: string; email: string; roles: string[] }[]> {
+    const { data } = await api.get<{ id: string; name: string; email: string; roles: string[] }[]>('/admin/users');
+    return data;
+  },
+
+  async transferOwnership(characterId: string, newOwnerId: string): Promise<CharacterResponse> {
+    const { data } = await api.patch<CharacterResponse>(`/admin/characters/${characterId}/owner`, { newOwnerId });
+    return data;
+  },
 };
