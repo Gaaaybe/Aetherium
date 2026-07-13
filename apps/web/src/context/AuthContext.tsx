@@ -10,7 +10,7 @@ import type { LoginPayload, RegisterPayload } from '@/services/types';
 import { AuthContext, type AuthUser } from './auth-context';
 
 // Decodifica o payload do JWT sem biblioteca externa
-function decodeJwtPayload(token: string): { sub: string; email: string; name: string; exp?: number } | null {
+function decodeJwtPayload(token: string): { sub: string; email: string; name: string; isAdmin?: boolean; exp?: number } | null {
   try {
     const payload = token.split('.')[1];
     const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
     const payload = decodeJwtPayload(token);
-    if (payload) return { id: payload.sub, email: payload.email, name: payload.name ?? payload.email };
+    if (payload) return { id: payload.sub, email: payload.email, name: payload.name ?? payload.email, isAdmin: !!payload.isAdmin };
     return null;
   });
 
@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!decoded) throw new Error('Resposta de autenticação inválida');
     // Limpa trabalho em progresso do usuário anterior antes de definir o novo
     limparDadosCriador();
-    flushSync(() => setUser({ id: decoded.sub, email: decoded.email, name: decoded.name ?? decoded.email }));
+    flushSync(() => setUser({ id: decoded.sub, email: decoded.email, name: decoded.name ?? decoded.email, isAdmin: !!decoded.isAdmin }));
     scheduleExpirationLogout();
   }, [scheduleExpirationLogout]);
 

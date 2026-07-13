@@ -1,7 +1,7 @@
 import { Character } from '@aetherium/rules-engine';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { DomainMasteryLevel } from '@prisma/client';
+import { DomainMasteryLevel, UserRole } from '@prisma/client';
 import { CatalogBenefitsLookupAdapter } from '@/infrastructure/database/catalog-benefits-lookup-adapter';
 import { CatalogDomainsLookupAdapter } from '@/infrastructure/database/catalog-domains-lookup-adapter';
 import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
@@ -214,7 +214,12 @@ export class CharactersService {
     }
 
     if (userId && raw.userId !== userId) {
-      throw new NotAllowedError();
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+      if (!user || !user.roles.includes(UserRole.ADMIN)) {
+        throw new NotAllowedError();
+      }
     }
 
     await this.migrateIfNeeded(raw);
@@ -459,7 +464,7 @@ export class CharactersService {
       where: { id: userId },
     });
 
-    if (!user || !user.roles.includes('MASTER')) {
+    if (!user || !user.roles.includes(UserRole.ADMIN)) {
       throw new NotAllowedError('Acesso não autorizado');
     }
 
@@ -1514,5 +1519,31 @@ export class CharactersService {
     await this.saveCharacter(this.prisma, character);
 
     return character;
+  }
+
+  async changeOwner(id: string, newOwnerId: string, currentUserId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: currentUserId },
+    });
+    if (!user || !user.roles.includes(UserRole.ADMIN)) {
+      throw new NotAllowedError();
+    }
+
+    const newOwner = await this.prisma.user.findUnique({
+      where: { id: newOwnerId },
+    });
+    if (!newOwner) {
+      throw new ResourceNotFoundError();
+    }
+
+    const updated = await this.prisma.character.update({
+      where: { id },
+      data: {
+        userId: newOwnerId,
+      },
+      include: INCLUDE,
+    });
+
+    return updated as unknown as Character;
   }
 }

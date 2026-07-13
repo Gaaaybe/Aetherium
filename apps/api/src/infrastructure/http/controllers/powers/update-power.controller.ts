@@ -16,7 +16,7 @@ export class UpdatePowerController {
     @Body(new ZodValidationPipe(updatePowerBodySchema)) body: UpdatePowerBodySchema,
     @CurrentUser() user: UserPayload,
   ) {
-    const raw = await this.powersService.updatePower(powerId, user.sub, body);
+    const raw = await this.powersService.updatePower(powerId, user.sub, body, user.isAdmin);
     return formatPowerToHTTP(raw);
   }
 }

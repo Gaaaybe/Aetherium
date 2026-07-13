@@ -1,5 +1,6 @@
 import { calculatePowerCost, DomainName } from '@aetherium/rules-engine';
 import { Injectable, Logger } from '@nestjs/common';
+import { UserRole } from '@prisma/client';
 import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
 import {
   CreatePeculiarityBodySchema,
@@ -29,6 +30,7 @@ const POWER_INCLUDE = {
     select: {
       id: true,
       name: true,
+      roles: true,
     },
   },
   peculiarity: true,
@@ -114,6 +116,7 @@ export class PowersService {
     peculiarityId: string,
     userId: string,
     body: UpdatePeculiarityBodySchema,
+    isAdmin = false,
   ) {
     const existing = await this.prisma.peculiarity.findUnique({
       where: { id: peculiarityId },
@@ -123,7 +126,7 @@ export class PowersService {
       throw new ResourceNotFoundError('Peculiaridade não encontrada');
     }
 
-    if (!canBeEditedBy(existing, userId)) {
+    if (!isAdmin && !canBeEditedBy(existing, userId)) {
       throw new NotAllowedError();
     }
 
@@ -142,7 +145,7 @@ export class PowersService {
     });
   }
 
-  async deletePeculiarity(peculiarityId: string, userId: string) {
+  async deletePeculiarity(peculiarityId: string, userId: string, isAdmin = false) {
     const existing = await this.prisma.peculiarity.findUnique({
       where: { id: peculiarityId },
     });
@@ -151,7 +154,7 @@ export class PowersService {
       throw new ResourceNotFoundError('Peculiaridade não encontrada');
     }
 
-    if (!canBeEditedBy(existing, userId)) {
+    if (!isAdmin && !canBeEditedBy(existing, userId)) {
       throw new NotAllowedError();
     }
 
@@ -329,7 +332,7 @@ export class PowersService {
     return calcResult.result;
   }
 
-  async createPower(userId: string, body: CreatePowerBodySchema) {
+  async createPower(userId: string | null, body: CreatePowerBodySchema) {
     const {
       nome,
       descricao,
@@ -363,6 +366,12 @@ export class PowersService {
         this.logger.warn(
           `[Ghost Peculiarity] peculiarId "${dominio.peculiarId}" não encontrado — criando placeholder para o power "${nome}" (userId=${userId})`,
         );
+
+        if (!userId) {
+          throw new InvalidVisibilityError(
+            'Não é possível criar poder oficial sem a peculiaridade associada existir no sistema',
+          );
+        }
 
         await this.prisma.peculiarity.create({
           data: {
@@ -464,7 +473,7 @@ export class PowersService {
     });
   }
 
-  async updatePower(powerId: string, userId: string, body: UpdatePowerBodySchema) {
+  async updatePower(powerId: string, userId: string, body: UpdatePowerBodySchema, isAdmin = false) {
     const existing = await this.prisma.power.findUnique({
       where: { id: powerId },
       include: POWER_INCLUDE,
@@ -474,7 +483,7 @@ export class PowersService {
       throw new ResourceNotFoundError('Poder não encontrado');
     }
 
-    if (!canBeEditedBy(existing, userId)) {
+    if (!isAdmin && !canBeEditedBy(existing, userId)) {
       throw new NotAllowedError();
     }
 
@@ -873,7 +882,7 @@ export class PowersService {
     });
   }
 
-  async deletePower(powerId: string, userId: string) {
+  async deletePower(powerId: string, userId: string, isAdmin = false) {
     const existing = await this.prisma.power.findUnique({
       where: { id: powerId },
       include: POWER_INCLUDE,
@@ -883,7 +892,7 @@ export class PowersService {
       throw new ResourceNotFoundError('Poder não encontrado');
     }
 
-    if (!canBeEditedBy(existing, userId)) {
+    if (!isAdmin && !canBeEditedBy(existing, userId)) {
       throw new NotAllowedError();
     }
 
@@ -1131,7 +1140,7 @@ export class PowersService {
     });
   }
 
-  async updatePowerArray(powerArrayId: string, userId: string, body: UpdatePowerArrayBodySchema) {
+  async updatePowerArray(powerArrayId: string, userId: string, body: UpdatePowerArrayBodySchema, isAdmin = false) {
     const existing = await this.prisma.powerArray.findUnique({
       where: { id: powerArrayId },
       include: POWER_ARRAY_INCLUDE,
@@ -1141,7 +1150,7 @@ export class PowersService {
       throw new ResourceNotFoundError('Acervo não encontrado');
     }
 
-    if (!canBeEditedBy(existing, userId)) {
+    if (!isAdmin && !canBeEditedBy(existing, userId)) {
       throw new NotAllowedError();
     }
 
@@ -1182,7 +1191,7 @@ export class PowersService {
       }
 
       for (const p of powers) {
-        if (!canBeAccessedBy(p, userId)) {
+        if (!isAdmin && !canBeAccessedBy(p, userId)) {
           throw new NotAllowedError('Acesso negado a um dos poderes selecionados');
         }
       }
@@ -1320,7 +1329,7 @@ export class PowersService {
     });
   }
 
-  async deletePowerArray(powerArrayId: string, userId: string) {
+  async deletePowerArray(powerArrayId: string, userId: string, isAdmin = false) {
     const existing = await this.prisma.powerArray.findUnique({
       where: { id: powerArrayId },
     });
@@ -1329,7 +1338,7 @@ export class PowersService {
       throw new ResourceNotFoundError('Acervo não encontrado');
     }
 
-    if (!canBeEditedBy(existing, userId)) {
+    if (!isAdmin && !canBeEditedBy(existing, userId)) {
       throw new NotAllowedError();
     }
 
@@ -1529,6 +1538,100 @@ export class PowersService {
         ...(category ? { categoria: category } : {}),
       },
       orderBy: { nome: 'asc' },
+    });
+  }
+
+  async promotePower(powerId: string) {
+    const existing = await this.prisma.power.findUnique({
+      where: { id: powerId },
+    });
+
+    if (!existing) {
+      throw new ResourceNotFoundError('Poder não encontrado');
+    }
+
+    return this.prisma.power.update({
+      where: { id: powerId },
+      data: {
+        userId: null,
+        isPublic: true,
+      },
+      include: POWER_INCLUDE,
+    });
+  }
+
+  async fetchAllPowers() {
+    const powers = await this.prisma.power.findMany({
+      include: POWER_INCLUDE,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return powers.filter(
+      (power) => power.userId !== null && !power.user?.roles?.includes('ADMIN'),
+    );
+  }
+
+  async promotePowerArray(powerArrayId: string) {
+    const existing = await this.prisma.powerArray.findUnique({
+      where: { id: powerArrayId },
+    });
+
+    if (!existing) {
+      throw new ResourceNotFoundError('Acervo não encontrado');
+    }
+
+    return this.prisma.powerArray.update({
+      where: { id: powerArrayId },
+      data: {
+        userId: null,
+        isPublic: true,
+      },
+      include: POWER_ARRAY_INCLUDE,
+    });
+  }
+
+  async fetchAllPowerArrays() {
+    return this.prisma.powerArray.findMany({
+      include: POWER_ARRAY_INCLUDE,
+      where: { userId: { not: null } },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async promotePeculiarity(peculiarityId: string) {
+    const existing = await this.prisma.peculiarity.findUnique({
+      where: { id: peculiarityId },
+    });
+
+    if (!existing) {
+      throw new ResourceNotFoundError('Peculiaridade não encontrada');
+    }
+
+    return this.prisma.peculiarity.update({
+      where: { id: peculiarityId },
+      data: {
+        userId: null,
+        isPublic: true,
+      },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
+    });
+  }
+
+  async fetchAllPeculiarities() {
+    return this.prisma.peculiarity.findMany({
+      where: { userId: { not: null } },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
   }
 }

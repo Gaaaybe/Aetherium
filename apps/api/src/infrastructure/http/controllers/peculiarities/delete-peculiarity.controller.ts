@@ -10,6 +10,6 @@ export class DeletePeculiarityController {
   @Delete()
   @HttpCode(204)
   async handle(@Param('peculiarityId') peculiarityId: string, @CurrentUser() user: UserPayload) {
-    await this.powersService.deletePeculiarity(peculiarityId, user.sub);
+    await this.powersService.deletePeculiarity(peculiarityId, user.sub, user.isAdmin);
   }
 }

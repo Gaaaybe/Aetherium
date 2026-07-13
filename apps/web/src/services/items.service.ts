@@ -50,3 +50,13 @@ export async function importItem(payload: any): Promise<ItemResponse> {
   return data;
 }
 
+export async function fetchAdminItems(): Promise<ItemResponse[]> {
+  const { data } = await api.get<ItemResponse[]>('/admin/items');
+  return data;
+}
+
+export async function promoteItemToOfficial(id: string): Promise<ItemResponse> {
+  const { data } = await api.patch<ItemResponse>(`/admin/items/${id}/promote`);
+  return data;
+}
+

@@ -23,7 +23,7 @@ async function main() {
       email: 'dev@aetherium.com',
       name: 'Dev Explorer',
       password: passwordHash,
-      roles: ['PLAYER', 'MASTER']
+      roles: ['PLAYER', 'ADMIN']
     }
   })
   console.log('👤 Usuário Dev criado (dev@aetherium.com / aetherium123)')

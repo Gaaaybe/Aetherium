@@ -148,4 +148,43 @@ describe('DeleteCharacterController (e2e)', () => {
 
     expect(response.statusCode).toBe(403);
   });
+
+  test('[DELETE] /characters/:characterId — should allow admin user to delete another user character', async () => {
+    await request(app.getHttpServer()).post('/users').send({
+      name: 'Admin User',
+      email: 'adminuser@example.com',
+      password: '123456',
+      masterConfirm: true,
+    });
+
+    const adminAuthResponse = await request(app.getHttpServer()).post('/auth').send({
+      email: 'adminuser@example.com',
+      password: '123456',
+    });
+
+    const createResponse = await request(app.getHttpServer())
+      .post('/characters')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        ...validCharacterBody,
+        narrative: {
+          ...validCharacterBody.narrative,
+          identity: 'Character Owned by Normal User',
+        },
+      });
+
+    const characterId = createResponse.body.id;
+
+    const deleteResponse = await request(app.getHttpServer())
+      .delete(`/characters/${characterId}`)
+      .set('Authorization', `Bearer ${adminAuthResponse.body.access_token}`);
+
+    expect(deleteResponse.statusCode).toBe(204);
+
+    const getResponse = await request(app.getHttpServer())
+      .get(`/characters/${characterId}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(getResponse.statusCode).toBe(404);
+  });
 });

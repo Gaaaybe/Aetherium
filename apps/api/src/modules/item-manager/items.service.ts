@@ -235,7 +235,7 @@ export class ItemsService {
     return created;
   }
 
-  async update(itemId: string, userId: string, body: UpdateItemBodySchema) {
+  async update(itemId: string, userId: string, body: UpdateItemBodySchema, isAdmin = false) {
     const existing = await this.prisma.item.findUnique({
       where: { id: itemId },
       include: INCLUDE,
@@ -247,7 +247,7 @@ export class ItemsService {
 
     const isOwned = existing.userId === userId;
     const isOfficial = !existing.userId;
-    if (isOfficial || !isOwned) {
+    if (!isAdmin && (isOfficial || !isOwned)) {
       throw new NotAllowedError();
     }
 
@@ -376,7 +376,7 @@ export class ItemsService {
     return updated!;
   }
 
-  async delete(itemId: string, userId: string) {
+  async delete(itemId: string, userId: string, isAdmin = false) {
     const existing = await this.prisma.item.findUnique({
       where: { id: itemId },
     });
@@ -387,7 +387,7 @@ export class ItemsService {
 
     const isOwned = existing.userId === userId;
     const isOfficial = !existing.userId;
-    if (isOfficial || !isOwned) {
+    if (!isAdmin && (isOfficial || !isOwned)) {
       throw new NotAllowedError();
     }
 
@@ -827,7 +827,7 @@ export class ItemsService {
     };
   }
 
-  async exportItem(itemId: string, userId: string) {
+  async exportItem(itemId: string, userId: string, isAdmin = false) {
     const item = await this.prisma.item.findUnique({
       where: { id: itemId },
       include: EXPORT_INCLUDE,
@@ -837,7 +837,7 @@ export class ItemsService {
       throw new ResourceNotFoundError('Item não encontrado');
     }
 
-    if (item.userId && item.userId !== userId && !item.isPublic) {
+    if (!isAdmin && item.userId && item.userId !== userId && !item.isPublic) {
       throw new NotAllowedError();
     }
 
@@ -997,5 +997,34 @@ export class ItemsService {
     } as any;
 
     return this.create(userId, createItemBody);
+  }
+
+  async promoteItem(itemId: string) {
+    const existing = await this.prisma.item.findUnique({
+      where: { id: itemId },
+    });
+
+    if (!existing) {
+      throw new ResourceNotFoundError('Item não encontrado');
+    }
+
+    return this.prisma.item.update({
+      where: { id: itemId },
+      data: {
+        userId: null,
+        isPublic: true,
+      },
+      include: INCLUDE,
+    });
+  }
+
+  async fetchAllItems() {
+    return this.prisma.item.findMany({
+      include: INCLUDE,
+      where: { userId: { not: null } },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
   }
 }

@@ -10,6 +10,7 @@ import { ChangeInventoryItemQuantityController } from '@/infrastructure/http/con
 // Controllers
 import { CreateCharacterController } from '@/infrastructure/http/controllers/characters/create-character.controller';
 import { DeleteCharacterController } from '@/infrastructure/http/controllers/characters/delete-character.controller';
+import { ChangeCharacterOwnerController } from '@/infrastructure/http/controllers/characters/change-character-owner.controller';
 import { DeletePowerArrayFromCharacterController } from '@/infrastructure/http/controllers/characters/delete-power-array-from-character.controller';
 import { DeletePowerFromCharacterController } from '@/infrastructure/http/controllers/characters/delete-power-from-character.controller';
 import { DiscardBenefitController } from '@/infrastructure/http/controllers/characters/discard-benefit.controller';
@@ -45,6 +46,7 @@ import { CharactersService } from './characters.service';
     GetCharacterByIdController,
     FetchAllCharactersController,
     DeleteCharacterController,
+    ChangeCharacterOwnerController,
     UpdateUnarmedMasteryController,
     AcquireDomainMasteryController,
     DiscardDomainMasteryController,
