@@ -464,7 +464,7 @@ export function CriadorDeItem({
                   const baseSelectValue = isBasePreset ? baseNormalizada : BASE_CUSTOM_VALUE;
 
                   return (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+                  <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-2 items-end border-b border-gray-100 dark:border-gray-800 pb-3 md:pb-0 md:border-0">
                     <Input
                       label="Dado"
                       value={dano.dado}
@@ -499,6 +499,12 @@ export function CriadorDeItem({
                         />
                       ) : null}
                     </div>
+                    <Input
+                      label="Tipo de Dano"
+                      value={dano.tipoDano ?? ''}
+                      onChange={(e) => updateWeaponDamage(index, 'tipoDano', e.target.value)}
+                      placeholder="Ex: Corte, Impacto..."
+                    />
                     <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 h-10">
                       <input
                         type="checkbox"
@@ -512,6 +518,7 @@ export function CriadorDeItem({
                       variant="danger"
                       onClick={() => removeWeaponDamage(index)}
                       disabled={state.weapon.danos.length === 1}
+                      className="w-full md:w-auto"
                     >
                       Remover
                     </Button>

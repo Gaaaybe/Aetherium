@@ -470,6 +470,7 @@ model ItemDamage {
   base       String
   espiritual Boolean @default(false)
   posicao    Int     @default(0)
+  tipoDano   String?
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 

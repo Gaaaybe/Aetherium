@@ -38,6 +38,7 @@ const damageDescriptorSchema = z.object({
   dado: z.string().regex(/^\d+d\d+$/, 'Formato inválido, use NdN (ex: 1d8)'),
   base: z.string().min(1),
   espiritual: z.boolean(),
+  tipoDano: z.string().max(100).optional().nullable(),
 });
 
 const commonFields = {
@@ -286,11 +287,13 @@ export function formatItemToHTTP(raw: any) {
       dado: scaleWeaponDie(d.dado, upgradeLevel),
       base: d.base,
       espiritual: d.espiritual,
+      tipoDano: d.tipoDano ?? null,
     }));
     const baseDanos = raw.itemDamages.map((d: any) => ({
       dado: d.dado,
       base: d.base,
       espiritual: d.espiritual,
+      tipoDano: d.tipoDano ?? null,
     }));
 
     return {

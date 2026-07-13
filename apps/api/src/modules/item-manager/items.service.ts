@@ -191,6 +191,7 @@ export class ItemsService {
           dado: d.dado.toLowerCase(),
           base: d.base.toLowerCase(),
           espiritual: d.espiritual,
+          tipoDano: d.tipoDano || null,
           posicao: index,
         })),
       };
@@ -313,6 +314,7 @@ export class ItemsService {
             dado: d.dado.toLowerCase(),
             base: d.base.toLowerCase(),
             espiritual: d.espiritual,
+            tipoDano: d.tipoDano || null,
             posicao: index,
           })),
         };
@@ -651,6 +653,7 @@ export class ItemsService {
               base: entry.base,
               espiritual: entry.espiritual,
               posicao: entry.posicao,
+              tipoDano: entry.tipoDano,
             })),
           },
           itemPowers: {
@@ -890,6 +893,7 @@ export class ItemsService {
         dado: d.dado,
         base: d.base,
         espiritual: d.espiritual,
+        tipoDano: d.tipoDano ?? undefined,
       }));
     } else if (item.tipo === 'DEFENSIVE_EQUIPMENT') {
       base.tipoEquipamento = item.tipoEquipamento?.toLowerCase() ?? undefined;

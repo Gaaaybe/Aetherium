@@ -271,6 +271,7 @@ export class PrismaCharacterManagerItemsLookupAdapter {
               base: entry.base,
               espiritual: entry.espiritual,
               posicao: entry.posicao,
+              tipoDano: entry.tipoDano,
             })),
           },
           itemPowers: {
