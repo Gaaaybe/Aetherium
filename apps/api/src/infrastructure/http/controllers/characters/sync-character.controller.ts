@@ -29,6 +29,22 @@ const syncCharacterBodySchema = z.object({
       motivations: z.array(z.string()).optional(),
       complications: z.array(z.string()).optional(),
       generalNotes: z.string().optional(),
+      deity: z
+        .object({
+          name: z.string(),
+          aspects: z.array(z.string()),
+          precepts: z.string(),
+          minorPrecepts: z.string(),
+          taboos: z.string(),
+          personality: z.string(),
+          isSealed: z.boolean(),
+        })
+        .optional(),
+      psychicState: z
+        .object({
+          stress: z.number().int().nonnegative(),
+        })
+        .optional(),
     })
     .optional(),
   symbol: z.string().trim().min(1).nullable().optional(),

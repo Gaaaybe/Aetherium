@@ -94,6 +94,8 @@ export class CharacterPresenter {
         motivations: character.narrativeProfile.motivations || [],
         complications: character.narrativeProfile.complications || [],
         generalNotes: character.narrativeProfile.generalNotes || '',
+        deity: character.narrativeProfile.deity || undefined,
+        psychicState: character.narrativeProfile.psychicState || undefined,
       },
       attributes: {
         strength: {

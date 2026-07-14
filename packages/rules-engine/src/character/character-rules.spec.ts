@@ -50,7 +50,8 @@ import {
   calculateMovement,
   getRollAdvantageDisadvantage,
   getSkillRollBonus,
-  RulesValidationError
+  RulesValidationError,
+  rollScientificPrecision
 } from './character-rules.js';
 
 // Helper para criar um personagem fake válido para os testes
@@ -868,6 +869,22 @@ describe('Motor de Regras de Personagem - character-rules.ts', () => {
         char.conditions
       );
       expect(fortitudeBonus).toBe(3);
+    });
+  });
+
+  describe('rollScientificPrecision', () => {
+    it('deve retornar um objeto com sucesso e o valor rolado', () => {
+      const res = rollScientificPrecision();
+      expect(res).toHaveProperty('roll');
+      expect(res).toHaveProperty('success');
+      expect(res.roll).toBeGreaterThanOrEqual(1);
+      expect(res.roll).toBeLessThanOrEqual(10);
+      
+      if (res.roll >= 3) {
+        expect(res.success).toBe(true);
+      } else {
+        expect(res.success).toBe(false);
+      }
     });
   });
 

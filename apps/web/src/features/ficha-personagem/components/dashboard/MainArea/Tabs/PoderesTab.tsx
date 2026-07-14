@@ -548,12 +548,15 @@ export function PoderesTab({
             <div className="flex flex-wrap gap-2">
               {character.domainMasteries.map((mastery) => {
                 const isPeculiarity = !!mastery.nome || !DOMINIOS.find(d => d.id === mastery.domainId);
+                const isSealed = mastery.domainId === 'sagrado' && character.narrative?.deity?.isSealed;
                 return (
                   <Badge 
                     key={mastery.domainId} 
-                    variant={isPeculiarity ? 'espirito' : 'secondary'} 
+                    variant={isSealed ? 'caos' : isPeculiarity ? 'espirito' : 'secondary'} 
                     className={`pl-1 pr-3 py-1 flex items-center gap-2 border-indigo-200 dark:border-indigo-800 cursor-pointer hover:opacity-80 transition-colors ${
-                      isPeculiarity ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400' : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
+                      isSealed
+                        ? 'opacity-60 line-through'
+                        : isPeculiarity ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400' : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400'
                     }`}
                     onClick={() => {
                       setSelectedDomain(mastery.domainId);
@@ -565,7 +568,7 @@ export function PoderesTab({
                       {getDomainIcon(mastery, "w-full h-full object-cover")}
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-black uppercase text-[11px] leading-tight">{getDomainName(mastery)}</span>
+                      <span className="font-black uppercase text-[11px] leading-tight">{getDomainName(mastery)} {isSealed && "(SELADO)"}</span>
                       <span className="text-[9px] font-bold opacity-70 leading-tight">{mastery.masteryLevel}</span>
                     </div>
                   </Badge>
@@ -662,52 +665,265 @@ export function PoderesTab({
         <div className="space-y-6 py-2">
           {isCreatingPeculiarity ? (
             <div className="space-y-4">
-              <Button variant="ghost" size="sm" onClick={() => setIsCreatingPeculiarity(false)} className="flex items-center gap-1 text-gray-500 p-0"><ChevronLeft className="w-4 h-4" /> Voltar</Button>
-              <Input label="Nome da Peculiaridade" value={newPeculiarity.nome} onChange={e => setNewPeculiarity({...newPeculiarity, nome: e.target.value})} />
-              <textarea className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 text-sm h-24 outline-none focus:ring-2 focus:ring-purple-500" placeholder="Descrição..." value={newPeculiarity.descricao} onChange={e => setNewPeculiarity({...newPeculiarity, descricao: e.target.value})} />
-              <div className="grid grid-cols-2 gap-4">
-                <Select label="Energia" value={newPeculiarity.espiritual ? 'true' : 'false'} onChange={e => setNewPeculiarity({...newPeculiarity, espiritual: e.target.value === 'true'})} options={[{value: 'true', label: 'Espiritual'}, {value: 'false', label: 'Técnica'}]} />
-                <Input label="Ícone (URL)" value={newPeculiarity.icone} onChange={e => setNewPeculiarity({...newPeculiarity, icone: e.target.value})} />
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                  Nova Peculiaridade
+                </label>
+                <Button variant="ghost" size="sm" onClick={() => setIsCreatingPeculiarity(false)} className="flex items-center gap-1 text-gray-500 p-0 hover:text-gray-700 font-bold">
+                  <ChevronLeft className="w-3.5 h-3.5" /> Voltar
+                </Button>
+              </div>
+              <div className="space-y-4 p-4 rounded-2xl border border-gray-150 dark:border-gray-800 bg-gray-50/50 dark:bg-black/10">
+                <Input label="Nome da Peculiaridade" value={newPeculiarity.nome} onChange={e => setNewPeculiarity({...newPeculiarity, nome: e.target.value})} />
+                <div>
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 block">Descrição</label>
+                  <textarea className="w-full px-3 py-2 border rounded-xl dark:bg-gray-800 text-sm h-24 outline-none focus:ring-2 focus:ring-purple-500 border-gray-200 dark:border-gray-700" placeholder="Descreva os efeitos e temática do domínio..." value={newPeculiarity.descricao} onChange={e => setNewPeculiarity({...newPeculiarity, descricao: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Select label="Energia" value={newPeculiarity.espiritual ? 'true' : 'false'} onChange={e => setNewPeculiarity({...newPeculiarity, espiritual: e.target.value === 'true'})} options={[{value: 'true', label: 'Espiritual'}, {value: 'false', label: 'Técnica'}]} />
+                  <Input label="Ícone (URL)" value={newPeculiarity.icone} onChange={e => setNewPeculiarity({...newPeculiarity, icone: e.target.value})} />
+                </div>
               </div>
             </div>
           ) : (
             <>
               {selectedDomain && (
-                <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border shadow-inner">
-                  <div className="flex items-center gap-4">
-                    <div className="w-20 h-20 shrink-0 rounded-2xl bg-white dark:bg-gray-800 flex items-center justify-center border shadow-md overflow-hidden p-1">{getDomainIcon(selectedDomain, "w-full h-full object-cover")}</div>
-                    <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Selecionado</p>
-                      <p className="text-2xl font-black text-gray-900 dark:text-white uppercase">{getDomainName({ domainId: selectedDomain })}</p>
+                <div className="relative overflow-hidden p-5 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border border-indigo-500/20 shadow-md">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl pointer-events-none" />
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 shrink-0 rounded-2xl bg-white dark:bg-gray-800 flex items-center justify-center border shadow-md overflow-hidden p-1">
+                        {getDomainIcon(selectedDomain, "w-full h-full object-cover")}
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">
+                          Domínio Selecionado
+                        </span>
+                        <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase leading-none mt-1">
+                          {getDomainName({ domainId: selectedDomain })}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 leading-relaxed max-w-md">
+                          {DOMINIOS.find(d => d.id === selectedDomain)?.descricao || 
+                           myPeculiarities.find(p => p.id === selectedDomain)?.descricao ||
+                           'Domínio customizado e exclusivo do personagem.'}
+                        </p>
+                      </div>
                     </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleRemoveMastery} 
+                      className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl h-10 w-10 p-0"
+                      title="Remover Mestria"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={handleRemoveMastery} className="text-red-500 p-2 h-12 w-12"><Trash2 className="w-6 h-6" /></Button>
                 </div>
               )}
-              <div className="space-y-4">
-                {!showPeculiarityLibrary ? (
-                  <>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" className={`h-20 flex flex-col gap-1 ${!showPeculiarityLibrary ? 'border-indigo-500 bg-indigo-50/50' : ''}`} onClick={() => setShowPeculiarityLibrary(false)}><Shield className="w-5 h-5" />Sistema</Button>
-                      <Button variant="outline" className={`h-20 flex flex-col gap-1 ${showPeculiarityLibrary ? 'border-purple-500 bg-purple-50/50' : ''}`} onClick={() => setShowPeculiarityLibrary(true)}><Sparkles className="w-5 h-5" />Peculiar</Button>
+
+              <div className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    className={`p-4 rounded-2xl border-2 text-left transition-all relative overflow-hidden group ${
+                      !showPeculiarityLibrary
+                        ? 'border-indigo-500 bg-indigo-50/10 dark:bg-indigo-950/10 ring-2 ring-indigo-500/20'
+                        : 'border-gray-200 dark:border-gray-800 bg-transparent hover:border-gray-300 dark:hover:border-gray-700'
+                    }`}
+                    onClick={() => {
+                      setShowPeculiarityLibrary(false);
+                      if (!selectedDomain || myPeculiarities.some(p => p.id === selectedDomain)) {
+                        setSelectedDomain(filteredSystemDomains[0]?.id || '');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-xl border ${
+                        !showPeculiarityLibrary 
+                          ? 'bg-indigo-500 text-white border-indigo-400' 
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-550 border-gray-200 dark:border-gray-700'
+                      }`}>
+                        <Shield className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-xs uppercase tracking-wide text-gray-900 dark:text-white">
+                          Sistema
+                        </h4>
+                        <p className="text-[9px] text-gray-500 dark:text-gray-400 mt-0.5 font-bold">
+                          Caminhos tradicionais
+                        </p>
+                      </div>
                     </div>
-                    {!showPeculiarityLibrary && <Select label="Domínio" value={selectedDomain} onChange={e => setSelectedDomain(e.target.value)} options={filteredSystemDomains.map(d => ({ value: d.id, label: d.nome }))} placeholder="Selecione..." />}
-                  </>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`p-4 rounded-2xl border-2 text-left transition-all relative overflow-hidden group ${
+                      showPeculiarityLibrary
+                        ? 'border-purple-500 bg-purple-50/10 dark:bg-purple-950/10 ring-2 ring-purple-500/20'
+                        : 'border-gray-200 dark:border-gray-800 bg-transparent hover:border-gray-300 dark:hover:border-gray-700'
+                    }`}
+                    onClick={() => {
+                      setShowPeculiarityLibrary(true);
+                      setSelectedDomain('');
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-xl border ${
+                        showPeculiarityLibrary 
+                          ? 'bg-purple-500 text-white border-purple-400' 
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-550 border-gray-200 dark:border-gray-700'
+                      }`}>
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-xs uppercase tracking-wide text-gray-900 dark:text-white">
+                          Peculiar
+                        </h4>
+                        <p className="text-[9px] text-gray-500 dark:text-gray-400 mt-0.5 font-bold">
+                          Customizados do herói
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+
+                {!showPeculiarityLibrary ? (
+                  <div className="space-y-2 border-t border-gray-100 dark:border-gray-800 pt-4">
+                    <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                      Selecione o Domínio
+                    </label>
+                    <div className="p-2.5 rounded-2xl border border-gray-150 dark:border-gray-800/80 bg-gray-50/30 dark:bg-black/10">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+                        {filteredSystemDomains.map(d => {
+                          const isSelected = selectedDomain === d.id;
+                          const isEspiritual = d.categoria === 'espiritual';
+                          const isArma = d.categoria === 'arma';
+                          return (
+                            <button
+                              key={d.id}
+                              type="button"
+                              onClick={() => setSelectedDomain(d.id)}
+                              className={`p-2.5 rounded-xl border text-left flex flex-col justify-between h-20 transition-all relative overflow-hidden group ${
+                                isSelected
+                                  ? isEspiritual
+                                    ? 'border-purple-500 bg-purple-50/20 dark:bg-purple-950/20 ring-2 ring-purple-500/20'
+                                    : isArma
+                                      ? 'border-red-500 bg-red-50/20 dark:bg-red-950/20 ring-2 ring-red-500/20'
+                                      : 'border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/20 ring-2 ring-indigo-500/20'
+                                  : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/40'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <div className={`p-1 rounded-lg border ${
+                                  isSelected
+                                    ? isEspiritual
+                                      ? 'bg-purple-500 text-white border-purple-400'
+                                      : isArma
+                                        ? 'bg-red-500 text-white border-red-400'
+                                        : 'bg-indigo-500 text-white border-indigo-400'
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-550 border-gray-200 dark:border-gray-700'
+                                }`}>
+                                  {getDomainIcon(d.id, "w-3 h-3")}
+                                </div>
+                                <span className="text-[8px] font-black uppercase tracking-wider opacity-60">
+                                  {d.categoria}
+                                </span>
+                              </div>
+                              <span className="font-black text-[10px] uppercase tracking-wide truncate text-gray-900 dark:text-white mt-2">
+                                {d.nome}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="space-y-4 animate-in slide-in-from-right-4">
-                    <Button variant="ghost" size="sm" onClick={() => setShowPeculiarityLibrary(false)} className="flex items-center gap-1 text-gray-500 p-0"><ChevronLeft className="w-4 h-4" /> Voltar</Button>
-                    <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
-                      {myPeculiarities.map(p => (
-                        <button key={p.id} onClick={() => setSelectedDomain(p.id)} className={`flex items-center gap-4 p-3 rounded-xl border text-left transition-all ${selectedDomain === p.id ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 ring-2 ring-purple-500/20' : 'border-gray-100 hover:bg-gray-50'}`}>
-                          <div className="w-14 h-14 shrink-0 rounded-xl bg-white border flex items-center justify-center overflow-hidden p-1">{p.icone ? <DynamicIcon name={p.icone} className="w-full h-full object-cover" /> : <Shield className="w-7 h-7 text-purple-400" />}</div>
-                          <span className="text-sm font-black uppercase text-gray-900 dark:text-white leading-none">{p.nome}</span>
+                  <div className="space-y-3 animate-in slide-in-from-right-4 border-t border-gray-100 dark:border-gray-800 pt-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                        Escolha a Peculiaridade
+                      </label>
+                      <Button variant="ghost" size="sm" onClick={() => setShowPeculiarityLibrary(false)} className="flex items-center gap-1 text-gray-500 p-0 hover:text-gray-700 font-bold">
+                        <ChevronLeft className="w-3.5 h-3.5" /> Voltar
+                      </Button>
+                    </div>
+                    
+                    <div className="p-2.5 rounded-2xl border border-gray-150 dark:border-gray-800/80 bg-gray-50/30 dark:bg-black/10">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+                        {myPeculiarities.map(p => {
+                          const isSelected = selectedDomain === p.id;
+                          return (
+                            <button 
+                              key={p.id} 
+                              type="button"
+                              onClick={() => setSelectedDomain(p.id)} 
+                              className={`flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
+                                isSelected 
+                                  ? 'border-purple-500 bg-purple-50/20 dark:bg-purple-900/20 ring-2 ring-purple-500/20' 
+                                  : 'border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/40'
+                              }`}
+                            >
+                              <div className="w-10 h-10 shrink-0 rounded-xl bg-white dark:bg-gray-800 border flex items-center justify-center overflow-hidden p-1 shadow-sm">
+                                {p.icone ? <DynamicIcon name={p.icone} className="w-full h-full object-cover" /> : <Shield className="w-5 h-5 text-purple-400" />}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <span className="text-[10px] font-black uppercase text-gray-900 dark:text-white leading-tight block truncate">
+                                  {p.nome}
+                                </span>
+                                <span className="text-[8px] text-gray-500 dark:text-gray-400 truncate block mt-0.5 uppercase tracking-wide">
+                                  {p.espiritual ? 'Espiritual' : 'Técnico'}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                        
+                        <button
+                          type="button"
+                          onClick={() => setIsCreatingPeculiarity(true)}
+                          className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-purple-300 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/10 transition-colors h-14"
+                        >
+                          <Plus className="w-4 h-4" /> 
+                          <span className="text-xs uppercase font-black tracking-wide">Criar Peculiaridade</span>
                         </button>
-                      ))}
-                      <Button variant="ghost" className="w-full border border-dashed border-purple-300 text-purple-600 mt-2" onClick={() => setIsCreatingPeculiarity(true)}><Plus className="w-4 h-4 mr-2" /> Criar Nova</Button>
+                      </div>
                     </div>
                   </div>
                 )}
-                <Select label="Maestria" value={selectedMastery} onChange={e => setSelectedMastery(e.target.value as any)} options={[{ value: 'INICIANTE', label: 'Iniciante' }, { value: 'PRATICANTE', label: 'Praticante' }, { value: 'MESTRE', label: 'Mestre' }]} />
+
+                <div className="space-y-2 border-t border-gray-100 dark:border-gray-800 pt-4">
+                  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                    Nível de Mestria
+                  </label>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {[
+                      { value: 'INICIANTE', label: 'Iniciante', icon: Shield },
+                      { value: 'PRATICANTE', label: 'Praticante', icon: Sword },
+                      { value: 'MESTRE', label: 'Mestre', icon: Sparkles }
+                    ].map(opt => {
+                      const isSelected = selectedMastery === opt.value;
+                      const Icon = opt.icon;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setSelectedMastery(opt.value as any)}
+                          className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center gap-1.5 transition-all ${
+                            isSelected
+                              ? 'border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/20 text-indigo-600 dark:text-indigo-400 ring-2 ring-indigo-500/20 font-black'
+                              : 'border-gray-200 dark:border-gray-800 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800/40 font-bold'
+                          }`}
+                        >
+                          <Icon className={`w-4 h-4 ${isSelected ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400'}`} />
+                          <span className="text-[10px] uppercase tracking-wide">{opt.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </>
           )}

@@ -290,9 +290,9 @@ export function ConditionsCard({ conditions, onSync }: ConditionsCardProps) {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-[11px] leading-relaxed text-gray-500 dark:text-gray-400 italic font-medium">
+                      <div className="text-[11px] leading-relaxed text-gray-500 dark:text-gray-400 italic font-medium">
                         {renderDescriptionWithTooltips(cond.descricao, cond.nome, 'bottom')}
-                      </p>
+                      </div>
 
                       {isPrivado && (
                         <div className="space-y-2 mt-2 pt-2 border-t border-dashed border-gray-100 dark:border-gray-800">

@@ -877,6 +877,8 @@ export class CharactersService {
           motivations: data.narrative.motivations || character.narrativeProfile.motivations || [],
           complications: data.narrative.complications || character.narrativeProfile.complications || [],
           generalNotes: data.narrative.generalNotes !== undefined ? data.narrative.generalNotes : (character.narrativeProfile.generalNotes || ''),
+          deity: data.narrative.deity !== undefined ? data.narrative.deity : character.narrativeProfile.deity,
+          psychicState: data.narrative.psychicState !== undefined ? data.narrative.psychicState : character.narrativeProfile.psychicState,
         };
       }
 

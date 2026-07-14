@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { resolvePower, type ResolvePowerResponse, type GameMutation } from '@/services/powers.service';
 import type { CharacterResponse } from '@/services/characters.types';
 import { toast } from '@/shared/ui';
+import { calcPsychicStressGain, getPsychicPenalties, rollScientificPrecision } from '@aetherium/rules-engine';
 
 // ─── Assistente de Rolagem de Dados Interno ──────────────────────────────────
 function rollDiceFormula(formula: string): number {
@@ -175,8 +176,9 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
         efeitos?: any[];
         originItemId?: string;
         originItemTipo?: string;
+        dominio?: { name: string; peculiarId?: string | null; espiritual?: boolean | null };
       },
-      options?: { skipActivation?: boolean; mutations?: any[] }
+      options?: { skipActivation?: boolean; mutations?: any[]; character?: CharacterResponse }
     ) => {
       setIsConfirming(true);
       try {
@@ -205,14 +207,86 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
           }
         }
 
-        const finalPeChange = peChange - power.peCost;
+        // Calcule stress psíquico e penalidades antes do custo de PE
+        const isPsychic = power.dominio?.name?.toLowerCase() === 'psíquico' || power.dominio?.name?.toLowerCase() === 'psiquico';
+        let newStress = 0;
+        let stressGain = 0;
+        const stressDetails: string[] = [];
+        let updatedNarrative: any = undefined;
+        let conditionsToSync = options?.character?.conditions ? [...options.character.conditions] : undefined;
 
-        if (pvChange !== 0 || finalPeChange !== 0 || tempPvChange !== 0 || tempPeChange !== 0) {
+        if (isPsychic && options?.character) {
+          const maxGrau = power.efeitos && Array.isArray(power.efeitos)
+            ? power.efeitos.reduce((max, eff) => Math.max(max, eff.grau ?? 0), 0)
+            : 0;
+
+          const currentStress = options.character.narrative.psychicState?.stress ?? 0;
+          stressGain = calcPsychicStressGain(maxGrau, options.character.level);
+          newStress = currentStress + stressGain;
+
+          const penalties = getPsychicPenalties(newStress, options.character.level);
+          updatedNarrative = {
+            psychicState: { stress: newStress }
+          };
+
+          if (penalties.esmorecido) {
+            if (!conditionsToSync) conditionsToSync = [];
+            if (!conditionsToSync.includes('Esmorecido')) {
+              conditionsToSync.push('Esmorecido');
+            }
+          }
+
+          if (penalties.danoPsiquico) {
+            const pvMax = options.character.health.maxPV;
+            const rolledDmg = Math.floor(Math.random() * pvMax) + 1;
+            pvChange -= rolledDmg;
+            stressDetails.push(`💥 ${rolledDmg} dano psíquico`);
+          }
+
+          if (penalties.perdaEnergia) {
+            const peMax = options.character.energy.maxPE;
+            const rolledLoss = Math.floor(Math.random() * peMax) + 1;
+            peChange -= rolledLoss;
+            stressDetails.push(`⚡ ${rolledLoss} PE perdido`);
+          }
+        }
+
+        // Calcule o multiplicador correto de PE (Alquebrado e Custo Duplicado do estresse)
+        let multiplier = 1;
+        if (options?.character) {
+          const hasAlquebrado = (options.character.conditions || []).some((c: string) => {
+            const clean = c.includes('(') ? c.split('(')[0].trim() : c;
+            return clean === 'Alquebrado';
+          });
+          if (hasAlquebrado) multiplier *= 2;
+
+          if (isPsychic) {
+            const stressToCheck = newStress > 0 ? newStress : (options.character.narrative.psychicState?.stress ?? 0);
+            const stressExcess = stressToCheck - options.character.level;
+            if (stressExcess >= 8) {
+              multiplier *= 2;
+            }
+          }
+        }
+
+        const finalPeCost = power.peCost * multiplier;
+        const finalPeChange = peChange - finalPeCost;
+
+        if (
+          pvChange !== 0 ||
+          finalPeChange !== 0 ||
+          tempPvChange !== 0 ||
+          tempPeChange !== 0 ||
+          updatedNarrative ||
+          conditionsToSync
+        ) {
           await onSync({
             pvChange: pvChange !== 0 ? pvChange : undefined,
             peChange: finalPeChange !== 0 ? finalPeChange : undefined,
             tempPvChange: tempPvChange !== 0 ? tempPvChange : undefined,
             tempPeChange: tempPeChange !== 0 ? tempPeChange : undefined,
+            narrative: updatedNarrative,
+            conditions: conditionsToSync,
           });
         }
 
@@ -235,7 +309,7 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
             icone: power.icone,
             duracao: power.duracao,
             // Manutenção: metade do custo por rodada (arredondado p/ baixo)
-            peCostPerRound: power.duracao <= 2 ? Math.floor(power.peCost / 2) : 0,
+            peCostPerRound: power.duracao <= 2 ? Math.floor(finalPeCost / 2) : 0,
             activatedAt: Date.now(),
             efeitos: power.efeitos,
             originItemId: power.originItemId,
@@ -246,16 +320,23 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
 
         let resultMsg = `${power.nome} usado!`;
         const details: string[] = [];
-        if (power.peCost > 0) details.push(`−${power.peCost} PE`);
+        if (finalPeCost > 0) details.push(`−${finalPeCost} PE`);
         if (pvChange > 0) details.push(`+${pvChange} PV`);
+        if (pvChange < 0) details.push(`${pvChange} PV`);
         if (peChange > 0) details.push(`+${peChange} PE`);
+        if (peChange < 0) details.push(`${peChange} PE`);
         if (tempPvChange > 0) details.push(`+${tempPvChange} PV Temp`);
         if (tempPeChange > 0) details.push(`+${tempPeChange} PE Temp`);
+        if (stressGain > 0) details.push(`+${stressGain} Estresse Psíquico`);
         
         if (details.length > 0) {
           resultMsg += ` (${details.join(', ')})`;
         }
         toast.success(resultMsg);
+
+        if (stressDetails.length > 0) {
+          toast.warning(`Penalidades de Estresse: ${stressDetails.join(' e ')}`);
+        }
       } catch (err: any) {
         const msg = err?.response?.data?.message ?? 'Erro ao usar poder';
         toast.error(msg);
@@ -321,27 +402,54 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
 // ─── Helpers de display ───────────────────────────────────────────────────────
 
 /** Transforma as mutações do motor em descrições legíveis para o modal. */
-export function describeMutations(mutations: GameMutation[]): string[] {
+export function describeMutations(mutations: GameMutation[]): Array<{ text: string; type: string }> {
   return mutations.map(m => {
     switch (m.type) {
       case 'DEAL_DAMAGE':
-        return `💥 Causa ${m.formula} de dano (${m.damageType ?? 'físico'})${m.isSelfInflicted ? ' em você mesmo' : ''}`;
+        return {
+          text: `Causa ${m.formula} de dano (${m.damageType ?? 'físico'})${m.isSelfInflicted ? ' em você mesmo' : ''}`,
+          type: m.type
+        };
       case 'HEAL':
-        return `💚 Cura ${m.formula} PV`;
+        return {
+          text: `Cura ${m.formula} PV`,
+          type: m.type
+        };
       case 'RESTORE_PE':
-        return `⚡ Restaura ${m.formula} PE`;
+        return {
+          text: `Restaura ${m.formula} PE`,
+          type: m.type
+        };
       case 'ADD_TEMP_PV':
-        return `🛡️ Concede ${m.formula} PV temporários`;
+        return {
+          text: `Concede ${m.formula} PV temporários`,
+          type: m.type
+        };
       case 'ADD_TEMP_PE':
-        return `⚡ Concede ${m.formula} PE temporários`;
+        return {
+          text: `Concede ${m.formula} PE temporários`,
+          type: m.type
+        };
       case 'APPLY_CONDITION':
-        return `🌀 Aplica condição: ${m.condicaoId}`;
+        return {
+          text: `Aplica condição: ${m.condicaoId}`,
+          type: m.type
+        };
       case 'APPLY_MARKER':
-        return `🏷️ Marca alvo: ${m.label ?? m.markerId}`;
+        return {
+          text: `Marca alvo: ${m.label ?? m.markerId}`,
+          type: m.type
+        };
       case 'REGISTER_TRIGGER':
-        return `⚙️ Registra gatilho: ${m.trigger?.evento ?? ''}`;
+        return {
+          text: `Registra gatilho: ${m.trigger?.evento ?? ''}`,
+          type: m.type
+        };
       default:
-        return `🎲 Efeito: ${m.type}`;
+        return {
+          text: `Efeito: ${m.type}`,
+          type: m.type
+        };
     }
   });
 }

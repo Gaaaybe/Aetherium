@@ -1217,8 +1217,9 @@ export function AcoesTab({
                 peCost,
                 efeitos: detail.effects,
                 originItemId: detail.originItemId,
+                dominio: detail.dominio,
               },
-              { skipActivation: usingPowerFromActive, mutations: resolution?.mutations }
+              { skipActivation: usingPowerFromActive, mutations: resolution?.mutations, character }
             );
             setUsingPower(null);
             setUsingPowerFromActive(false);
@@ -1262,11 +1263,18 @@ export function AcoesTab({
             poder={pCon}
             detalhes={(() => {
               const baseDetails = calcularDetalhesPoder(pCon, catalogEfeitos, catalogModificacoes);
-              const hasAlquebrado = (character?.conditions || []).some((c: string) => {
+               const hasAlquebrado = (character?.conditions || []).some((c: string) => {
                 const clean = c.includes('(') ? c.split('(')[0].trim() : c;
                 return clean === 'Alquebrado';
               });
-              const peCostMultiplier = hasAlquebrado ? 2 : 1;
+              const isPsychic = pCon.dominio?.name?.toLowerCase() === 'psíquico' || pCon.dominio?.name?.toLowerCase() === 'psiquico';
+              const currentStress = character?.narrative?.psychicState?.stress ?? 0;
+              const stressExcess = currentStress - (character?.level ?? 1);
+              const isPsychicDouble = isPsychic && stressExcess >= 8;
+
+              let peCostMultiplier = 1;
+              if (hasAlquebrado) peCostMultiplier *= 2;
+              if (isPsychicDouble) peCostMultiplier *= 2;
               return {
                 ...baseDetails,
                 peTotal: baseDetails.peTotal * peCostMultiplier,

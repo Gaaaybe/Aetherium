@@ -19,6 +19,20 @@ export const AttributesSchema = z.object({
   keyMental: MentalAttributeSchema,
 });
 
+export const DeityDevotionSchema = z.object({
+  name: z.string().default(''),
+  aspects: z.array(z.string()).default([]),
+  precepts: z.string().default(''),
+  minorPrecepts: z.string().default(''),
+  taboos: z.string().default(''),
+  personality: z.string().default(''),
+  isSealed: z.boolean().default(false),
+});
+
+export const PsychicStateSchema = z.object({
+  stress: z.number().int().nonnegative().default(0),
+});
+
 export const NarrativeProfileSchema = z.object({
   name: z.string().optional().default(''),
   identity: z.string(),
@@ -26,6 +40,8 @@ export const NarrativeProfileSchema = z.object({
   motivations: z.array(z.string()),
   complications: z.array(z.string()),
   generalNotes: z.string().default(''),
+  deity: DeityDevotionSchema.optional(),
+  psychicState: PsychicStateSchema.optional(),
 });
 
 export const SkillEntrySchema = z.object({

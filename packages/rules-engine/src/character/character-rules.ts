@@ -976,3 +976,26 @@ export function applyRestResult(character: any, pvChange: number, peChange: numb
     applyConsumeEnergy(character, Math.abs(peChange));
   }
 }
+
+export function calcPsychicStressGain(powerGrau: number, characterLevel: number): number {
+  return Math.ceil(powerGrau / 2);
+}
+
+export function getPsychicPenalties(stress: number, level: number) {
+  const excess = stress - level;
+  return {
+    esmorecido: excess >= 3,
+    danoPsiquico: excess >= 5,
+    custoDuplicado: excess >= 8,
+    perdaEnergia: excess >= 11,
+    excess,
+  };
+}
+
+export function rollScientificPrecision(): { success: boolean; roll: number } {
+  const roll = Math.floor(Math.random() * 10) + 1;
+  return {
+    roll,
+    success: roll >= 3,
+  };
+}

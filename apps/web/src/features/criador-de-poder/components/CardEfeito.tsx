@@ -503,6 +503,7 @@ export function CardEfeito({
           {efeitoBase.requerInput &&
            efeito.configuracaoSelecionada !== 'pv' &&
            efeito.configuracaoSelecionada !== 'pe' &&
+           efeito.configuracaoSelecionada !== 'rd' &&
            (efeitoBase.id === 'fortalecer' || (
              efeito.configuracaoSelecionada !== 'critico-margem' &&
              efeito.configuracaoSelecionada !== 'critico-multiplicador'
