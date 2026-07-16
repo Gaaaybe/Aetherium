@@ -18,7 +18,7 @@ export function SidebarColumn({ character, onSync, activePowers }: SidebarColumn
       <AttributeCard character={character} onSync={onSync} activePowers={activePowers} />
       <VitalsCard health={character.health} energy={character.energy} onSync={onSync} activePowers={activePowers} character={character} />
       <DefenseCard character={character} activePowers={activePowers} onSync={onSync} />
-      <ConditionsCard conditions={character.conditions} onSync={onSync} />
+      <ConditionsCard conditions={character.conditions} onSync={onSync} character={character} />
       <InspirationPdACard inspiration={character.inspiration} pda={character.pda} onSync={onSync} />
       <PassiveStatsCard character={character} />
     </div>

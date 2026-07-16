@@ -50,6 +50,7 @@ export class ResolvePowerController {
       mutations: result.mutations,
       resolutionMode: result.resolutionMode,
       isDanoAcoplado: result.isDanoAcoplado,
+      isRecuperacaoAcoplada: result.isRecuperacaoAcoplada,
     };
   }
 }

@@ -1,16 +1,17 @@
-import { Card, CardHeader, CardTitle, CardContent, Badge, Button, Modal, ModalFooter, Tooltip } from '@/shared/ui';
-import { AlertTriangle, Info, X, Search, ShieldAlert, Dices } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, Badge, Button, Modal, ModalFooter, Tooltip, toast } from '@/shared/ui';
+import { AlertTriangle, Info, X, Search, ShieldAlert, Dices, Skull, RotateCcw } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { CONDICOES, Condicao } from '@/data';
-import { SyncCharacterData } from '@/services/characters.types';
+import { SyncCharacterData, CharacterResponse } from '@/services/characters.types';
 import { renderDescriptionWithTooltips } from '@/features/ficha-personagem/utils/conditionsHelper';
 
 interface ConditionsCardProps {
   conditions: string[];
   onSync: (data: SyncCharacterData) => Promise<void>;
+  character: CharacterResponse;
 }
 
-export function ConditionsCard({ conditions, onSync }: ConditionsCardProps) {
+export function ConditionsCard({ conditions, onSync, character }: ConditionsCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatamar, setSelectedPatamar] = useState<string>('todos');
@@ -20,6 +21,7 @@ export function ConditionsCard({ conditions, onSync }: ConditionsCardProps) {
     direction?: number;
     directionLabel?: string;
   } | null>(null);
+
 
   const rollConfuso = () => {
     const d6 = Math.floor(Math.random() * 6) + 1;
@@ -121,6 +123,9 @@ export function ConditionsCard({ conditions, onSync }: ConditionsCardProps) {
     }
   };
 
+  const deathState = character?.death?.state || 'ALIVE';
+  const deathCounter = character?.death?.counter || 0;
+
   return (
     <>
       <Card className="border-none shadow-md bg-white dark:bg-gray-900">
@@ -139,6 +144,89 @@ export function ConditionsCard({ conditions, onSync }: ConditionsCardProps) {
           </Button>
         </CardHeader>
         <CardContent className="pt-0">
+          {/* Marcadores de Morte / Estado de Morte */}
+          <div className={`mb-4 p-3.5 rounded-2xl border space-y-3 transition-colors ${
+            deathState === 'DEAD'
+              ? 'border-red-200 dark:border-red-950/80 bg-red-100/10 dark:bg-red-950/20'
+              : deathState === 'DYING'
+              ? 'border-red-100 dark:border-red-950/40 bg-red-50/20 dark:bg-red-950/10'
+              : 'border-gray-100 dark:border-gray-800/40 bg-gray-50/50 dark:bg-gray-900/10'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Skull className={`w-4 h-4 transition-colors ${
+                  deathState === 'DEAD'
+                    ? 'text-red-600 animate-pulse'
+                    : deathState === 'DYING'
+                    ? 'text-red-500'
+                    : 'text-gray-400 dark:text-gray-500'
+                }`} />
+                <span className={`text-[10px] font-black uppercase tracking-wider transition-colors ${
+                  deathState !== 'ALIVE'
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}>
+                  {deathState === 'DEAD' ? 'Personagem Morto' : deathState === 'DYING' ? 'Estado: Morrendo' : 'Estado: Normal'}
+                </span>
+              </div>
+              
+              {deathCounter > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    await onSync({ deathState: 'ALIVE', deathCounter: 0 });
+                    toast.success('Estado de morte resetado narrativamente!');
+                  }}
+                  className="h-6 text-[8px] font-extrabold uppercase text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 rounded-lg flex items-center gap-1 border border-red-200/50 dark:border-red-900/30 animate-fade-in"
+                  title="Reset Narrativo (Fim da Cena)"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                  Reset
+                </Button>
+              )}
+            </div>
+
+            {/* Markers Row */}
+            <div className={`flex items-center justify-between py-1 bg-white/50 dark:bg-black/20 rounded-xl px-3 border transition-colors ${
+              deathState !== 'ALIVE'
+                ? 'border-red-50 dark:border-red-900/20'
+                : 'border-gray-100 dark:border-gray-800/40'
+            }`}>
+              <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase">
+                Marcadores:
+              </span>
+              <div className="flex items-center gap-1.5">
+                {[1, 2, 3].map((val) => {
+                  const isActive = deathCounter >= val;
+                  return (
+                    <button
+                      key={val}
+                      onClick={async () => {
+                        const nextCounter = val;
+                        const nextState = nextCounter >= 3 ? 'DEAD' : 'DYING';
+                        await onSync({ deathCounter: nextCounter, deathState: nextState });
+                      }}
+                      className={`p-1 rounded-lg transition-all ${
+                        isActive
+                          ? 'text-red-600 dark:text-red-500 scale-110 drop-shadow-[0_0_4px_rgba(220,38,38,0.4)]'
+                          : 'text-gray-300 dark:text-gray-700 hover:text-red-300'
+                      }`}
+                      title={`Definir marcadores para ${val}/3`}
+                    >
+                      <Skull className="w-4 h-4 fill-current" />
+                    </button>
+                  );
+                })}
+                <span className={`text-xs font-black ml-1 transition-colors ${
+                  deathCounter > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-600'
+                }`}>
+                  {deathCounter}/3
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-1.5 min-h-[40px] items-center">
             {conditions.length === 0 ? (
               <div className="flex items-center gap-2 text-xs text-gray-400 italic py-1">

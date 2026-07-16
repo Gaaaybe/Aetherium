@@ -101,6 +101,8 @@ const syncCharacterBodySchema = z.object({
     )
     .optional(),
   conditions: z.array(z.string().min(1)).optional(),
+  deathState: z.enum(['ALIVE', 'DYING', 'DEAD']).optional(),
+  deathCounter: z.number().int().min(0).max(3).optional(),
 });
 
 type SyncCharacterBodySchema = z.infer<typeof syncCharacterBodySchema>;

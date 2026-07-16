@@ -178,6 +178,49 @@ describe('SyncCharacterController (e2e)', () => {
     expect(resetResponse.body.energy.limitMaxPE).toBeNull();
   });
 
+  test('[PATCH] /characters/:id/sync — should sync deathState and deathCounter, auto applying conditions', async () => {
+    const response = await request(app.getHttpServer())
+      .patch(`/characters/${characterId}/sync`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        deathState: 'DYING',
+        deathCounter: 2,
+      });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.death.state).toBe('DYING');
+    expect(response.body.death.counter).toBe(2);
+    expect(response.body.conditions).toContain('Morrendo');
+    expect(response.body.conditions).toContain('Caído');
+
+    // Change to alive without resetting counter
+    const aliveNoResetResponse = await request(app.getHttpServer())
+      .patch(`/characters/${characterId}/sync`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        deathState: 'ALIVE',
+      });
+
+    expect(aliveNoResetResponse.statusCode).toBe(200);
+    expect(aliveNoResetResponse.body.death.state).toBe('ALIVE');
+    expect(aliveNoResetResponse.body.death.counter).toBe(2);
+    expect(aliveNoResetResponse.body.conditions).not.toContain('Morrendo');
+
+    // Reset to alive with explicit counter reset
+    const aliveResponse = await request(app.getHttpServer())
+      .patch(`/characters/${characterId}/sync`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        deathState: 'ALIVE',
+        deathCounter: 0,
+      });
+
+    expect(aliveResponse.statusCode).toBe(200);
+    expect(aliveResponse.body.death.state).toBe('ALIVE');
+    expect(aliveResponse.body.death.counter).toBe(0);
+    expect(aliveResponse.body.conditions).not.toContain('Morrendo');
+  });
+
   test('[PATCH] /characters/:id/sync — should allow admin user to sync another user character', async () => {
     await request(app.getHttpServer()).post('/users').send({
       name: 'Admin Sync User',

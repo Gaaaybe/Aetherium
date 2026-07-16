@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dices, Zap, Target, Sparkles, RotateCcw, Plus } from 'lucide-react';
+import { Dices, Zap, Target, Sparkles, RotateCcw, Plus, Heart, Flame } from 'lucide-react';
 import { Button, Modal, Badge, ModalFooter } from '../ui';
 import { rollD20, rollDamage, type RollResult } from '../utils/diceRoller';
 
@@ -25,6 +25,10 @@ interface DiceRollerProps {
   isDanoAcoplado?: boolean;
   initialRule?: 'advantage' | 'disadvantage' | 'normal';
   initialExtraDice?: number;
+  isRecuperacao?: boolean;
+  recoveryFormula?: string;
+  onApplyRecovery?: (value: number) => void;
+  applyRecoveryLabel?: string;
 }
 
 export function DiceRoller({ 
@@ -49,9 +53,14 @@ export function DiceRoller({
   isDanoAcoplado = false,
   initialRule = 'normal',
   initialExtraDice = 0,
+  isRecuperacao = false,
+  recoveryFormula = '',
+  onApplyRecovery,
+  applyRecoveryLabel = 'Aplicar Cura na Ficha',
 }: DiceRollerProps) {
   const [attackRoll, setAttackRoll] = useState<(RollResult & { efficiency?: number, manual?: number }) | null>(null);
   const [damageRoll, setDamageRoll] = useState<{ total: number; rolls: number[]; modifier: number; multiplier: number; components?: Array<{ value: number; label: string }> } | null>(null);
+  const [recoveryRoll, setRecoveryRoll] = useState<{ total: number; rolls: number[]; modifier: number; components?: Array<{ value: number; label: string }> } | null>(null);
   const [isRolling, setIsRolling] = useState(false);
   
   const [extraDice, setExtraDice] = useState(initialExtraDice);
@@ -71,6 +80,7 @@ export function DiceRoller({
     if (isOpen) {
       setAttackRoll(null);
       setDamageRoll(null);
+      setRecoveryRoll(null);
       setApplyEfficiency(initialApplyEfficiency);
       setManualModifier(0);
       setManualDamageModifier(0);
@@ -98,7 +108,7 @@ export function DiceRoller({
 
   const handleRollDamage = () => {
     const formulaToUse = isModular ? localFormula : damageFormula;
-    if (!formulaToUse) return;
+    if (!formulaToUse && !recoveryFormula) return;
     
     setIsRolling(true);
     const multiplier = (attackRoll?.isCritical && !isDanoAcoplado) ? critMultiplier : 1;
@@ -106,30 +116,41 @@ export function DiceRoller({
     const bonusToUse = baseMod + manualDamageModifier;
     
     setTimeout(() => {
-      const result = rollDamage(formulaToUse, multiplier);
-      const finalTotal = result.total + (bonusToUse * multiplier);
-      
-      const finalComponents = [...result.components];
-      if (baseMod !== 0) {
-        finalComponents.push({
-          value: baseMod * multiplier,
-          label: `${Math.abs(baseMod)}${multiplier > 1 ? ` x${multiplier}` : ''}`
+      if (formulaToUse) {
+        const result = rollDamage(formulaToUse, multiplier);
+        const finalTotal = result.total + (bonusToUse * multiplier);
+        
+        const finalComponents = [...result.components];
+        if (baseMod !== 0) {
+          finalComponents.push({
+            value: baseMod * multiplier,
+            label: `${Math.abs(baseMod)}${multiplier > 1 ? ` x${multiplier}` : ''}`
+          });
+        }
+        if (manualDamageModifier !== 0) {
+          finalComponents.push({
+            value: manualDamageModifier * multiplier,
+            label: `${Math.abs(manualDamageModifier)}${multiplier > 1 ? ` x${multiplier}` : ''}`
+          });
+        }
+        
+        setDamageRoll({
+          ...result,
+          total: finalTotal,
+          modifier: result.modifier + (bonusToUse * multiplier),
+          components: finalComponents,
+          multiplier
         });
       }
-      if (manualDamageModifier !== 0) {
-        finalComponents.push({
-          value: manualDamageModifier * multiplier,
-          label: `${Math.abs(manualDamageModifier)}${multiplier > 1 ? ` x${multiplier}` : ''}`
+
+      if (recoveryFormula) {
+        const recResult = rollDamage(recoveryFormula, 1);
+        setRecoveryRoll({
+          ...recResult,
+          total: recResult.total,
         });
       }
-      
-      setDamageRoll({
-        ...result,
-        total: finalTotal,
-        modifier: result.modifier + (bonusToUse * multiplier),
-        components: finalComponents,
-        multiplier
-      });
+
       setIsRolling(false);
       onRoll?.();
     }, 400);
@@ -384,15 +405,28 @@ export function DiceRoller({
             <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-500 shadow-lg shadow-amber-500/10 animate-in zoom-in-95 duration-200 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex gap-2">
-                  <Badge className="bg-amber-500 text-white border-none text-[10px] font-black uppercase">Dano Causado</Badge>
+                  <Badge className="bg-amber-500 text-white border-none text-[10px] font-black uppercase">
+                    {isRecuperacao ? 'Cura Realizada' : 'Dano Causado'}
+                  </Badge>
                   {damageRoll.multiplier > 1 && (
                     <Badge className="bg-red-500 text-white border-none text-[10px] font-black uppercase">x{damageRoll.multiplier} Crítico!</Badge>
                   )}
                 </div>
-                <Zap className="w-4 h-4 text-amber-500" />
+                {isRecuperacao ? (
+                  <Sparkles className="w-4 h-4 text-emerald-500" />
+                ) : (
+                  <Zap className="w-4 h-4 text-amber-500" />
+                )}
               </div>
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-4xl font-black text-amber-600 leading-none">💥 {damageRoll.total}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-4xl font-black text-amber-600 leading-none flex items-center gap-2">
+                  {isRecuperacao ? (
+                    <Heart className="w-8 h-8 text-emerald-500 fill-emerald-500/20" />
+                  ) : (
+                    <Flame className="w-8 h-8 text-red-500 fill-red-500/20" />
+                  )}
+                  {damageRoll.total}
+                </span>
                 <span className="text-xs font-bold text-amber-700/60 flex flex-wrap gap-1 items-center">
                   ( {damageRoll.components && damageRoll.components.length > 0 ? (
                     damageRoll.components.map((comp, idx) => {
@@ -416,10 +450,15 @@ export function DiceRoller({
                   )} {damageRoll.multiplier > 1 ? `) x ${damageRoll.multiplier}` : ')'}
                 </span>
               </div>
-              <div className="pt-2 border-t border-dashed border-amber-200 dark:border-amber-900/50 flex items-center justify-between text-xs font-bold text-amber-700/80 dark:text-amber-400">
-                <span>Dano Parcial (Metade):</span>
-                <span className="font-black text-amber-600 dark:text-amber-300">💥 {Math.floor(damageRoll.total / 2)}</span>
-              </div>
+              {!isRecuperacao && (
+                <div className="pt-2 border-t border-dashed border-amber-200 dark:border-amber-900/50 flex items-center justify-between text-xs font-bold text-amber-700/80 dark:text-amber-400">
+                  <span>Dano Parcial (Metade):</span>
+                  <span className="font-black text-amber-600 dark:text-amber-300 flex items-center gap-1">
+                    <Flame className="w-3.5 h-3.5 text-red-500" />
+                    {Math.floor(damageRoll.total / 2)}
+                  </span>
+                </div>
+              )}
               {onApply && (
                 <Button
                   onClick={() => {
@@ -433,6 +472,57 @@ export function DiceRoller({
               )}
             </div>
           )}
+
+          {recoveryRoll && !isRolling && (
+            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border-2 border-emerald-500 shadow-lg shadow-emerald-500/10 animate-in zoom-in-95 duration-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex gap-2">
+                  <Badge className="bg-emerald-600 text-white border-none text-[10px] font-black uppercase">
+                    Cura Realizada
+                  </Badge>
+                </div>
+                <Sparkles className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-4xl font-black text-emerald-600 leading-none flex items-center gap-2">
+                  <Heart className="w-8 h-8 text-emerald-500 fill-emerald-500/20" />
+                  {recoveryRoll.total}
+                </span>
+                <span className="text-xs font-bold text-emerald-700/60 flex flex-wrap gap-1 items-center">
+                  ( {recoveryRoll.components && recoveryRoll.components.length > 0 ? (
+                    recoveryRoll.components.map((comp, idx) => {
+                      const sign = comp.value >= 0 ? '+' : '-';
+                      const cleanLabel = comp.label.replace(/^[+-]/, '').trim();
+                      return (
+                        <span key={idx} className="inline-flex items-center">
+                          {idx > 0 ? (
+                            <span className="mx-1 text-emerald-700/40">{sign}</span>
+                          ) : (
+                            comp.value < 0 ? <span className="mr-1 text-emerald-700/40">-</span> : null
+                          )}
+                          <span className={cleanLabel.includes('[') ? 'text-emerald-600 dark:text-emerald-400 font-extrabold border border-emerald-200 dark:border-emerald-900/50 bg-emerald-100/30 dark:bg-emerald-950/20 px-1 rounded' : ''}>
+                            {cleanLabel}
+                          </span>
+                        </span>
+                      );
+                    })
+                  ) : (
+                    `Dados: [${recoveryRoll.rolls.join(', ')}]`
+                  )} )
+                </span>
+              </div>
+              {onApplyRecovery && (
+                <Button
+                  onClick={() => {
+                    onApplyRecovery(recoveryRoll.total);
+                  }}
+                  className="w-full mt-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black h-9 rounded-xl shadow-md gap-2"
+                >
+                  <Sparkles className="w-4 h-4" /> {applyRecoveryLabel}
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3">
@@ -442,7 +532,7 @@ export function DiceRoller({
               disabled={isRolling}
               className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-black h-12 rounded-xl shadow-lg shadow-amber-500/20 gap-2"
             >
-              <Zap className="w-5 h-5" /> {damageRoll ? 'Rolar Novamente' : (rollButtonLabel || 'Rolar Dano')}
+              <Zap className="w-5 h-5" /> {damageRoll || recoveryRoll ? 'Rolar Novamente' : (rollButtonLabel || 'Rolar Dano')}
             </Button>
           ) : (
             <>
@@ -459,7 +549,7 @@ export function DiceRoller({
                 {attackRoll ? 'Rolar Novamente' : rollButtonLabel}
               </Button>
               
-              {(isModular || damageFormula) && attackRoll && !isRolling && (
+              {(isModular || damageFormula || recoveryFormula) && attackRoll && !isRolling && (
                 <Button
                   onClick={handleRollDamage}
                   className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-black h-12 rounded-xl shadow-lg shadow-amber-500/20 gap-2 animate-in slide-in-from-left-4"
@@ -473,10 +563,10 @@ export function DiceRoller({
       </div>
 
       <ModalFooter className="justify-center border-none pt-0">
-        {(attackRoll || damageRoll) && (
+        {(attackRoll || damageRoll || recoveryRoll) && (
           <Button
             variant="ghost"
-            onClick={() => { setAttackRoll(null); setDamageRoll(null); }}
+            onClick={() => { setAttackRoll(null); setDamageRoll(null); setRecoveryRoll(null); }}
             size="sm"
             className="text-gray-400 hover:text-gray-600 gap-1 font-bold italic"
           >

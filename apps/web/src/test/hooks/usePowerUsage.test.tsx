@@ -1,11 +1,12 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePowerUsage, describeMutations } from '@/features/ficha-personagem/hooks/usePowerUsage';
-import { resolvePower } from '@/services/powers.service';
+import { resolvePower, applyMutations } from '@/services/powers.service';
 import * as RulesEngine from '@aetherium/rules-engine';
 
 vi.mock('@/services/powers.service', () => ({
   resolvePower: vi.fn(),
+  applyMutations: vi.fn(),
 }));
 
 vi.mock('@/shared/ui', () => ({
@@ -209,6 +210,12 @@ describe('usePowerUsage hook', () => {
       tempPvChange: 5,
       tempPeChange: 3,
     });
+
+    expect(applyMutations).toHaveBeenCalledWith(
+      `free-use-${characterId}`,
+      characterId,
+      [{ type: 'HEAL', formula: '20', targetId: 'other-character-id' }]
+    );
   });
 
   test('deve descontar custo de PE para manter poder ativo com maintainPower', async () => {

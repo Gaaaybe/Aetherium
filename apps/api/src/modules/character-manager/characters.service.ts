@@ -1004,6 +1004,31 @@ export class CharactersService {
       if (data.conditions) {
         applyUpdateConditions(character, data.conditions);
       }
+
+      if (data.deathState !== undefined) {
+        character.deathState = data.deathState;
+        if (data.deathState === 'ALIVE') {
+          character.conditions = (character.conditions || []).filter((c: string) => c !== 'Morrendo');
+        } else if (data.deathState === 'DYING') {
+          const condSet = new Set(character.conditions || []);
+          condSet.add('Morrendo');
+          condSet.add('Caído');
+          character.conditions = Array.from(condSet);
+        }
+      }
+
+      if (data.deathCounter !== undefined) {
+        character.deathCounter = Math.max(0, Math.min(3, data.deathCounter));
+        if (character.deathCounter >= 3) {
+          character.deathState = 'DEAD';
+        } else if (character.deathCounter > 0) {
+          character.deathState = 'DYING';
+          const condSet = new Set(character.conditions || []);
+          condSet.add('Morrendo');
+          condSet.add('Caído');
+          character.conditions = Array.from(condSet);
+        }
+      }
     });
 
     await this.saveCharacter(this.prisma, character);

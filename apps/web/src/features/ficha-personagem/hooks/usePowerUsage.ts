@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { resolvePower, type ResolvePowerResponse, type GameMutation } from '@/services/powers.service';
+import { resolvePower, applyMutations, type ResolvePowerResponse, type GameMutation } from '@/services/powers.service';
 import type { CharacterResponse } from '@/services/characters.types';
 import { toast } from '@/shared/ui';
 import { calcPsychicStressGain, getPsychicPenalties, rollScientificPrecision } from '@aetherium/rules-engine';
@@ -288,6 +288,14 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
             narrative: updatedNarrative,
             conditions: conditionsToSync,
           });
+        }
+
+        const thirdPartyMutations = (options?.mutations || []).filter(
+          mut => mut.targetId && mut.targetId !== characterId
+        );
+
+        if (thirdPartyMutations.length > 0) {
+          await applyMutations(`free-use-${characterId}`, characterId, thirdPartyMutations);
         }
 
         // Registra poder ativo se tiver duração (Concentração, Sustentado, Ativado)

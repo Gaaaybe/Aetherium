@@ -888,5 +888,82 @@ describe('Motor de Regras de Personagem - character-rules.ts', () => {
     });
   });
 
+  describe('Mecânicas de Morte e Lesão Avançadas', () => {
+    it('deve entrar no estado DYING e adicionar condições Morrendo e Caído ao zerar os PVs', () => {
+      const char = makeFakeCharacter({ healthState: { currentPV: 4 } });
+      const res = applyDamage(char, 4);
+      expect(char.healthState.currentPV).toBe(0);
+      expect(char.deathState).toBe('DYING');
+      expect(char.deathCounter).toBe(0);
+      expect(char.conditions).toContain('Morrendo');
+      expect(char.conditions).toContain('Caído');
+      expect(res.died).toBe(true);
+    });
+
+    it('deve recuperar PV e remover a condição Morrendo ao receber cura enquanto DYING, mas manter os marcadores de morte', () => {
+      const char = makeFakeCharacter({
+        healthState: { currentPV: 0 },
+        deathState: 'DYING',
+        deathCounter: 2,
+        conditions: ['Morrendo', 'Caído']
+      });
+      applyHeal(char, 3);
+      expect(char.healthState.currentPV).toBe(3);
+      expect(char.deathState).toBe('ALIVE');
+      expect(char.deathCounter).toBe(2);
+      expect(char.conditions).not.toContain('Morrendo');
+      expect(char.conditions).toContain('Caído'); // Caído continua até se levantar
+    });
+
+    it('deve incrementar marcador de morte ao sofrer dano enquanto morrendo', () => {
+      const char = makeFakeCharacter({
+        healthState: { currentPV: 0 },
+        deathState: 'DYING',
+        deathCounter: 1,
+        conditions: ['Morrendo', 'Caído']
+      });
+
+      const res = applyDamage(char, 5);
+      expect(char.deathCounter).toBe(2);
+      expect(char.deathState).toBe('DYING');
+      expect(char.healthState.currentPV).toBe(0); // Não reduz abaixo de 0
+    });
+
+    it('deve morrer (DEAD) ao atingir 3 marcadores de morte', () => {
+      const char = makeFakeCharacter({
+        healthState: { currentPV: 0 },
+        deathState: 'DYING',
+        deathCounter: 2,
+        conditions: ['Morrendo', 'Caído']
+      });
+
+      const res = applyDamage(char, 2);
+      expect(char.deathCounter).toBe(3);
+      expect(char.deathState).toBe('DEAD');
+      expect(res.died).toBe(true);
+    });
+
+    it('deve sincronizar estados de morte ao aplicar a condição Morrendo', () => {
+      const char = makeFakeCharacter();
+      applyCondition(char, 'Morrendo');
+      expect(char.deathState).toBe('DYING');
+      expect(char.deathCounter).toBe(0);
+      expect(char.conditions).toContain('Morrendo');
+      expect(char.conditions).toContain('Caído');
+    });
+
+    it('deve mudar o estado de morte mas manter os marcadores de morte ao remover a condição Morrendo', () => {
+      const char = makeFakeCharacter({
+        deathState: 'DYING',
+        deathCounter: 2,
+        conditions: ['Morrendo', 'Caído']
+      });
+      applyRemoveCondition(char, 'Morrendo');
+      expect(char.deathState).toBe('ALIVE');
+      expect(char.deathCounter).toBe(2);
+      expect(char.conditions).not.toContain('Morrendo');
+    });
+  });
+
 });
 

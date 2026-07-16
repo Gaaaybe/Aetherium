@@ -208,6 +208,8 @@ export interface SyncCharacterData {
     trainingBonusIncrease?: number;
   }[];
   conditions?: string[];
+  deathState?: 'ALIVE' | 'DYING' | 'DEAD';
+  deathCounter?: number;
 }
 
 export type EquipSlot = 'suit' | 'accessory' | 'hand' | 'quick-access';

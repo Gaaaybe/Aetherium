@@ -20,13 +20,14 @@ export function executeBehavior(
   basedOnAttribute = false,
   dadoModularizado?: string,
   isDanoAcoplado = false,
+  isRecuperacaoAcoplada = false,
 ): GameMutation[] {
   switch (behavior.kind) {
     case 'DANO':
       return executeDano(behavior, targets, grau, context, basedOnAttribute, dadoModularizado, isDanoAcoplado);
 
     case 'RECUPERACAO':
-      return executeRecuperacao(behavior, targets);
+      return executeRecuperacao(behavior, targets, grau, context, basedOnAttribute, dadoModularizado, isRecuperacaoAcoplada);
 
     case 'MARCADOR':
       return executeMarcador(behavior, targets, sourcePowerId);

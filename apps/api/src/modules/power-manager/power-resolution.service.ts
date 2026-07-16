@@ -65,6 +65,7 @@ export interface ResolvePowerUseResult {
   /** Modo de resolução do poder — narrativo implica sem automação */
   resolutionMode: 'ON_USE' | 'PASSIVE' | 'NARRATIVE';
   isDanoAcoplado?: boolean;
+  isRecuperacaoAcoplada?: boolean;
 }
 
 export interface ResolvePassiveInput {
@@ -144,7 +145,7 @@ export class PowerResolutionService {
 
     // Passivos e narrativos não produzem GameMutation via este endpoint
     if (resolutionMode.mode !== 'ON_USE') {
-      return { mutations: [], resolutionMode: resolutionMode.mode, isDanoAcoplado: false };
+      return { mutations: [], resolutionMode: resolutionMode.mode, isDanoAcoplado: false, isRecuperacaoAcoplada: false };
     }
 
     // 3. Busca marcadores de cena ativos para o contexto
@@ -198,6 +199,23 @@ export class PowerResolutionService {
           alvo: targetAlvo,
           configDano: configDanoObj,
         } as any;
+      }
+
+      if (behavior && behavior.kind === 'RECUPERACAO') {
+        const configId = ae.configuracaoId;
+        if (configId === 'dano') {
+          behavior = {
+            ...behavior,
+            recurso: 'PV',
+          };
+        } else if (configId === 'energia') {
+          behavior = {
+            ...behavior,
+            recurso: 'PE',
+          };
+        } else {
+          behavior = null;
+        }
       }
 
       const modifications: ResolvedModification[] = ae.appliedModifications.map((am) => {
@@ -269,6 +287,7 @@ export class PowerResolutionService {
     const isInstantaneous = power.parametrosDuracao === 0;
 
     const isDanoAcoplado = isFromWeapon && !(isEspiritual && isInstantaneous);
+    const isRecuperacaoAcoplada = isFromWeapon || (isEspiritual && isInstantaneous);
 
     const resolvedPower: ResolvedPower = {
       id: power.id,
@@ -276,6 +295,7 @@ export class PowerResolutionService {
       effects: resolvedEffects,
       globalModifications,
       isDanoAcoplado,
+      isRecuperacaoAcoplada,
     };
 
     // 5. Chama o motor com contexto enriquecido
@@ -291,7 +311,7 @@ export class PowerResolutionService {
       selectedTargetIds,
     });
 
-    return { mutations, resolutionMode: 'ON_USE', isDanoAcoplado };
+    return { mutations, resolutionMode: 'ON_USE', isDanoAcoplado, isRecuperacaoAcoplada };
   }
 
   /**

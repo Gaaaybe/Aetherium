@@ -130,8 +130,22 @@ export function PowerUsageModal({
     resolution?.isDanoAcoplado ??
     ((((power as any).originItemTipo?.toUpperCase() === 'WEAPON') || (power as any).originItemTipo === 'weapon') && !(isEspiritual && duracao === 0));
 
-  const getBaseFormula = (grau: number) => {
-    if (isDanoAcoplado) {
+  const isRecuperacaoAcoplada =
+    resolution?.isRecuperacaoAcoplada ??
+    ((((power as any).originItemTipo?.toUpperCase() === 'WEAPON') || (power as any).originItemTipo === 'weapon') || (isEspiritual && duracao === 0));
+
+  const getBaseFormula = (grau: number, effectBaseId?: string, configId?: string) => {
+    if (effectBaseId === 'recuperacao') {
+      if (isRecuperacaoAcoplada) {
+        return `1d${4 * Math.pow(2, Math.max(1, grau) - 1)}`;
+      }
+      if (configId === 'energia' || configId === 'pe') {
+        return String(grau * 4);
+      }
+      const danoInfo = buscarGrauNaTabela(grau);
+      return danoInfo ? danoInfo.dano : '1d6';
+    }
+    if (isDanoAcoplado && (effectBaseId === 'dano' || !effectBaseId)) {
       return `1d${4 * Math.pow(2, Math.max(1, grau) - 1)}`;
     }
     const danoInfo = buscarGrauNaTabela(grau);
@@ -154,11 +168,13 @@ export function PowerUsageModal({
   useEffect(() => {
     const initial: Record<string, string> = {};
     damageEffects.forEach((e: any) => {
-      const baseFormula = getBaseFormula(e.grau);
+      const effectBaseId = e.effectBaseId || e.id;
+      const configId = e.configuracaoSelecionada || e.configuracaoId || '';
+      const baseFormula = getBaseFormula(e.grau, effectBaseId, configId);
       initial[e.id] = e.dadoModularizado || baseFormula;
     });
     setFormulasModularizadas(initial);
-  }, [power.effects, isDanoAcoplado]);
+  }, [power.effects, isDanoAcoplado, isRecuperacaoAcoplada]);
 
   useEffect(() => {
     if (isOpen) {
@@ -179,7 +195,7 @@ export function PowerUsageModal({
 
 
   const firstDamageEffect = damageEffects[0];
-  const firstBaseFormula = firstDamageEffect ? getBaseFormula(firstDamageEffect.grau) : '';
+  const firstBaseFormula = firstDamageEffect ? getBaseFormula(firstDamageEffect.grau, firstDamageEffect.effectBaseId || firstDamageEffect.id, firstDamageEffect.configuracaoSelecionada || firstDamageEffect.configuracaoId || '') : '';
   const firstFormulaSelecionada = firstDamageEffect ? (formulasModularizadas[firstDamageEffect.id] || firstDamageEffect.dadoModularizado || firstBaseFormula) : '';
   const firstHasBaseadoAtributos = firstDamageEffect ? (
     power.globalModifications.some((m: any) => m.modificationBaseId === 'baseado-atributos') ||
@@ -479,6 +495,7 @@ export function PowerUsageModal({
                   damageFormula: firstBaseFormula ? firstFormulaSelecionada : undefined,
                   damageModifier: firstHasBaseadoAtributos ? effTeste : 0,
                   isDanoAcoplado,
+                  isRecuperacao: firstDamageEffect ? (firstDamageEffect.effectBaseId === 'recuperacao' || firstDamageEffect.configuracaoSelecionada === 'pv' || firstDamageEffect.configuracaoSelecionada === 'pe' || firstDamageEffect.configuracaoId === 'pv' || firstDamageEffect.configuracaoId === 'pe') : false,
                   initialRule: rule,
                   initialExtraDice: extraDice,
                 });
@@ -489,27 +506,61 @@ export function PowerUsageModal({
               Teste: {effTeste >= 0 ? `+${effTeste}` : effTeste}
             </Button>
 
-            {isScientific && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-[10px] gap-1 px-2 border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-400"
-                onClick={handleScientificRoll}
-                disabled={isRollingScientific}
-              >
-                <FlaskConical className={`w-3 h-3 ${isRollingScientific ? 'animate-spin' : 'animate-pulse'}`} />
-                Rolar Precisão ({scientificRoll ? `Rolou ${scientificRoll.roll}` : '1d10'})
-              </Button>
-            )}
-
             {damageEffects.map((e: any) => {
-              const danoInfo = buscarGrauNaTabela(e.grau);
-              const baseFormula = danoInfo ? danoInfo.dano : '';
+              const effectBaseId = e.effectBaseId || e.id;
+              const configId = e.configuracaoSelecionada || e.configuracaoId || '';
+              const baseFormula = getBaseFormula(e.grau, effectBaseId, configId);
               const formulaSelecionada = formulasModularizadas[e.id] || e.dadoModularizado || baseFormula;
               const modulacoes = obterModulacoesDeDados(baseFormula);
               const hasBaseadoAtributos = 
                 power.globalModifications.some((m: any) => m.modificationBaseId === 'baseado-atributos') ||
                 e.modifications?.some((m: any) => m.modificationBaseId === 'baseado-atributos');
+
+              const isPeRecovery = effectBaseId === 'recuperacao' && (configId === 'energia' || configId === 'pe');
+              if (isPeRecovery) {
+                const peAmount = e.grau * 4;
+                return (
+                  <div key={e.id} className="flex items-center gap-0 animate-in fade-in duration-200">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[10px] gap-1 px-2 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 active:scale-95 transition-all"
+                      onClick={async () => {
+                        if (onSync) {
+                          await onSync({ peChange: peAmount });
+                          toast.success(`Recuperou ${peAmount} PE com sucesso!`);
+                        }
+                      }}
+                    >
+                      <Zap className="w-3 h-3 text-emerald-500 animate-pulse" />
+                      Recuperar {peAmount} PE {e.nota ? `(${e.nota})` : ''}
+                    </Button>
+                  </div>
+                );
+              }
+
+              const isTempPe = effectBaseId === 'fortalecer' && configId === 'pe';
+              if (isTempPe) {
+                const peAmount = e.grau * 4;
+                return (
+                  <div key={e.id} className="flex items-center gap-0 animate-in fade-in duration-200">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[10px] gap-1 px-2 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 active:scale-95 transition-all"
+                      onClick={async () => {
+                        if (onSync) {
+                          await onSync({ tempPeChange: peAmount });
+                          toast.success(`Aplicou +${peAmount} PE Temporário com sucesso!`);
+                        }
+                      }}
+                    >
+                      <Zap className="w-3 h-3 text-emerald-500 animate-pulse" />
+                      Aplicar +${peAmount} PE Temp {e.nota ? `(${e.nota})` : ''}
+                    </Button>
+                  </div>
+                );
+              }
 
               return (
                 <div key={e.id} className="flex items-center gap-0 animate-in fade-in duration-200">
@@ -589,6 +640,7 @@ export function PowerUsageModal({
                         onlyDamage: true,
                         rollButtonLabel: effectBaseId === 'recuperacao' ? 'Rolar Cura' : 'Rolar Efeito',
                         isDanoAcoplado,
+                        isRecuperacao: effectBaseId === 'recuperacao' || configId === 'pv' || configId === 'pe',
                         onApply: onApplyCallback,
                         applyLabel: applyLabelText,
                         onRoll: () => {

@@ -70,7 +70,8 @@ export function resolvePowerUse({ power, context, selectedTargetIds }: PowerUseI
       power.id,
       basedOnAttribute,
       effect.dadoModularizado,
-      power.isDanoAcoplado
+      power.isDanoAcoplado,
+      power.isRecuperacaoAcoplada
     ));
 
   }

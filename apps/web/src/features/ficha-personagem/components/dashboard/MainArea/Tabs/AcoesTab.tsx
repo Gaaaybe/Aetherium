@@ -144,6 +144,7 @@ export function AcoesTab({
   const [rollingAction, setRollingAction] = useState<{
     name: string;
     damage?: string;
+    recovery?: string;
     modifier: number;
     damageModifier?: number;
     critMargin?: number;
@@ -346,6 +347,29 @@ export function AcoesTab({
     p => p.parametros?.duracao !== 4
   );
 
+  const handleRestartTurn = async () => {
+    setActions(defaultActions);
+    setMovement(1);
+
+    if (character.death?.state === 'DYING' || character.conditions.includes('Morrendo')) {
+      const nextCounter = (character.death?.counter ?? 0) + 1;
+      const isDead = nextCounter >= 3;
+
+      await onSync({
+        deathCounter: Math.min(3, nextCounter),
+        deathState: isDead ? 'DEAD' : 'DYING'
+      });
+
+      if (isDead) {
+        toast.error('Seu personagem acumulou 3 marcadores de morte e MORREU!');
+      } else {
+        toast.warning(`Início de turno: Marcador de morte incrementado para ${nextCounter}/3.`);
+      }
+    } else {
+      toast.success('Turno iniciado/reiniciado.');
+    }
+  };
+
   const filteredCombatActions = ACOES_COMBATE.filter(acao => {
     const matchesSearch = acao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
       acao.descricao.toLowerCase().includes(searchTerm.toLowerCase());
@@ -365,7 +389,7 @@ export function AcoesTab({
                 <Sword className="w-4 h-4 text-red-500" />
                 Ações de Turno
               </div>
-              <Button variant="ghost" size="sm" className="h-7 w-7 rounded-full hover:bg-red-50 !p-0 flex items-center justify-center transition-transform hover:rotate-180 duration-500" onClick={() => { setActions(defaultActions); setMovement(1); }} title="Reiniciar Turno">
+              <Button variant="ghost" size="sm" className="h-7 w-7 rounded-full hover:bg-red-50 !p-0 flex items-center justify-center transition-transform hover:rotate-180 duration-500" onClick={handleRestartTurn} title="Reiniciar Turno">
                 <RotateCcw className="w-4 h-4 text-red-500" />
               </Button>
             </CardTitle>
@@ -490,10 +514,15 @@ export function AcoesTab({
                             }, character);
 
                             let finalDamage = baseDamage;
+                            let finalRecovery = '';
                             for (const fb of fortalecerBonuses) {
                               if (fb.configId === 'dano') {
                                 const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
                                 finalDamage += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
+                              } else if (fb.configId === 'recuperacao') {
+                                const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
+                                if (finalRecovery) finalRecovery += ' + ';
+                                finalRecovery += `${fb.formula.replace(/^\+/, '')}${descSuffix}`;
                               }
                             }
 
@@ -502,6 +531,7 @@ export function AcoesTab({
                             setRollingAction({
                               name: character.unarmedMastery?.customName || 'Ataque Desarmado',
                               damage: finalDamage,
+                              recovery: finalRecovery || undefined,
                               modifier: mod,
                               damageModifier: mod,
                               critMargin: finalCritMargin,
@@ -598,14 +628,19 @@ export function AcoesTab({
                             }, character);
 
                             let finalDamage = baseDamage;
+                            let finalRecovery = '';
                             for (const fb of fortalecerBonuses) {
                               if (fb.configId === 'dano') {
                                 const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
                                 finalDamage += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
+                              } else if (fb.configId === 'recuperacao') {
+                                const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
+                                if (finalRecovery) finalRecovery += ' + ';
+                                finalRecovery += `${fb.formula.replace(/^\+/, '')}${descSuffix}`;
                               }
                             }
 
-                            // Procurar poderes do próprio item que estão ativos/equipados e têm Efeito Dano
+                            // Procurar poderes do próprio item que estão ativos/equipados e têm Efeito Dano ou Efeito Recuperação
                             const itemDanoPowers = activePowers.filter(p => p.originItemId === itemDetail?.id);
                             for (const ip of itemDanoPowers) {
                               const powerInfo = detailedPowers[ip.powerId];
@@ -614,7 +649,7 @@ export function AcoesTab({
                               const effects = powerInfo.effects || [];
                               for (const eff of effects) {
                                 const baseId = eff.effectBaseId;
-                                if (baseId === 'dano') {
+                                if (baseId === 'dano' || baseId === 'recuperacao') {
                                   const degree = eff.grau || 1;
                                   
                                   const espiritualDomains = ['natural', 'sagrado', 'sacrilegio', 'psiquico'];
@@ -623,10 +658,10 @@ export function AcoesTab({
                                   const isEspiritual = isEspiritualDomain || (domainName.toLowerCase() === 'peculiar' && !!(powerInfo.dominio as any)?.espiritual);
                                   const isInstantaneous = powerInfo.parametros?.duracao === 0;
                                   const itemTipo = ip.originItemTipo || (ip.originItemId ? detailedItems[ip.originItemId]?.tipo : undefined);
-                                  const isDanoAcoplado = ((itemTipo?.toUpperCase() === 'WEAPON' || itemTipo === 'weapon') && !(isEspiritual && isInstantaneous));
+                                  const isAcoplado = ((itemTipo?.toUpperCase() === 'WEAPON' || itemTipo === 'weapon') && !(isEspiritual && isInstantaneous));
 
                                   let formula = '';
-                                  if (isDanoAcoplado) {
+                                  if (isAcoplado) {
                                     formula = `1d${4 * Math.pow(2, Math.max(1, degree) - 1)}`;
                                   } else {
                                     const danoInfo = buscarGrauNaTabela(degree);
@@ -637,7 +672,12 @@ export function AcoesTab({
                                     const customDescriptor = (eff as any).inputCustomizado || (eff as any).inputValue;
                                     const descriptorVal = customDescriptor ? String(customDescriptor).trim() : domainName;
                                     const descriptor = descriptorVal ? ` [${descriptorVal.toUpperCase()}]` : '';
-                                    finalDamage += ` + ${formula}${descriptor}[Acoplado]`;
+                                    if (baseId === 'recuperacao') {
+                                      if (finalRecovery) finalRecovery += ' + ';
+                                      finalRecovery += `${formula}${descriptor}[Cura Acoplada]`;
+                                    } else {
+                                      finalDamage += ` + ${formula}${descriptor}[Acoplado]`;
+                                    }
                                   }
                                 }
                               }
@@ -657,6 +697,7 @@ export function AcoesTab({
                             setRollingAction({
                               name: itemDetail?.nome || 'Ataque',
                               damage: finalDamage,
+                              recovery: finalRecovery || undefined,
                               modifier: mod,
                               damageModifier: mod,
                               critMargin: finalCritMargin,
@@ -1133,6 +1174,15 @@ export function AcoesTab({
         modifier={rollingAction?.modifier || 0}
         damageFormula={rollingAction?.damage}
         damageModifier={rollingAction?.damageModifier}
+        recoveryFormula={rollingAction?.recovery}
+        onApplyRecovery={async (value) => {
+          try {
+            await onSync({ pvChange: value });
+            toast.success(`Cura de +${value} PV aplicada com sucesso!`);
+          } catch {
+            toast.error('Erro ao aplicar cura na ficha.');
+          }
+        }}
         critMargin={rollingAction?.critMargin}
         critMultiplier={rollingAction?.critMultiplier}
         efficiencyBonus={rollingAction?.efficiencyBonus}

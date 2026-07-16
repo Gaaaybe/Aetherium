@@ -848,23 +848,32 @@ export function CardEfeito({
                   <p className="font-semibold">
                     {efeitoBase.configuracoes.opcoes.find((c: any) => c.id === efeito.configuracaoSelecionada)?.descricao}
                   </p>
-                  {efeitoBase.id === 'fortalecer' && (() => {
+                  {(efeitoBase.id === 'fortalecer' || efeitoBase.id === 'recuperacao') && (() => {
                     const g = efeito.grau || 1;
                     let calculatedLabel = '';
-                    if (efeito.configuracaoSelecionada === 'acoes') {
-                      let bonus = 0;
-                      if (g >= 10) bonus = 3;
-                      else if (g >= 6) bonus = 2;
-                      else if (g >= 2) bonus = 1;
-                      calculatedLabel = `Bônus do Grau ${g}: +${bonus} Ação${bonus !== 1 ? 'es' : ''} Padrão Extra${bonus !== 1 ? 's' : ''}`;
-                    } else if (efeito.configuracaoSelecionada === 'rd') {
-                      const bonus = 2 * Math.pow(2, g - 1);
-                      calculatedLabel = `Bônus do Grau ${g}: +${bonus} de Redução de Dano (RD)`;
-                    } else if (efeito.configuracaoSelecionada === 'pv') {
-                      const formula = buscarGrauNaTabela(g)?.dano || '1d6';
-                      calculatedLabel = `Bônus do Grau ${g}: Rolagem de ${formula} PV Temporário(s)`;
-                    } else if (efeito.configuracaoSelecionada === 'pe') {
-                      calculatedLabel = `Bônus do Grau ${g}: +${g * 4} PE Temporário(s)`;
+                    if (efeitoBase.id === 'fortalecer') {
+                      if (efeito.configuracaoSelecionada === 'acoes') {
+                        let bonus = 0;
+                        if (g >= 10) bonus = 3;
+                        else if (g >= 6) bonus = 2;
+                        else if (g >= 2) bonus = 1;
+                        calculatedLabel = `Bônus do Grau ${g}: +${bonus} Ação${bonus !== 1 ? 'es' : ''} Padrão Extra${bonus !== 1 ? 's' : ''}`;
+                      } else if (efeito.configuracaoSelecionada === 'rd') {
+                        const bonus = 2 * Math.pow(2, g - 1);
+                        calculatedLabel = `Bônus do Grau ${g}: +${bonus} de Redução de Dano (RD)`;
+                      } else if (efeito.configuracaoSelecionada === 'pv') {
+                        const formula = buscarGrauNaTabela(g)?.dano || '1d6';
+                        calculatedLabel = `Bônus do Grau ${g}: Rolagem de ${formula} PV Temporário(s)`;
+                      } else if (efeito.configuracaoSelecionada === 'pe') {
+                        calculatedLabel = `Bônus do Grau ${g}: +${g * 4} PE Temporário(s)`;
+                      }
+                    } else if (efeitoBase.id === 'recuperacao') {
+                      if (efeito.configuracaoSelecionada === 'dano') {
+                        const formula = buscarGrauNaTabela(g)?.dano || '1d6';
+                        calculatedLabel = `Recuperação do Grau ${g}: Cura de ${formula} PV`;
+                      } else if (efeito.configuracaoSelecionada === 'energia') {
+                        calculatedLabel = `Recuperação do Grau ${g}: Restaura +${g * 4} PE de forma fixa (Não afetado por Fortalecer/Enfraquecer)`;
+                      }
                     }
                     return calculatedLabel ? (
                       <p className="font-black text-amber-700 dark:text-amber-400 bg-amber-500/10 p-1.5 rounded mt-1.5 border border-amber-500/20">
@@ -880,11 +889,11 @@ export function CardEfeito({
             </div>
           )}
 
-          {/* Modularização de Dados (apenas para efeito Dano) */}
-          {efeitoBase.id === 'dano' && opcoesDados.length > 0 && onAtualizarDadoModularizado && (
+          {/* Modularização de Dados (apenas para efeito Dano ou Recuperação de Dano) */}
+          {(efeitoBase.id === 'dano' || (efeitoBase.id === 'recuperacao' && efeito.configuracaoSelecionada === 'dano')) && opcoesDados.length > 0 && onAtualizarDadoModularizado && (
             <div className="p-3 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 border border-purple-200 dark:border-purple-800 rounded-lg shadow-sm">
               <Select
-                label="Modularização dos Dados de Dano"
+                label={`Modularização dos Dados de ${efeitoBase.id === 'dano' ? 'Dano' : 'Recuperação'}`}
                 value={efeito.dadoModularizado || formulaBase}
                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                   const valor = e.target.value;
