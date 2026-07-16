@@ -713,7 +713,7 @@ export function PoderesTab({
                       variant="ghost" 
                       size="sm" 
                       onClick={handleRemoveMastery} 
-                      className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl h-10 w-10 p-0"
+                      className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl h-10 w-10 !p-0"
                       title="Remover Mestria"
                     >
                       <Trash2 className="w-5 h-5" />

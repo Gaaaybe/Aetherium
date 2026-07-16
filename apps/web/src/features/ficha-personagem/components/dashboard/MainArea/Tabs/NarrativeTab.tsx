@@ -286,7 +286,7 @@ export function NarrativeTab({ character, _onSync }: NarrativeTabProps) {
                           placeholder="Escreva uma motivação..."
                           className="flex-1 min-w-0"
                         />
-                        <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-red-500 shrink-0" onClick={() => setMotivations(motivations.filter((_, i) => i !== idx))}>
+                        <Button variant="ghost" size="sm" className="h-10 w-10 !p-0 text-red-500 shrink-0" onClick={() => setMotivations(motivations.filter((_, i) => i !== idx))}>
                           <Trash2 className="w-5 h-5" />
                         </Button>
                       </div>
@@ -348,7 +348,7 @@ export function NarrativeTab({ character, _onSync }: NarrativeTabProps) {
                           placeholder="Escreva uma complicação..."
                           className="flex-1 min-w-0"
                         />
-                        <Button variant="ghost" size="sm" className="h-10 w-10 p-0 text-red-500 shrink-0" onClick={() => setComplications(complications.filter((_, i) => i !== idx))}>
+                        <Button variant="ghost" size="sm" className="h-10 w-10 !p-0 text-red-500 shrink-0" onClick={() => setComplications(complications.filter((_, i) => i !== idx))}>
                           <Trash2 className="w-5 h-5" />
                         </Button>
                       </div>

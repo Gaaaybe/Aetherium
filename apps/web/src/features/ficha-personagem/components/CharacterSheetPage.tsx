@@ -35,7 +35,7 @@ export function CharacterSheetPage() {
             Meus Personagens
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Gerencie suas fichas de personagem de Spirit & Caos
+            Gerencie suas fichas de personagem de <span className="font-semibold"><span className="text-espirito-500 dark:text-espirito-400">Espírito</span> <span className="text-caos-500 dark:text-caos-400">e Caos</span></span>
           </p>
         </div>
         <Button className="flex items-center gap-2" onClick={() => setIsCharactermancerOpen(true)}>

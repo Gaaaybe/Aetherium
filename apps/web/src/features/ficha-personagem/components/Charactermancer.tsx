@@ -301,7 +301,7 @@ export function Charactermancer({ isOpen, onClose, onSuccess }: CharactermancerP
             <div className="bg-purple-50 dark:bg-purple-900/10 p-5 rounded-lg border border-purple-200 dark:border-purple-800">
               <h3 className="text-lg font-bold text-purple-900 dark:text-purple-100 mb-2">O Despertar</h3>
               <p className="text-purple-700 dark:text-purple-300 text-sm mb-4">
-                Em Spirit & Caos, o Princípio Espiritual é o que separa mortais de seres extraordinários. Despertar seu princípio lhe dá acesso a magias, peculiaridades e acervos, mas consome 15 Pontos de Aprendizado (PdA) da sua reserva.
+                Em <span className="font-semibold"><span className="text-espirito-500 dark:text-espirito-400">Espírito</span> <span className="text-caos-500 dark:text-caos-400">e Caos</span></span>, o Princípio Espiritual é o que separa mortais de seres extraordinários. Despertar seu princípio lhe dá acesso a magias, peculiaridades e acervos, mas consome 15 Pontos de Aprendizado (PdA) da sua reserva.
               </p>
 
               <div className="flex flex-col gap-3">
