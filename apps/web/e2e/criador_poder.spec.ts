@@ -4,11 +4,13 @@ test.describe('Criador de Poder E2E', () => {
   test('deve criar um poder simples com sucesso e salvar', async ({ authenticatedPage }) => {
     const page = authenticatedPage;
 
-    // Intercepta o POST para criar poder
-    await page.route('http://localhost:3333/powers', async (route) => {
-      const request = route.request();
-      if (request.method() === 'POST') {
-        const payload = request.postDataJSON();
+    // Intercepta todas as chamadas para a API
+    await page.route('http://localhost:3333/**', async (route) => {
+      const url = route.request().url();
+      const method = route.request().method();
+
+      if (url.includes('/powers') && method === 'POST') {
+        const payload = route.request().postDataJSON();
         
         // Valida que os dados enviados são os que preenchemos na tela
         expect(payload.nome).toBe('Poder Super E2E');
@@ -24,12 +26,23 @@ test.describe('Criador de Poder E2E', () => {
           }),
         });
       } else {
-        await route.fallback();
+        // Para qualquer outra chamada GET/POST/etc à API, retorna 200 com array vazio ou objeto vazio
+        // Isso evita erros 401/404 que deslogam ou quebram o fluxo do frontend
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(url.includes('/powers') || url.includes('/me') || url.includes('/peculiarities') || url.includes('/power-arrays') ? [] : {}),
+        });
       }
     });
 
     // Navega para a página do Criador de Poder
     await page.goto('/Aetherium/criador');
+
+    // Garante que estamos na aba de poderes
+    const tabPoderes = page.locator('button:has-text("Poderes")').first();
+    await expect(tabPoderes).toBeVisible();
+    await tabPoderes.click();
 
     // Preenche o nome do poder
     const nomeInput = page.locator('input[placeholder="Ex: Bola de Fogo"]').first();

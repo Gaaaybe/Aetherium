@@ -10,7 +10,7 @@ test.describe('Aetherium Landing & Navigation E2E', () => {
     await expect(title).toBeVisible();
 
     // Verifica a presença do subtítulo do app
-    const subtitle = page.locator('text=Plataforma Digital para Spirit and Caos').first();
+    const subtitle = page.locator('text=Plataforma Digital para Espírito e Caos').first();
     await expect(subtitle).toBeVisible();
   });
 
