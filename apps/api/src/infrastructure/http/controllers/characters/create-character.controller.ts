@@ -14,6 +14,22 @@ const createCharacterBodySchema = z.object({
       origin: z.string().min(1),
       motivations: z.array(z.string().min(1)),
       complications: z.array(z.string().min(1)),
+      deity: z
+        .object({
+          name: z.string(),
+          aspects: z.array(z.string()),
+          precepts: z.string(),
+          minorPrecepts: z.string(),
+          taboos: z.string(),
+          personality: z.string(),
+          isSealed: z.boolean(),
+        })
+        .optional(),
+      psychicState: z
+        .object({
+          stress: z.number().int().nonnegative(),
+        })
+        .optional(),
     })
     .refine(
       (value) => value.motivations.length + value.complications.length >= 2,

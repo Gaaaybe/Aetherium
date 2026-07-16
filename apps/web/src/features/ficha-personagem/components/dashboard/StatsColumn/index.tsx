@@ -311,7 +311,7 @@ export function StatsColumn({ character, onSync, activePowers = [], deactivatePo
               <ShieldCheck className="w-4 h-4 text-indigo-500" />
               Resistências
             </CardTitle>
-            <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={openModal}>
+            <Button variant="ghost" size="sm" className="h-9 w-9 !p-0" onClick={openModal}>
               <Edit2 className="w-5 h-5 text-gray-400" />
             </Button>
           </CardHeader>
@@ -366,7 +366,7 @@ export function StatsColumn({ character, onSync, activePowers = [], deactivatePo
               Perícias
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={openModal}>
+              <Button variant="ghost" size="sm" className="h-9 w-9 !p-0" onClick={openModal}>
                 <Edit2 className="w-5 h-5 text-gray-400" />
               </Button>
             </div>

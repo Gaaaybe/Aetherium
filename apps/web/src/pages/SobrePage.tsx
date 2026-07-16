@@ -13,11 +13,11 @@ export function SobrePage() {
         <CardContent className="space-y-4">
           <div>
             <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
-              Plataforma Digital para Spirit and Caos
+              Plataforma Digital para <span className="font-semibold"><span className="text-espirito-500 dark:text-espirito-400">Espírito</span> <span className="text-caos-500 dark:text-caos-400">e Caos</span></span>
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
               O Aetherium é uma plataforma completa para mestres e jogadores de 
-              <strong> Spirit and Caos</strong>, oferecendo ferramentas poderosas para criar poderes, 
+              <strong> <span className="font-semibold"><span className="text-espirito-500 dark:text-espirito-400">Espírito</span> <span className="text-caos-500 dark:text-caos-400">e Caos</span></span></strong>, oferecendo ferramentas poderosas para criar poderes, 
               gerenciar criaturas e muito mais. Inspirado em Mutants & Masterminds.
             </p>
           </div>
@@ -123,7 +123,7 @@ export function SobrePage() {
               <User className="w-5 h-5" /> Desenvolvedor
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Criado por <strong>Gabriel Menezes</strong> para jogadores de Spirit and Caos
+              Criado por <strong>Gabriel Menezes</strong> para jogadores de <span className="font-semibold"><span className="text-espirito-500 dark:text-espirito-400">Espírito</span> <span className="text-caos-500 dark:text-caos-400">e Caos</span></span>
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
               Versão 1.0.0 • Janeiro 2026

@@ -139,7 +139,7 @@ function AppContent() {
                 Aetherium
               </h1>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">
-                Plataforma Digital para Spirit and Caos
+                Plataforma Digital para <span className="font-semibold"><span className="text-espirito-500 dark:text-espirito-400">Espírito</span> <span className="text-caos-500 dark:text-caos-400">e Caos</span></span>
               </p>
             </Link>
             
@@ -231,10 +231,10 @@ function AppContent() {
       </main>
 
       {/* Footer com créditos */}
-      <footer className="py-4 sm:py-6 border-t border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
+      <footer className="relative z-40 py-4 sm:py-6 border-t border-gray-200/50 dark:border-gray-800/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 text-center">
           <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            Criado por Gabriel Menezes para jogadores de Spirit and Caos
+            Criado por Gabriel Menezes para jogadores de <span className="font-semibold"><span className="text-espirito-500 dark:text-espirito-400">Espírito</span> <span className="text-caos-500 dark:text-caos-400">e Caos</span></span>
           </p>
         </div>
       </footer>

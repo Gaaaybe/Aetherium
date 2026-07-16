@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { CharacterResponse, SyncCharacterData } from '@/services/characters.types';
 import { Badge, Button, DynamicIcon, Modal, Input, ModalFooter, toast } from '@/shared/ui';
-import { User, Settings, Shield, MoreHorizontal, Camera, Save, X, Edit2, ArrowUpCircle, Dices, Moon } from 'lucide-react';
+import { User, Settings, Shield, MoreHorizontal, Camera, Save, X, Edit2, ArrowUpCircle, Dices, Moon, Skull } from 'lucide-react';
 import { FreeDiceRollerModal } from '@/shared/components/FreeDiceRollerModal';
 import { FichaPropertiesModal } from './FichaPropertiesModal';
+import { DeathTheme } from '../../hooks/useDeathTheme';
 
 export const parseArtUrl = (url: string | null) => {
   if (!url) return { cleanUrl: '', zoom: 1, x: 0, y: 0 };
@@ -51,9 +52,10 @@ interface CharacterHeaderProps {
   onSync: (data: SyncCharacterData) => Promise<void>;
   onLevelUp: () => void;
   onOpenRest: () => void;
+  deathTheme: DeathTheme;
 }
 
-export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: CharacterHeaderProps) {
+export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest, deathTheme }: CharacterHeaderProps) {
   // Estados para Modais
   const [isArtModalOpen, setIsArtModalOpen] = useState(false);
   const [isSymbolModalOpen, setIsSymbolModalOpen] = useState(false);
@@ -217,13 +219,13 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-none lg:rounded-lg shadow-sm border-b lg:border border-gray-200 dark:border-gray-800 p-3 md:p-6 transition-all duration-300">
+    <div className={`bg-white dark:bg-gray-900 rounded-none lg:rounded-lg shadow-sm border-b lg:border transition-all duration-700 p-3 md:p-6 ${deathTheme.headerClass || 'border-gray-200 dark:border-gray-800'}`}>
       <div className="flex flex-col md:flex-row justify-between items-center gap-4 lg:gap-6">
         <div className="flex items-center gap-4 lg:gap-6 w-full md:w-auto">
           {/* Avatar com Edição */}
           <div className="relative group shrink-0">
             <div 
-              className="w-16 h-16 md:w-24 md:h-24 rounded-lg bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 border-2 border-purple-500/20 flex items-center justify-center overflow-hidden shrink-0 shadow-inner transition-transform group-hover:scale-105 cursor-pointer relative"
+              className={`w-16 h-16 md:w-24 md:h-24 rounded-lg bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/20 dark:to-indigo-900/20 border-2 flex items-center justify-center overflow-hidden shrink-0 shadow-inner transition-all duration-700 group-hover:scale-105 cursor-pointer relative ${deathTheme.avatarBorderClass}`}
               onClick={openArtModal}
             >
               {character.art ? (
@@ -238,9 +240,19 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
                 <User className="w-10 h-10 md:w-12 md:h-12 text-purple-400" />
               )}
               
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-6 h-6 text-white" />
-              </div>
+              {/* Death overlay */}
+              {deathTheme.showDeadOverlay && (
+                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-1 animate-in fade-in duration-700">
+                  <Skull className="w-8 h-8 text-gray-300" />
+                </div>
+              )}
+
+              {/* Hover overlay — only when not dead */}
+              {!deathTheme.showDeadOverlay && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+              )}
             </div>
             
             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:-bottom-2 md:-right-2 bg-purple-600 text-white text-[10px] md:text-xs font-bold px-1.5 md:px-1.5 py-0.5 md:py-1 rounded shadow-lg border-2 border-white dark:border-gray-900 flex items-center gap-0.5 md:gap-1 group/level transition-colors whitespace-nowrap" title="Editar Nível">
@@ -310,6 +322,15 @@ export function CharacterHeader({ character, onSync, onLevelUp, onOpenRest }: Ch
             </div>
             
             <div className="flex flex-wrap items-center gap-y-2 gap-x-2 md:gap-x-3 mt-1">
+              {/* Death state badge */}
+              {deathTheme.badgeLabel && (
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 border transition-all duration-700 ${deathTheme.badgeClass}`}
+                >
+                  {deathTheme.badgeLabel}
+                </Badge>
+              )}
               {isEditingIdentity ? (
                 <div className="flex items-center gap-1.5 animate-in fade-in duration-200">
                   <input

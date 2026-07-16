@@ -75,6 +75,20 @@ export interface UnarmedMasteryResponse {
   totalPdaCost: number;
 }
 
+export interface DeityDevotion {
+  name: string;
+  aspects: string[];
+  precepts: string;
+  minorPrecepts: string;
+  taboos: string;
+  personality: string;
+  isSealed: boolean;
+}
+
+export interface PsychicState {
+  stress: number;
+}
+
 export interface CharacterResponse {
   id: string;
   userId: string;
@@ -89,6 +103,8 @@ export interface CharacterResponse {
     motivations: string[];
     complications: string[];
     generalNotes: string;
+    deity?: DeityDevotion;
+    psychicState?: PsychicState;
   };
   attributes: CharacterAttributesResponse;
   skills: CharacterSkillResponse[];
@@ -160,6 +176,8 @@ export interface SyncCharacterData {
     motivations?: string[];
     complications?: string[];
     generalNotes?: string;
+    deity?: DeityDevotion;
+    psychicState?: PsychicState;
   };
   symbol?: string | null;
   art?: string | null;
@@ -190,6 +208,8 @@ export interface SyncCharacterData {
     trainingBonusIncrease?: number;
   }[];
   conditions?: string[];
+  deathState?: 'ALIVE' | 'DYING' | 'DEAD';
+  deathCounter?: number;
 }
 
 export type EquipSlot = 'suit' | 'accessory' | 'hand' | 'quick-access';

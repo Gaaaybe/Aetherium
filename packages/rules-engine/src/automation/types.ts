@@ -152,6 +152,7 @@ export interface ResolvedPower {
   /** Fórmula de dano no caster quando EFEITO_COLATERAL dispara. Default: '2d8' */
   colateralFormula?: string;
   isDanoAcoplado?: boolean;
+  isRecuperacaoAcoplada?: boolean;
 }
 
 export interface ResolvedPassivePower {

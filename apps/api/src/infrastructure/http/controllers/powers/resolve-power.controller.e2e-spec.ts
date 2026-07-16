@@ -176,6 +176,7 @@ describe('ResolvePowerController (e2e)', () => {
     expect(response.body).toEqual({
       resolutionMode: 'ON_USE',
       isDanoAcoplado: false,
+      isRecuperacaoAcoplada: false,
       mutations: [
         {
           type: 'DEAL_DAMAGE',

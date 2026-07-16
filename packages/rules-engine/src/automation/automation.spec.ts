@@ -182,6 +182,72 @@ describe('resolvePowerUse — RECUPERACAO', () => {
     const [mut] = resolvePowerUse({ power, context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] } });
     expect(mut.type).toBe('RESTORE_PE');
   });
+
+  it('PV com formula "tabela" usa valor da tabela universal pelo grau', () => {
+    const power = makePower({
+      effects: [makeEffect({ grau: 5, behavior: { kind: 'RECUPERACAO', recurso: 'PV', formula: 'tabela' } })],
+    });
+    const [mut] = resolvePowerUse({ power, context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] } });
+    expect(mut).toMatchObject({ type: 'HEAL', formula: '1d128' });
+  });
+
+  it('PE com formula "tabela" usa grau * 4', () => {
+    const power = makePower({
+      effects: [makeEffect({ grau: 3, behavior: { kind: 'RECUPERACAO', recurso: 'PE', formula: 'tabela' } })],
+    });
+    const [mut] = resolvePowerUse({ power, context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] } });
+    expect(mut).toMatchObject({ type: 'RESTORE_PE', formula: '12' });
+  });
+
+  it('prioriza dadoModularizado mesmo com formula de tabela', () => {
+    const power = makePower({
+      effects: [makeEffect({ grau: 5, dadoModularizado: '8d16', behavior: { kind: 'RECUPERACAO', recurso: 'PV', formula: 'tabela' } })],
+    });
+    const [mut] = resolvePowerUse({ power, context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] } });
+    expect(mut).toMatchObject({ type: 'HEAL', formula: '8d16' });
+  });
+
+  it('aplica modificador de atributo no executor de RECUPERACAO', () => {
+    const powerAttr = makePower({
+      effects: [
+        makeEffect({
+          grau: 1,
+          behavior: { kind: 'RECUPERACAO', recurso: 'PV', formula: 'tabela' },
+          modifications: [{ modificationBaseId: 'baseado-atributos', grau: 1, targetingEffect: 'NENHUM', casterEffect: 'NENHUM' }],
+        })
+      ]
+    });
+    const ctx = {
+      ...BASE_CONTEXT,
+      isEspiritual: false,
+      casterState: {
+        ...BASE_CONTEXT.casterState,
+        keyPhysicalModifier: 3,
+      }
+    };
+    const [mut] = resolvePowerUse({ power: powerAttr, context: ctx });
+    // Grau 1 PV tabela -> 1d8, +3 physical modifier
+    expect(mut).toMatchObject({ type: 'HEAL', formula: '1d8+3' });
+  });
+
+  it('usa a escala de cura de arma/acoplada quando isRecuperacaoAcoplada é true', () => {
+    const power = makePower({
+      effects: [makeEffect({ grau: 3, behavior: { kind: 'RECUPERACAO', recurso: 'PV', formula: 'tabela' } })],
+      isRecuperacaoAcoplada: true,
+    });
+    const [mut] = resolvePowerUse({ power, context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] } });
+    // Grau 3: 4 * 2^(3-1) = 16 -> 1d16
+    expect(mut).toMatchObject({ type: 'HEAL', formula: '1d16' });
+  });
+
+  it('usa dadoModularizado mesmo quando isRecuperacaoAcoplada é true', () => {
+    const power = makePower({
+      effects: [makeEffect({ grau: 3, dadoModularizado: '2d8', behavior: { kind: 'RECUPERACAO', recurso: 'PV', formula: 'tabela' } })],
+      isRecuperacaoAcoplada: true,
+    });
+    const [mut] = resolvePowerUse({ power, context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] } });
+    expect(mut).toMatchObject({ type: 'HEAL', formula: '2d8' });
+  });
 });
 
 describe('resolvePowerUse — MARCADOR', () => {

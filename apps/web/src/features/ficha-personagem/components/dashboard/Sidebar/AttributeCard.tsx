@@ -97,7 +97,7 @@ export function AttributeCard({ character, onSync, activePowers }: AttributeCard
             <Activity className="w-4 h-4 text-purple-500" />
             Atributos
           </CardTitle>
-          <Button variant="ghost" size="sm" className="h-9 w-9 p-0" onClick={() => setIsModalOpen(true)}>
+          <Button variant="ghost" size="sm" className="h-9 w-9 !p-0" onClick={() => setIsModalOpen(true)}>
             <Edit2 className="w-5 h-5 text-gray-400" />
           </Button>
         </CardHeader>
@@ -228,11 +228,11 @@ export function AttributeCard({ character, onSync, activePowers }: AttributeCard
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-full" onClick={() => handleUpdateBase(item.key as any, -1)}>
+                      <Button variant="outline" size="sm" className="h-8 w-8 !p-0 rounded-full" onClick={() => handleUpdateBase(item.key as any, -1)}>
                         <Minus className="w-3.5 h-3.5" />
                       </Button>
                       <span className="text-lg font-black w-6 text-center">{localAttr.baseValue}</span>
-                      <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-full" onClick={() => handleUpdateBase(item.key as any, 1)} disabled={remainingPoints <= 0}>
+                      <Button variant="outline" size="sm" className="h-8 w-8 !p-0 rounded-full" onClick={() => handleUpdateBase(item.key as any, 1)} disabled={remainingPoints <= 0}>
                         <Plus className="w-3.5 h-3.5" />
                       </Button>
                     </div>

@@ -8,6 +8,7 @@ import { MobileBottomNav } from './dashboard/Mobile/MobileBottomNav';
 import { ConfirmDialog, Modal, ModalFooter, Input, Badge, toast, Button } from '@/shared/ui';
 import { DescansoModal } from './dashboard/DescansoModal';
 import { usePowerUsage } from '../hooks/usePowerUsage';
+import { useDeathTheme } from '../hooks/useDeathTheme';
 import { charactersService } from '@/services/characters.service';
 import { obterBonusVidaEnergiaFortalecer } from '../utils/fortalecerHelper';
 import { getPowerById } from '@/services/powers.service';
@@ -52,6 +53,8 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
     clearPendingAction,
     refresh,
   } = useCharacterSheet(characterId);
+
+  const deathTheme = useDeathTheme(character);
 
   const { user: currentUser } = useAuth();
   const isAdminMode = !!(currentUser?.isAdmin && character?.userId !== currentUser?.id);
@@ -298,7 +301,17 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
   if (!character) return null;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20 lg:pb-0">
+    <>
+      {/* Full screen vignette overlay */}
+      {deathTheme.level !== 'normal' && (
+        <div
+          className="fixed left-0 right-0 top-[90px] sm:top-[70px] bottom-0 pointer-events-none z-30 transition-all duration-700"
+          style={deathTheme.vignetteStyle}
+        />
+      )}
+      <div
+        className={`space-y-6 animate-in fade-in duration-500 pb-20 lg:pb-0 transition-all duration-700 ${deathTheme.wrapperClass}`}
+      >
       {isAdminMode && (
         <div className="bg-gradient-to-r from-red-950/40 to-slate-900/60 backdrop-blur-md border border-red-500/30 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg shadow-red-950/20 animate-in slide-in-from-top duration-300">
           <div className="flex items-center gap-3">
@@ -348,7 +361,8 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
         character={character} 
         onSync={sync} 
         onLevelUp={levelUp} 
-        onOpenRest={() => setIsRestModalOpen(true)} 
+        onOpenRest={() => setIsRestModalOpen(true)}
+        deathTheme={deathTheme}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -507,5 +521,6 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
         </ModalFooter>
       </Modal>
     </div>
+    </>
   );
 }

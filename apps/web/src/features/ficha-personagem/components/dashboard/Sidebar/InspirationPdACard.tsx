@@ -78,7 +78,7 @@ export function InspirationPdACard({ inspiration, pda, onSync }: InspirationPdAC
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-9 w-9 p-0 hover:bg-amber-200 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+              className="h-9 w-9 !p-0 hover:bg-amber-200 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400"
               onClick={() => handleInspirationChange(-1)}
               disabled={isUpdating || inspiration <= 0}
             >
@@ -87,7 +87,7 @@ export function InspirationPdACard({ inspiration, pda, onSync }: InspirationPdAC
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 w-9 p-0 hover:bg-amber-200 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+              className="h-9 w-9 !p-0 hover:bg-amber-200 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400"
               onClick={() => handleInspirationChange(1)}
               disabled={isUpdating || inspiration >= 3}
             >

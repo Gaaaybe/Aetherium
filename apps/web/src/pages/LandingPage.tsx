@@ -23,7 +23,7 @@ export function LandingPage() {
             <div className="text-center lg:text-left space-y-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-full text-espirito-700 dark:text-espirito-300 text-sm font-medium border border-espirito-200/50 dark:border-espirito-800/50 shadow-lg">
                 <Sparkles className="w-4 h-4" />
-                Plataforma Digital para Spirit and Caos
+                Plataforma Digital para <span className="font-semibold"><span className="text-espirito-500 dark:text-espirito-400">Espírito</span> <span className="text-caos-500 dark:text-caos-400">e Caos</span></span>
               </div>
               
               <div>
@@ -38,7 +38,7 @@ export function LandingPage() {
                 </h1>
                 
                 <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  A plataforma completa para mestres e jogadores de Spirit and Caos. 
+                  A plataforma completa para mestres e jogadores de <span className="font-semibold"><span className="text-espirito-500 dark:text-espirito-400">Espírito</span> <span className="text-caos-500 dark:text-caos-400">e Caos</span></span>. 
                   Crie poderes épicos, gerencie criaturas e conduza campanhas inesquecíveis.
                 </p>
               </div>
@@ -152,7 +152,7 @@ export function LandingPage() {
                 </span>
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Tudo que você precisa para criar e gerenciar suas aventuras em Spirit and Caos
+                Tudo que você precisa para criar e gerenciar suas aventuras em <span className="font-semibold"><span className="text-espirito-500 dark:text-espirito-400">Espírito</span> <span className="text-caos-500 dark:text-caos-400">e Caos</span></span>
               </p>
             </div>
             

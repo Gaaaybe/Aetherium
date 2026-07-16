@@ -28,6 +28,7 @@ export interface ResolvePowerResponse {
   resolutionMode: 'ON_USE' | 'PASSIVE' | 'NARRATIVE';
   mutations: GameMutation[];
   isDanoAcoplado?: boolean;
+  isRecuperacaoAcoplada?: boolean;
 }
 
 export interface ResolvePowerInput {

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter, Button, Badge } from '@/shared/ui';
-import { Zap, Clock, Ruler, Timer, Play, Dices, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Zap, Clock, Ruler, Timer, Play, Dices, AlertTriangle, ChevronDown, ChevronUp, Flame, Heart, Shield, Settings, Tag, Wind, FlaskConical, RotateCcw } from 'lucide-react';
 import { ESCALAS, buscarGrauNaTabela, buscarDominio } from '@/data';
 import type { PoderResponse } from '@/services/types';
 import type { ResolvePowerResponse } from '@/services/powers.service';
 import { describeMutations } from '@/features/ficha-personagem/hooks/usePowerUsage';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { obterBonusFortalecerAtivos, obterBonusFortalecerDanoRecuperacao } from '@/features/ficha-personagem/utils/fortalecerHelper';
-import { fortaleceAlvoMatch, getRollAdvantageDisadvantage } from '@aetherium/rules-engine';
+import { fortaleceAlvoMatch, getRollAdvantageDisadvantage, calcPsychicStressGain, getPsychicPenalties, rollScientificPrecision } from '@aetherium/rules-engine';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -91,12 +91,24 @@ export function PowerUsageModal({
   const [showMutations, setShowMutations] = useState(true);
   const [formulasModularizadas, setFormulasModularizadas] = useState<Record<string, string>>({});
   const [spendPE, setSpendPE] = useState(true);
+  const [scientificRoll, setScientificRoll] = useState<{ roll: number; success: boolean } | null>(null);
+  const [isRollingScientific, setIsRollingScientific] = useState(false);
 
   const hasAlquebrado = (character?.conditions || []).some((c: string) => {
     const clean = c.includes('(') ? c.split('(')[0].trim() : c;
     return clean === 'Alquebrado';
   });
-  const peCostMultiplier = hasAlquebrado ? 2 : 1;
+
+  const isPsychic = power.dominio?.name?.toLowerCase() === 'psíquico' || power.dominio?.name?.toLowerCase() === 'psiquico';
+  const isScientific = power.dominio?.name?.toLowerCase() === 'cientifico' || power.dominio?.name?.toLowerCase() === 'científico';
+  const currentStress = character?.narrative?.psychicState?.stress ?? 0;
+  const level = character?.level ?? 1;
+  const stressExcess = currentStress - level;
+  const isPsychicDouble = isPsychic && stressExcess >= 8;
+
+  let peCostMultiplier = 1;
+  if (hasAlquebrado) peCostMultiplier *= 2;
+  if (isPsychicDouble) peCostMultiplier *= 2;
 
   const peCost = (power.custoTotal?.pe ?? 0) * peCostMultiplier;
   const effectivePECost = spendPE ? peCost : 0;
@@ -118,8 +130,22 @@ export function PowerUsageModal({
     resolution?.isDanoAcoplado ??
     ((((power as any).originItemTipo?.toUpperCase() === 'WEAPON') || (power as any).originItemTipo === 'weapon') && !(isEspiritual && duracao === 0));
 
-  const getBaseFormula = (grau: number) => {
-    if (isDanoAcoplado) {
+  const isRecuperacaoAcoplada =
+    resolution?.isRecuperacaoAcoplada ??
+    ((((power as any).originItemTipo?.toUpperCase() === 'WEAPON') || (power as any).originItemTipo === 'weapon') || (isEspiritual && duracao === 0));
+
+  const getBaseFormula = (grau: number, effectBaseId?: string, configId?: string) => {
+    if (effectBaseId === 'recuperacao') {
+      if (isRecuperacaoAcoplada) {
+        return `1d${4 * Math.pow(2, Math.max(1, grau) - 1)}`;
+      }
+      if (configId === 'energia' || configId === 'pe') {
+        return String(grau * 4);
+      }
+      const danoInfo = buscarGrauNaTabela(grau);
+      return danoInfo ? danoInfo.dano : '1d6';
+    }
+    if (isDanoAcoplado && (effectBaseId === 'dano' || !effectBaseId)) {
       return `1d${4 * Math.pow(2, Math.max(1, grau) - 1)}`;
     }
     const danoInfo = buscarGrauNaTabela(grau);
@@ -142,14 +168,34 @@ export function PowerUsageModal({
   useEffect(() => {
     const initial: Record<string, string> = {};
     damageEffects.forEach((e: any) => {
-      const baseFormula = getBaseFormula(e.grau);
+      const effectBaseId = e.effectBaseId || e.id;
+      const configId = e.configuracaoSelecionada || e.configuracaoId || '';
+      const baseFormula = getBaseFormula(e.grau, effectBaseId, configId);
       initial[e.id] = e.dadoModularizado || baseFormula;
     });
     setFormulasModularizadas(initial);
-  }, [power.effects, isDanoAcoplado]);
+  }, [power.effects, isDanoAcoplado, isRecuperacaoAcoplada]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setScientificRoll(null);
+      setIsRollingScientific(false);
+    }
+  }, [isOpen]);
+
+  const handleScientificRoll = () => {
+    setIsRollingScientific(true);
+    setScientificRoll(null);
+    setTimeout(() => {
+      const res = rollScientificPrecision();
+      setScientificRoll(res);
+      setIsRollingScientific(false);
+    }, 600);
+  };
+
 
   const firstDamageEffect = damageEffects[0];
-  const firstBaseFormula = firstDamageEffect ? getBaseFormula(firstDamageEffect.grau) : '';
+  const firstBaseFormula = firstDamageEffect ? getBaseFormula(firstDamageEffect.grau, firstDamageEffect.effectBaseId || firstDamageEffect.id, firstDamageEffect.configuracaoSelecionada || firstDamageEffect.configuracaoId || '') : '';
   const firstFormulaSelecionada = firstDamageEffect ? (formulasModularizadas[firstDamageEffect.id] || firstDamageEffect.dadoModularizado || firstBaseFormula) : '';
   const firstHasBaseadoAtributos = firstDamageEffect ? (
     power.globalModifications.some((m: any) => m.modificationBaseId === 'baseado-atributos') ||
@@ -218,6 +264,154 @@ export function PowerUsageModal({
           </div>
         )}
 
+        {isPsychic && (() => {
+          const maxGrau = power.effects
+            ? power.effects.reduce((max: number, eff: any) => Math.max(max, eff.grau ?? 0), 0)
+            : 0;
+          const stressGain = calcPsychicStressGain(maxGrau, level);
+          const projectedStress = currentStress + stressGain;
+          const projectedPenalties = getPsychicPenalties(projectedStress, level);
+
+          return (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-50/50 to-indigo-50/50 dark:from-purple-950/20 dark:to-indigo-950/20 border border-purple-500/20 dark:border-purple-500/30 shadow-sm relative overflow-hidden group space-y-3">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400 animate-pulse" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-purple-700 dark:text-purple-400">
+                  Gasto Psíquico Projetado
+                </h4>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 py-1 text-center">
+                <div className="bg-white/40 dark:bg-black/20 p-2.5 rounded-xl border border-purple-100/50 dark:border-purple-900/30">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Estresse Atual</div>
+                  <div className="text-lg font-black text-purple-600 dark:text-purple-400">{currentStress}</div>
+                </div>
+                <div className="bg-white/40 dark:bg-black/20 p-2.5 rounded-xl border border-purple-100/50 dark:border-purple-900/30 relative">
+                  <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Novo Estresse</div>
+                  <div className="text-lg font-black text-purple-700 dark:text-purple-300">
+                    {projectedStress} <span className="text-xs text-purple-400 font-medium">({stressGain > 0 ? `+${stressGain}` : stressGain})</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1 text-xs">
+                <div className="text-[9px] font-black uppercase tracking-wider text-gray-400 mb-1">Impacto das Penalidades:</div>
+                
+                <div className={`flex items-center gap-2 py-1 px-2 rounded-lg border ${
+                  projectedPenalties.esmorecido 
+                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-300 font-bold' 
+                    : 'bg-gray-50/50 border-gray-100 text-gray-400 dark:bg-gray-950/20 dark:border-gray-900'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${projectedPenalties.esmorecido ? 'bg-amber-500 animate-pulse' : 'bg-gray-300'}`} />
+                  <span>+3: Condição <strong className="font-extrabold">Esmorecido</strong> (prejudicado)</span>
+                </div>
+
+                <div className={`flex items-center gap-2 py-1 px-2 rounded-lg border ${
+                  projectedPenalties.danoPsiquico 
+                    ? 'bg-red-500/10 border-red-500/20 text-red-800 dark:text-red-300 font-bold' 
+                    : 'bg-gray-50/50 border-gray-100 text-gray-400 dark:bg-gray-950/20 dark:border-gray-900'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${projectedPenalties.danoPsiquico ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`} />
+                  <span>+5: Sofre <strong className="font-extrabold">1d[PV Máx]</strong> dano psíquico a cada uso</span>
+                </div>
+
+                <div className={`flex items-center gap-2 py-1 px-2 rounded-lg border ${
+                  projectedPenalties.custoDuplicado 
+                    ? 'bg-orange-500/10 border-orange-500/20 text-orange-800 dark:text-orange-300 font-bold' 
+                    : 'bg-gray-50/50 border-gray-100 text-gray-400 dark:bg-gray-950/20 dark:border-gray-900'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${projectedPenalties.custoDuplicado ? 'bg-orange-500 animate-pulse' : 'bg-gray-300'}`} />
+                  <span>+8: Custo de PE das habilidades psíquicas <strong className="font-extrabold">DOBRADO</strong></span>
+                </div>
+
+                <div className={`flex items-center gap-2 py-1 px-2 rounded-lg border ${
+                  projectedPenalties.perdaEnergia 
+                    ? 'bg-rose-500/10 border-rose-500/20 text-rose-800 dark:text-rose-300 font-bold' 
+                    : 'bg-gray-50/50 border-gray-100 text-gray-400 dark:bg-gray-950/20 dark:border-gray-900'
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${projectedPenalties.perdaEnergia ? 'bg-rose-500 animate-pulse' : 'bg-gray-300'}`} />
+                  <span>+11: Perde <strong className="font-extrabold">1d[Energia Máx]</strong> a cada uso</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {isScientific && (
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-cyan-50/50 to-blue-50/50 dark:from-cyan-950/20 dark:to-blue-950/20 border border-cyan-500/20 dark:border-cyan-500/30 shadow-sm relative overflow-hidden group space-y-3">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FlaskConical className="w-4 h-4 text-cyan-600 dark:text-cyan-400 animate-pulse" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-400">
+                  Precisão Científica
+                </h4>
+              </div>
+              <Badge variant="secondary" className="bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300 font-black text-[9px] uppercase tracking-wider border-none">
+                1d10
+              </Badge>
+            </div>
+            
+            <div className="text-xs text-gray-600 dark:text-gray-400 space-y-2 leading-relaxed">
+              {!isRollingScientific && !scientificRoll && (
+                <>
+                  <p>A precisão científica requer uma validação empírica. Role o dado de precisão abaixo:</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full h-8 text-[10px] font-black uppercase tracking-widest gap-2 bg-white/50 dark:bg-black/20 border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/20"
+                    onClick={handleScientificRoll}
+                  >
+                    <Dices className="w-3.5 h-3.5 text-cyan-500" />
+                    Rolar Precisão (1d10)
+                  </Button>
+                </>
+              )}
+
+              {isRollingScientific && (
+                <div className="flex flex-col items-center justify-center py-2 gap-1 animate-pulse">
+                  <FlaskConical className="w-6 h-6 text-cyan-500 animate-spin" />
+                  <span className="text-[10px] font-black text-cyan-600 uppercase tracking-widest">Avaliando variáveis...</span>
+                </div>
+              )}
+
+              {!isRollingScientific && scientificRoll && (
+                <div className="space-y-3">
+                  <div className={`p-3 rounded-xl border-2 text-center transition-all ${
+                    scientificRoll.success
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 shadow-sm'
+                      : 'bg-red-500/10 border-red-500/30 text-red-800 dark:text-red-300 shadow-sm'
+                  }`}>
+                    <div className="text-[10px] uppercase font-black tracking-widest opacity-60">Resultado da Rolagem</div>
+                    <div className="flex items-center justify-center gap-1.5 text-3xl font-black my-1">
+                      <Dices className="w-5 h-5 text-cyan-500" />
+                      {scientificRoll.roll}
+                    </div>
+                    <div className="text-[11px] font-black uppercase tracking-wider">
+                      {scientificRoll.success ? 'Sucesso! O poder funciona normalmente.' : 'Falha Crítica! O experimento falhou/voltou contra.'}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1 h-7 text-[9px] font-black uppercase text-gray-400 hover:text-gray-600 gap-1"
+                      onClick={handleScientificRoll}
+                    >
+                      <RotateCcw className="w-3 h-3" /> Rolar Novamente
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-[9px] text-gray-400 dark:text-gray-500 italic mt-1 leading-snug">
+                * Sucesso: 3 a 10. Falha Crítica: 1 ou 2 (efeitos cancelados, custo de PE consumido).
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* ─── Resultado do motor de automação ─────────────────────────── */}
         {isResolving && (
           <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/10 text-indigo-600 text-xs font-bold animate-pulse">
@@ -226,8 +420,9 @@ export function PowerUsageModal({
         )}
 
         {!isResolving && isNarrative && (
-          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-400 font-bold">
-            📖 Poder narrativo — resolução com o narrador na mesa.
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-400 font-bold">
+            <Settings className="w-4 h-4 text-amber-500 shrink-0" />
+            <span>Poder narrativo — resolução com o narrador na mesa.</span>
           </div>
         )}
 
@@ -237,16 +432,43 @@ export function PowerUsageModal({
               onClick={() => setShowMutations(v => !v)}
               className="w-full flex items-center justify-between px-3 py-2 bg-indigo-50 dark:bg-indigo-900/10 text-[10px] font-black uppercase tracking-wider text-indigo-500"
             >
-              <span>⚙️ Efeitos do Motor ({mutationDescriptions.length})</span>
+              <span className="flex items-center gap-1.5">
+                <Settings className="w-3.5 h-3.5 text-indigo-500" />
+                Efeitos do Motor ({mutationDescriptions.length})
+              </span>
               {showMutations ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
             {showMutations && (
               <ul className="divide-y divide-gray-100 dark:divide-gray-800">
-                {mutationDescriptions.map((desc, i) => (
-                  <li key={i} className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300">
-                    {desc}
-                  </li>
-                ))}
+                {mutationDescriptions.map((desc, i) => {
+                  const getMutationIcon = (type: string) => {
+                    switch (type) {
+                      case 'DEAL_DAMAGE':
+                        return <Flame className="w-3.5 h-3.5 text-red-500 shrink-0" />;
+                      case 'HEAL':
+                        return <Heart className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
+                      case 'RESTORE_PE':
+                      case 'ADD_TEMP_PE':
+                        return <Zap className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
+                      case 'ADD_TEMP_PV':
+                        return <Shield className="w-3.5 h-3.5 text-indigo-500 shrink-0" />;
+                      case 'APPLY_CONDITION':
+                        return <Wind className="w-3.5 h-3.5 text-purple-500 shrink-0" />;
+                      case 'APPLY_MARKER':
+                        return <Tag className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
+                      case 'REGISTER_TRIGGER':
+                        return <Settings className="w-3.5 h-3.5 text-gray-500 shrink-0" />;
+                      default:
+                        return <Dices className="w-3.5 h-3.5 text-gray-400 shrink-0" />;
+                    }
+                  };
+                  return (
+                    <li key={i} className="flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300">
+                      {getMutationIcon(desc.type)}
+                      <span>{desc.text}</span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -273,6 +495,7 @@ export function PowerUsageModal({
                   damageFormula: firstBaseFormula ? firstFormulaSelecionada : undefined,
                   damageModifier: firstHasBaseadoAtributos ? effTeste : 0,
                   isDanoAcoplado,
+                  isRecuperacao: firstDamageEffect ? (firstDamageEffect.effectBaseId === 'recuperacao' || firstDamageEffect.configuracaoSelecionada === 'pv' || firstDamageEffect.configuracaoSelecionada === 'pe' || firstDamageEffect.configuracaoId === 'pv' || firstDamageEffect.configuracaoId === 'pe') : false,
                   initialRule: rule,
                   initialExtraDice: extraDice,
                 });
@@ -284,13 +507,60 @@ export function PowerUsageModal({
             </Button>
 
             {damageEffects.map((e: any) => {
-              const danoInfo = buscarGrauNaTabela(e.grau);
-              const baseFormula = danoInfo ? danoInfo.dano : '';
+              const effectBaseId = e.effectBaseId || e.id;
+              const configId = e.configuracaoSelecionada || e.configuracaoId || '';
+              const baseFormula = getBaseFormula(e.grau, effectBaseId, configId);
               const formulaSelecionada = formulasModularizadas[e.id] || e.dadoModularizado || baseFormula;
               const modulacoes = obterModulacoesDeDados(baseFormula);
               const hasBaseadoAtributos = 
                 power.globalModifications.some((m: any) => m.modificationBaseId === 'baseado-atributos') ||
                 e.modifications?.some((m: any) => m.modificationBaseId === 'baseado-atributos');
+
+              const isPeRecovery = effectBaseId === 'recuperacao' && (configId === 'energia' || configId === 'pe');
+              if (isPeRecovery) {
+                const peAmount = e.grau * 4;
+                return (
+                  <div key={e.id} className="flex items-center gap-0 animate-in fade-in duration-200">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[10px] gap-1 px-2 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 active:scale-95 transition-all"
+                      onClick={async () => {
+                        if (onSync) {
+                          await onSync({ peChange: peAmount });
+                          toast.success(`Recuperou ${peAmount} PE com sucesso!`);
+                        }
+                      }}
+                    >
+                      <Zap className="w-3 h-3 text-emerald-500 animate-pulse" />
+                      Recuperar {peAmount} PE {e.nota ? `(${e.nota})` : ''}
+                    </Button>
+                  </div>
+                );
+              }
+
+              const isTempPe = effectBaseId === 'fortalecer' && configId === 'pe';
+              if (isTempPe) {
+                const peAmount = e.grau * 4;
+                return (
+                  <div key={e.id} className="flex items-center gap-0 animate-in fade-in duration-200">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[10px] gap-1 px-2 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 active:scale-95 transition-all"
+                      onClick={async () => {
+                        if (onSync) {
+                          await onSync({ tempPeChange: peAmount });
+                          toast.success(`Aplicou +${peAmount} PE Temporário com sucesso!`);
+                        }
+                      }}
+                    >
+                      <Zap className="w-3 h-3 text-emerald-500 animate-pulse" />
+                      Aplicar +${peAmount} PE Temp {e.nota ? `(${e.nota})` : ''}
+                    </Button>
+                  </div>
+                );
+              }
 
               return (
                 <div key={e.id} className="flex items-center gap-0 animate-in fade-in duration-200">
@@ -370,6 +640,7 @@ export function PowerUsageModal({
                         onlyDamage: true,
                         rollButtonLabel: effectBaseId === 'recuperacao' ? 'Rolar Cura' : 'Rolar Efeito',
                         isDanoAcoplado,
+                        isRecuperacao: effectBaseId === 'recuperacao' || configId === 'pv' || configId === 'pe',
                         onApply: onApplyCallback,
                         applyLabel: applyLabelText,
                         onRoll: () => {

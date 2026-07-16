@@ -9,23 +9,23 @@ interface MetaTagsConfig {
 
 const routeMetaTags: Record<string, MetaTagsConfig> = {
   '/': {
-    title: 'Aetherium - Plataforma Digital para Spirit and Caos',
-    description: 'A plataforma completa para mestres e jogadores de Spirit and Caos. Crie poderes, gerencie criaturas e muito mais.',
-    keywords: 'aetherium, spirit and caos, rpg, plataforma digital, criador de poderes, gerenciador',
+    title: 'Aetherium - Plataforma Digital para Espírito e Caos',
+    description: 'A plataforma completa para mestres e jogadores de Espírito e Caos. Crie poderes, gerencie criaturas e muito mais.',
+    keywords: 'aetherium, espírito e caos, rpg, plataforma digital, criador de poderes, gerenciador',
   },
   '/personagens': {
     title: 'Fichas de Personagem - Aetherium',
-    description: 'Crie e gerencie fichas de personagem completas para Spirit and Caos.',
+    description: 'Crie e gerencie fichas de personagem completas para Espírito e Caos.',
     keywords: 'fichas, personagens, character sheet, rpg, atributos',
   },
   '/campanhas': {
     title: 'Gerenciador de Campanhas - Aetherium',
-    description: 'Organize suas campanhas de Spirit and Caos com gerenciamento de sessões, notas e linha do tempo.',
+    description: 'Organize suas campanhas de Espírito e Caos com gerenciamento de sessões, notas e linha do tempo.',
     keywords: 'campanhas, sessões, mestre, adventure, jogo',
   },
   '/criador': {
     title: 'Criador de Poderes - Aetherium',
-    description: 'Crie e gerencie poderes personalizados para o sistema Spirit and Caos. Ferramenta completa com cálculo automático de custos, parâmetros e modificações.',
+    description: 'Crie e gerencie poderes personalizados para o sistema Espírito e Caos. Ferramenta completa com cálculo automático de custos, parâmetros e modificações.',
     keywords: 'criador de poderes, rpg, mutants and masterminds, sistema, jogo',
   },
   '/criador/biblioteca': {
@@ -40,20 +40,20 @@ const routeMetaTags: Record<string, MetaTagsConfig> = {
   },
   '/gerenciador': {
     title: 'Gerenciador de Criaturas - Aetherium',
-    description: 'Crie e gerencie NPCs, monstros e criaturas para suas sessões de Spirit and Caos.',
+    description: 'Crie e gerencie NPCs, monstros e criaturas para suas sessões de Espírito e Caos.',
     keywords: 'gerenciador, criaturas, npcs, monstros, combate',
   },
   '/sobre': {
     title: 'Sobre - Aetherium',
-    description: 'Conheça o Aetherium, a plataforma digital completa para Spirit and Caos. Documentação e informações sobre as ferramentas disponíveis.',
+    description: 'Conheça o Aetherium, a plataforma digital completa para Espírito e Caos. Documentação e informações sobre as ferramentas disponíveis.',
     keywords: 'documentação, regras, sistema, como usar, tutorial',
   },
 };
 
 const defaultMetaTags: MetaTagsConfig = {
-  title: 'Aetherium - Plataforma Digital para Spirit and Caos',
-  description: 'Ferramentas completas para mestres e jogadores de Spirit and Caos',
-  keywords: 'aetherium, spirit and caos, rpg, plataforma digital',
+  title: 'Aetherium - Plataforma Digital para Espírito e Caos',
+  description: 'Ferramentas completas para mestres e jogadores de Espírito e Caos',
+  keywords: 'aetherium, espírito e caos, rpg, plataforma digital',
 };
 
 /**

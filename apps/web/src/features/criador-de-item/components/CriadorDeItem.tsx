@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Package, Save, RefreshCw, Link2, Sword, Shield, FlaskConical, FileText, Plus, Eye, Sparkles, BookOpen, Hammer, Box, Trash2 } from 'lucide-react';
+import { Package, Save, RefreshCw, Link2, Sword, Shield, FlaskConical, FileText, Plus, Eye, Sparkles, BookOpen, Hammer, Box, Trash2, Tag, Bookmark, Coins, Scale } from 'lucide-react';
 import { DOMINIOS } from '@/data';
 import { usePeculiaridades } from '@/shared/hooks/usePeculiaridades';
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, Select, Textarea, Badge, toast, Tooltip, DynamicIcon, ConfirmDialog } from '@/shared/ui';
+import { Button, Card, CardContent, CardHeader, CardTitle, Input, Select, Textarea, toast, DynamicIcon, ConfirmDialog } from '@/shared/ui';
 import { usePoderes } from '@/features/criador-de-poder/hooks/usePoderes';
 import { usePowerArrays } from '@/features/criador-de-poder/hooks/usePowerArrays';
 import { useItemBuilder } from '../hooks/useItemBuilder';
@@ -247,92 +247,174 @@ export function CriadorDeItem({
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" /> Criador de Itens
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">Nível: {nivelCalculado}</Badge>
-              <Badge variant="secondary">Custo Real: {custoRealCalculado}</Badge>
-              <Badge variant="secondary">Venda: {precoVendaCalculado}</Badge>
-            </div>
+    <div className="space-y-6 pb-24">
+      {/* Page Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50/50 dark:bg-gray-900/20 p-4 rounded-2xl border border-gray-100 dark:border-gray-800/80">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
+            <Package className="w-6 h-6 animate-pulse" />
+            <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {state.editingItemId ? 'Editar Item' : 'Criador de Itens'}
+            </h2>
           </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {state.editingItemId ? `Editando o item existente no banco de dados` : 'Crie e configure um novo item personalizado para o sistema'}
+          </p>
+        </div>
+
+        {/* Stats Row */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 border border-purple-100 dark:border-purple-900/30 text-sm font-semibold">
+            <Sparkles className="w-4 h-4" />
+            <span>Nível {nivelCalculado}</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 border border-amber-100 dark:border-amber-900/30 text-sm font-semibold">
+            <Coins className="w-4 h-4" />
+            <span>Custo: {custoRealCalculado} ᚱ</span>
+          </div>
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-900/30 text-sm font-semibold">
+            <Scale className="w-4 h-4" />
+            <span>Venda: {precoVendaCalculado} ᚱ</span>
+          </div>
+        </div>
+      </div>
+
+      <Card className="border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+        <CardHeader className="bg-gray-50/30 dark:bg-gray-900/10 border-b border-gray-100 dark:border-gray-800/80">
+          <CardTitle className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            1. Informações Básicas
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent className="p-6 space-y-6">
+          {/* Nome */}
+          <div className="grid grid-cols-1 gap-4">
             <Input
-              label="Nome"
+              label="Nome do Item"
               value={state.nome}
               onChange={(e) => updateField('nome', e.target.value)}
               placeholder="Ex: Espada Solar"
               maxLength={100}
               helperText={`${state.nome.length}/100 caracteres`}
             />
-            <Select
-              label="Tipo de Item"
-              value={state.tipo}
-              onChange={(e) => setTipo(e.target.value as typeof state.tipo)}
-              options={[
-                { value: 'weapon', label: 'Arma' },
-                { value: 'defensive-equipment', label: 'Equipamento Defensivo' },
-                { value: 'consumable', label: 'Consumível' },
-                { value: 'artifact', label: 'Artefato' },
-                { value: 'accessory', label: 'Acessório' },
-                { value: 'general', label: 'Item Geral' },
-                { value: 'upgrade-material', label: 'Material de Upgrade' },
-              ]}
-              placeholder=""
-            />
           </div>
 
+          {/* Chips de tipo de item */}
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-gray-700 dark:text-gray-300">Tipo de Item</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              {[
+                { value: 'weapon', label: 'Arma', icon: Sword },
+                { value: 'defensive-equipment', label: 'Defesa', icon: Shield },
+                { value: 'consumable', label: 'Consumível', icon: FlaskConical },
+                { value: 'artifact', label: 'Artefato', icon: Sparkles },
+                { value: 'accessory', label: 'Acessório', icon: Tag },
+                { value: 'general', label: 'Item Geral', icon: Box },
+                { value: 'upgrade-material', label: 'Material', icon: Hammer },
+              ].map((t) => {
+                const Icon = t.icon;
+                const isSelected = state.tipo === t.value;
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setTipo(t.value as typeof state.tipo)}
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 group relative ${
+                      isSelected
+                        ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-300 shadow-md shadow-purple-500/5 ring-1 ring-purple-500/30'
+                        : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400'
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 mb-1.5 transition-transform duration-200 group-hover:scale-110 ${
+                      isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400 dark:text-gray-500'
+                    }`} />
+                    <span className="text-xs font-bold whitespace-nowrap">{t.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Descrição */}
           <Textarea
             label="Descrição"
             value={state.descricao}
             onChange={(e) => updateField('descricao', e.target.value)}
             rows={3}
-            placeholder="Descreva o item e sua função..."
+            placeholder="Descreva o item, sua função e efeitos mecânicos..."
             maxLength={1000}
             helperText={`${state.descricao.length}/1000 caracteres`}
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Input
-              label="Custo Base"
-              type="number"
-              min={0}
-              value={state.custoBase}
-              onChange={(e) => updateField('custoBase', Number(e.target.value || 0))}
-            />
-            <Input
-              label="Ícone (URL)"
-              value={state.icone}
-              onChange={(e) => updateField('icone', e.target.value)}
-              placeholder="https://..."
-            />
-            <Input
-              label="Nível Calculado"
-              value={String(nivelCalculado)}
-              readOnly
-              helperText="Soma dos graus de todos os efeitos dos poderes e acervos vinculados. Sem vínculos, nível 1."
-            />
+          {/* Custo Base, Ícone URL, Notas, Is Public */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <Input
+                label="Custo Base (R)"
+                type="number"
+                min={0}
+                value={state.custoBase}
+                onChange={(e) => updateField('custoBase', Number(e.target.value || 0))}
+              />
+              <Input
+                label="Ícone (URL da imagem)"
+                value={state.icone}
+                onChange={(e) => updateField('icone', e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
+            <div className="space-y-4">
+              <Input
+                label="Notas Internas / Opcionais"
+                value={state.notas}
+                onChange={(e) => updateField('notas', e.target.value)}
+                placeholder="Notas de Lore ou detalhes adicionais"
+              />
+              
+              <div className="flex items-center justify-between p-3.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+                <div className="space-y-0.5">
+                  <label htmlFor="is-public-item" className="text-sm font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
+                    Publicar na Comunidade
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Permite que outros usem este item.
+                  </p>
+                </div>
+                <button
+                  id="is-public-item"
+                  type="button"
+                  onClick={() => updateField('isPublic', !state.isPublic)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    state.isPublic ? 'bg-purple-600' : 'bg-gray-200 dark:bg-gray-800'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      state.isPublic ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Domínios do Item */}
-          <div className="space-y-4 border border-gray-100 dark:border-gray-800 p-4 rounded-xl bg-gray-50/50 dark:bg-gray-900/10">
+          <div className="space-y-4 border border-purple-100 dark:border-purple-900/20 p-5 rounded-2xl bg-purple-50/10 dark:bg-purple-950/5">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                Domínios ({state.dominios.length})
-              </h4>
+              <div>
+                <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">
+                  Domínios Vinculados
+                </h4>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Associe domínios ao item para restringir ou permitir poderes compatíveis.
+                </p>
+              </div>
               {state.dominios.length < 2 && (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => addDomain({ name: 'natural' })}
-                  className="flex items-center gap-1.5 h-8 text-xs font-bold text-espirito-600 dark:text-espirito-400 border-espirito-200 dark:border-espirito-800 hover:bg-espirito-50 dark:hover:bg-espirito-900/20"
+                  className="flex items-center gap-1.5 h-8 text-xs font-bold text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/20"
                 >
                   <Plus className="w-3.5 h-3.5" /> Adicionar Domínio
                 </Button>
@@ -341,14 +423,14 @@ export function CriadorDeItem({
 
             <div className="space-y-3">
               {state.dominios.length === 0 && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                <p className="text-sm text-gray-400 dark:text-gray-500 italic py-2">
                   Nenhum domínio selecionado. Este item não terá domínio vinculado.
                 </p>
               )}
               {state.dominios.map((dom, idx) => (
                 <div
                   key={idx}
-                  className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/50 space-y-3 relative group"
+                  className="p-4 border border-purple-100 dark:border-purple-900/30 rounded-xl bg-white dark:bg-gray-900/60 shadow-sm space-y-3 relative group hover:border-purple-200 dark:hover:border-purple-950/60 transition-all duration-200"
                 >
                   <div className="flex items-end gap-3">
                     <div className="flex-1">
@@ -374,7 +456,7 @@ export function CriadorDeItem({
                         type="button"
                         variant="ghost"
                         onClick={() => removeDomain(idx)}
-                        className="h-10 px-3 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0"
+                        className="h-10 w-10 !p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 shrink-0 rounded-lg border border-transparent hover:border-red-100 dark:hover:border-red-900/20"
                         title="Remover este domínio"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -407,193 +489,202 @@ export function CriadorDeItem({
               ))}
             </div>
           </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            <Input
-              label="Notas"
-              value={state.notas}
-              onChange={(e) => updateField('notas', e.target.value)}
-              placeholder="Notas opcionais do item"
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              id="is-public-item"
-              type="checkbox"
-              checked={state.isPublic}
-              onChange={(e) => updateField('isPublic', e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <label htmlFor="is-public-item" className="text-sm text-gray-700 dark:text-gray-300">
-              Publicar item para a comunidade
-            </label>
-          </div>
-
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-900/40">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              <span className="font-semibold">Domínios atuais:</span> {state.dominios.map((d) => DOMINIOS.find((dom) => dom.id === d.name)?.nome ?? d.name).join(', ')}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Apenas poderes e acervos com domínio compatível com algum dos selecionados podem ser vinculados.
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              `Upgrade Level` de armas e equipamentos defensivos é separado do nível do item e começa em 0.
-            </p>
-          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ItemTypeIcon tipo={state.tipo} /> Configurações por Tipo
+      <Card className="border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+        <CardHeader className="bg-gray-50/30 dark:bg-gray-900/10 border-b border-gray-100 dark:border-gray-800/80">
+          <CardTitle className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center gap-2">
+            <ItemTypeIcon tipo={state.tipo} /> 2. Configurações por Tipo ({state.tipo === 'weapon' ? 'Arma' : state.tipo === 'defensive-equipment' ? 'Equipamento Defensivo' : state.tipo === 'consumable' ? 'Consumível' : state.tipo === 'upgrade-material' ? 'Material de Upgrade' : 'Padrão'})
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-6 space-y-4">
           {state.tipo === 'weapon' && (
-            <>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Danos</p>
-                  <Button size="sm" variant="outline" onClick={addWeaponDamage}>Adicionar Dano</Button>
+            <div className="space-y-6">
+              {/* Seção de Danos */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-850 pb-2">
+                  <div>
+                    <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Fórmulas de Dano</h4>
+                    <p className="text-xs text-gray-500">Configure os dados, bases de atributos e tipos de dano da arma.</p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={addWeaponDamage} className="flex items-center gap-1.5">
+                    <Plus className="w-3.5 h-3.5" /> Adicionar Dano
+                  </Button>
                 </div>
-                {state.weapon.danos.map((dano, index) => {
-                  const baseNormalizada = dano.base.trim().toUpperCase();
-                  const isBasePreset = BASE_PRESETS.includes(baseNormalizada as (typeof BASE_PRESETS)[number]);
-                  const baseSelectValue = isBasePreset ? baseNormalizada : BASE_CUSTOM_VALUE;
+                
+                <div className="space-y-3">
+                  {state.weapon.danos.map((dano, index) => {
+                    const baseNormalizada = dano.base.trim().toUpperCase();
+                    const isBasePreset = BASE_PRESETS.includes(baseNormalizada as (typeof BASE_PRESETS)[number]);
+                    const baseSelectValue = isBasePreset ? baseNormalizada : BASE_CUSTOM_VALUE;
 
-                  return (
-                  <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-2 items-end border-b border-gray-100 dark:border-gray-800 pb-3 md:pb-0 md:border-0">
-                    <Input
-                      label="Dado"
-                      value={dano.dado}
-                      onChange={(e) => updateWeaponDamage(index, 'dado', e.target.value)}
-                      placeholder="1d8"
-                    />
-                    <div className="space-y-2">
+                    return (
+                      <div 
+                        key={index} 
+                        className="flex flex-col md:flex-row md:items-end gap-3 p-4 rounded-xl border border-gray-200/30 dark:border-gray-800/40 bg-gray-50/20 dark:bg-gray-900/10 relative group hover:border-gray-300/40 dark:hover:border-gray-700/40 transition-all duration-200"
+                      >
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 flex-1">
+                          <Input
+                            label="Dado"
+                            value={dano.dado}
+                            onChange={(e) => updateWeaponDamage(index, 'dado', e.target.value)}
+                            placeholder="1d8"
+                          />
+                          <Select
+                            label="Base de Atributo"
+                            value={baseSelectValue}
+                            onChange={(e) => {
+                              const nextValue = e.target.value;
+                              if (nextValue === BASE_CUSTOM_VALUE) {
+                                updateWeaponDamage(index, 'base', isBasePreset ? '' : dano.base);
+                                return;
+                              }
+                              updateWeaponDamage(index, 'base', nextValue);
+                            }}
+                            options={[
+                              ...BASE_PRESETS.map((base) => ({ value: base, label: base })),
+                              { value: BASE_CUSTOM_VALUE, label: 'Personalizado' },
+                            ]}
+                            placeholder=""
+                          />
+                          
+                          {baseSelectValue === BASE_CUSTOM_VALUE && (
+                            <Input
+                              label="Base Personalizada"
+                              value={dano.base}
+                              onChange={(e) => updateWeaponDamage(index, 'base', e.target.value)}
+                              placeholder="Ex: FOR x2"
+                            />
+                          )}
+
+                          <Input
+                            label="Tipo de Dano"
+                            value={dano.tipoDano ?? ''}
+                            onChange={(e) => updateWeaponDamage(index, 'tipoDano', e.target.value)}
+                            placeholder="Ex: Corte, Impacto..."
+                          />
+                        </div>
+
+                        <div className="flex items-center justify-between md:justify-end gap-4 min-w-[140px] h-10 border-t md:border-0 pt-2 md:pt-0 border-gray-200 dark:border-gray-800">
+                          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={dano.espiritual}
+                              onChange={(e) => updateWeaponDamage(index, 'espiritual', e.target.checked)}
+                              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                            />
+                            <span>Espiritual</span>
+                          </label>
+
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeWeaponDamage(index)}
+                            disabled={state.weapon.danos.length === 1}
+                            className="text-red-550 hover:text-red-750 hover:bg-red-50 dark:hover:bg-red-950/30 h-9 w-9 !p-0 rounded-lg shrink-0"
+                            title="Remover este dano"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Atributos da Arma */}
+              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800/80">
+                <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Propriedades de Combate</h4>
+                
+                {/* Agrupamento por Semântica */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {/* Crítico */}
+                  <div className="p-4 rounded-xl border border-red-200/20 dark:border-red-900/20 bg-red-50/5 dark:bg-red-950/5 space-y-3">
+                    <p className="text-xs font-bold text-red-500/80 dark:text-red-400/85 uppercase tracking-wider">Crítico</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        label="Margem"
+                        type="number"
+                        min={2}
+                        max={20}
+                        value={state.weapon.critMargin}
+                        onChange={(e) => updateWeaponField('critMargin', Number(e.target.value || 20))}
+                      />
+                      <Input
+                        label="Multiplicador"
+                        type="number"
+                        min={1}
+                        max={7}
+                        value={state.weapon.critMultiplier}
+                        onChange={(e) => updateWeaponField('critMultiplier', Number(e.target.value || 2))}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Alcance */}
+                  <div className="p-4 rounded-xl border border-blue-200/20 dark:border-blue-900/20 bg-blue-50/5 dark:bg-blue-950/5 space-y-3">
+                    <p className="text-xs font-bold text-blue-500/80 dark:text-blue-400/85 uppercase tracking-wider">Alcance</p>
+                    <div className="grid grid-cols-1 gap-2">
                       <Select
-                        label="Base"
-                        value={baseSelectValue}
-                        onChange={(e) => {
-                          const nextValue = e.target.value;
-                          if (nextValue === BASE_CUSTOM_VALUE) {
-                            updateWeaponDamage(index, 'base', isBasePreset ? '' : dano.base);
-                            return;
-                          }
-
-                          updateWeaponDamage(index, 'base', nextValue);
-                        }}
+                        label="Tipo de Alcance"
+                        value={state.weapon.alcance}
+                        onChange={(e) => updateWeaponField('alcance', e.target.value)}
                         options={[
-                          ...BASE_PRESETS.map((base) => ({ value: base, label: base })),
-                          { value: BASE_CUSTOM_VALUE, label: 'Personalizado' },
+                          { value: 'adjacente', label: 'Adjacente' },
+                          { value: 'natural', label: 'Natural' },
+                          { value: 'curto', label: 'Curto' },
+                          { value: 'medio', label: 'Médio' },
+                          { value: 'longo', label: 'Longo' },
                         ]}
                         placeholder=""
                       />
-                      {baseSelectValue === BASE_CUSTOM_VALUE ? (
+                      {state.weapon.alcance === 'natural' && (
                         <Input
-                          label="Base Personalizada"
-                          value={dano.base}
-                          onChange={(e) => updateWeaponDamage(index, 'base', e.target.value)}
-                          placeholder="Ex: FOR x2"
+                          label="Extra Natural (m)"
+                          type="number"
+                          min={0}
+                          step={0.5}
+                          value={state.weapon.alcanceExtraMetros}
+                          onChange={(e) =>
+                            updateWeaponField('alcanceExtraMetros', Number(e.target.value || 0))
+                          }
+                          helperText="Incrementos de 0,5m."
                         />
-                      ) : null}
+                      )}
                     </div>
-                    <Input
-                      label="Tipo de Dano"
-                      value={dano.tipoDano ?? ''}
-                      onChange={(e) => updateWeaponDamage(index, 'tipoDano', e.target.value)}
-                      placeholder="Ex: Corte, Impacto..."
-                    />
-                    <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 h-10">
-                      <input
-                        type="checkbox"
-                        checked={dano.espiritual}
-                        onChange={(e) => updateWeaponDamage(index, 'espiritual', e.target.checked)}
-                      />
-                      Espiritual
-                    </label>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => removeWeaponDamage(index)}
-                      disabled={state.weapon.danos.length === 1}
-                      className="w-full md:w-auto"
-                    >
-                      Remover
-                    </Button>
                   </div>
-                )})}
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <Input
-                  label="Margem Crítico"
-                  type="number"
-                  min={2}
-                  max={20}
-                  value={state.weapon.critMargin}
-                  onChange={(e) => updateWeaponField('critMargin', Number(e.target.value || 20))}
-                />
-                <Input
-                  label="Multiplicador"
-                  type="number"
-                  min={1}
-                  max={7}
-                  value={state.weapon.critMultiplier}
-                  onChange={(e) => updateWeaponField('critMultiplier', Number(e.target.value || 2))}
-                />
-                <Select
-                  label="Alcance"
-                  value={state.weapon.alcance}
-                  onChange={(e) => updateWeaponField('alcance', e.target.value)}
-                  options={[
-                    { value: 'adjacente', label: 'Adjacente' },
-                    { value: 'natural', label: 'Natural' },
-                    { value: 'curto', label: 'Curto' },
-                    { value: 'medio', label: 'Médio' },
-                    { value: 'longo', label: 'Longo' },
-                  ]}
-                  placeholder=""
-                />
-                <Input
-                  label="Extra Natural (m)"
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={state.weapon.alcanceExtraMetros}
-                  onChange={(e) =>
-                    updateWeaponField('alcanceExtraMetros', Number(e.target.value || 0))
-                  }
-                  disabled={state.weapon.alcance !== 'natural'}
-                  helperText={
-                    state.weapon.alcance === 'natural'
-                      ? 'Use incrementos de 0,5m para estender o alcance natural.'
-                      : 'Disponível apenas para armas de alcance natural.'
-                  }
-                />
-                <Input
-                  label="Atributo Escalonamento"
-                  value={state.weapon.atributoEscalonamento}
-                  onChange={(e) => updateWeaponField('atributoEscalonamento', e.target.value)}
-                  placeholder="FOR, DES..."
-                />
-                  <Input
-                    label="Upgrade Inicial"
-                    type="number"
-                    min={0}
-                    max={7}
-                    value={state.weapon.upgradeLevel}
-                    onChange={(e) => updateWeaponField('upgradeLevel', Number(e.target.value || 0))}
-                    disabled={!!state.editingItemId} // Trava de regra de negócio
-                    helperText={!!state.editingItemId ? "Upgrade só pode ser alterado na criação (Regra de Negócio)" : "0 a 7"}
-                  />
+                  {/* Escalonamento & Upgrade */}
+                  <div className="p-4 rounded-xl border border-purple-200/20 dark:border-purple-900/20 bg-purple-50/5 dark:bg-purple-950/5 space-y-3">
+                    <p className="text-xs font-bold text-purple-500/80 dark:text-purple-400/85 uppercase tracking-wider">Escalonamento & Upgrade</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        label="Atributo"
+                        value={state.weapon.atributoEscalonamento}
+                        onChange={(e) => updateWeaponField('atributoEscalonamento', e.target.value)}
+                        placeholder="FOR, DES..."
+                      />
+                      <Input
+                        label="Upgrade Inicial"
+                        type="number"
+                        min={0}
+                        max={7}
+                        value={state.weapon.upgradeLevel}
+                        onChange={(e) => updateWeaponField('upgradeLevel', Number(e.target.value || 0))}
+                        disabled={state.editingItemId !== null}
+                        helperText={state.editingItemId !== null ? "Apenas na criação" : "0 a 7"}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </>
+            </div>
           )}
 
           {state.tipo === 'defensive-equipment' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <Select
                 label="Tipo Equipamento"
                 value={state.defensive.tipoEquipamento}
@@ -624,14 +715,14 @@ export function CriadorDeItem({
                 max={9}
                 value={state.defensive.upgradeLevel}
                 onChange={(e) => updateDefensiveField('upgradeLevel', Number(e.target.value || 0))}
-                disabled={!!state.editingItemId} // Trava de regra de negócio
-                helperText={!!state.editingItemId ? "Upgrade só pode ser alterado na criação (Regra de Negócio)" : "0 a 9"}
+                disabled={state.editingItemId !== null}
+                helperText={state.editingItemId !== null ? "Apenas na criação" : "0 a 9"}
               />
             </div>
           )}
 
           {state.tipo === 'consumable' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
               <Input
                 label="Descritor do Efeito"
                 value={state.consumable.descritorEfeito}
@@ -645,20 +736,24 @@ export function CriadorDeItem({
                 value={state.consumable.qtdDoses}
                 onChange={(e) => updateConsumableField('qtdDoses', Number(e.target.value || 1))}
               />
-              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 h-10 mt-6">
+              <div className="flex items-center gap-2 mt-4 sm:mt-6">
                 <input
+                  id="is-refeicao-checkbox"
                   type="checkbox"
                   checked={state.consumable.isRefeicao}
                   onChange={(e) => updateConsumableField('isRefeicao', e.target.checked)}
+                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
                 />
-                É refeição
-              </label>
+                <label htmlFor="is-refeicao-checkbox" className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                  É refeição
+                </label>
+              </div>
             </div>
           )}
 
           {(state.tipo === 'artifact' || state.tipo === 'accessory' || state.tipo === 'general') && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Este tipo não requer campos extras obrigatórios. Você já pode vincular poderes/acervos e salvar.
+            <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
+              Este tipo de item não requer campos extras obrigatórios. Você já pode vincular poderes ou acervos e salvá-lo.
             </p>
           )}
 
@@ -677,8 +772,10 @@ export function CriadorDeItem({
                   placeholder=""
                 />
                 {patamar && (
-                  <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3 text-sm space-y-1">
-                    <p className="font-semibold text-amber-800 dark:text-amber-300">ᚱ {patamar.nome}</p>
+                  <div className="rounded-xl border border-amber-200 dark:border-amber-900/30 bg-amber-50/40 dark:bg-amber-950/10 p-4 text-sm space-y-1.5">
+                    <p className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                      <Bookmark className="w-4 h-4" /> ᚱ {patamar.nome}
+                    </p>
                     <p className="text-amber-700 dark:text-amber-400">
                       Permite aprimorar até <strong>{patamar.maxUpgradeLimit}x</strong> · Custo sugerido: <strong>{patamar.custoBase.toLocaleString('pt-BR')} ᚱ</strong>
                     </p>
@@ -694,135 +791,177 @@ export function CriadorDeItem({
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
+        <Card className="border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+          <CardHeader className="bg-gray-50/30 dark:bg-gray-900/10 border-b border-gray-100 dark:border-gray-800/80">
             <div className="flex items-center justify-between gap-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Link2 className="w-4 h-4" /> Poderes Vinculados ({state.powerIds.length})
+              <CardTitle className="flex items-center gap-2 text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                <Link2 className="w-4 h-4 text-purple-500" /> Poderes Vinculados ({state.powerIds.length})
               </CardTitle>
-              <Button size="sm" variant="outline" onClick={() => setModalPoderesAberto(true)}>
-                <Plus className="w-4 h-4 mr-1" /> Adicionar
+              <Button size="sm" variant="outline" onClick={() => setModalPoderesAberto(true)} className="h-8 text-xs font-bold text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/20">
+                <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="p-5 space-y-2">
             {poderesSelecionados.length === 0 ? (
-              <p className="text-sm text-gray-500">Nenhum poder vinculado ainda.</p>
+              <div className="text-center py-6 border border-dashed border-gray-200 dark:border-gray-805 rounded-xl bg-gray-50/10">
+                <Sparkles className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">Nenhum poder vinculado ainda.</p>
+              </div>
             ) : (
-              poderesSelecionados.map((poder) => (
-                <div key={poder.id} className="flex items-start justify-between gap-2 p-2 rounded border border-gray-200 dark:border-gray-700">
-                  <button
-                    type="button"
-                    onClick={() => setPoderResumoId(poder.id)}
-                    className="min-w-0 flex items-start gap-2 text-left flex-1"
-                  >
-                    <div className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0 flex items-center justify-center">
-                      {poder.icone ? (
-                        <DynamicIcon name={poder.icone} className="w-full h-full" />
-                      ) : (
-                        <Sparkles className="w-4 h-4 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{poder.nome}</p>
-                      <p className="text-xs text-gray-500 line-clamp-2">{poder.descricao}</p>
-                    </div>
-                  </button>
+              <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                {poderesSelecionados.map((poder) => (
+                  <div key={poder.id} className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/60 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => setPoderResumoId(poder.id)}
+                      className="min-w-0 flex items-center gap-3 text-left flex-1"
+                    >
+                      <div className="w-10 h-10 rounded-lg border border-purple-100 dark:border-purple-900/30 overflow-hidden bg-purple-50/40 dark:bg-purple-950/10 shrink-0 flex items-center justify-center">
+                        {poder.icone ? (
+                          <DynamicIcon name={poder.icone} className="w-full h-full p-1 text-purple-600 dark:text-purple-400" />
+                        ) : (
+                          <Sparkles className="w-5 h-5 text-purple-400" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-950 dark:text-gray-50 truncate">{poder.nome}</p>
+                        <p className="text-xs text-gray-500 line-clamp-1">{poder.descricao}</p>
+                      </div>
+                    </button>
 
-                  <div className="flex items-center gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => setPoderResumoId(poder.id)}>
-                      <Eye className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => togglePower(poder.id)}>Remover</Button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button size="xs" variant="ghost" onClick={() => setPoderResumoId(poder.id)} className="h-8 w-8 !p-0" title="Ver Detalhes">
+                        <Eye className="w-4 h-4 text-gray-400 hover:text-purple-500" />
+                      </Button>
+                      <Button 
+                        size="xs" 
+                        variant="ghost" 
+                        onClick={() => togglePower(poder.id)} 
+                        className="h-8 w-8 !p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                        title="Remover"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
 
-            {poderesCompativeis.length === 0 && (
-              <p className="text-sm text-gray-500">Nenhum poder compatível com o domínio atual.</p>
+            {poderesCompativeis.length === 0 && poderesSelecionados.length > 0 && (
+              <p className="text-xs text-amber-500 dark:text-amber-400 italic">Nenhum outro poder compatível com os domínios atuais.</p>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+          <CardHeader className="bg-gray-50/30 dark:bg-gray-900/10 border-b border-gray-100 dark:border-gray-800/80">
             <div className="flex items-center justify-between gap-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Link2 className="w-4 h-4" /> Acervos Vinculados ({state.powerArrayIds.length})
+              <CardTitle className="flex items-center gap-2 text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                <Link2 className="w-4 h-4 text-blue-500" /> Acervos Vinculados ({state.powerArrayIds.length})
               </CardTitle>
-              <Button size="sm" variant="outline" onClick={() => setModalAcervosAberto(true)}>
-                <Plus className="w-4 h-4 mr-1" /> Adicionar
+              <Button size="sm" variant="outline" onClick={() => setModalAcervosAberto(true)} className="h-8 text-xs font-bold text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/20">
+                <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="p-5 space-y-2">
             {acervosSelecionados.length === 0 ? (
-              <p className="text-sm text-gray-500">Nenhum acervo vinculado ainda.</p>
+              <div className="text-center py-6 border border-dashed border-gray-200 dark:border-gray-805 rounded-xl bg-gray-50/10">
+                <BookOpen className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">Nenhum acervo vinculado ainda.</p>
+              </div>
             ) : (
-              acervosSelecionados.map((acervo) => (
-                <div key={acervo.id} className="flex items-start justify-between gap-2 p-2 rounded border border-gray-200 dark:border-gray-700">
-                  <button
-                    type="button"
-                    onClick={() => setAcervoResumoId(acervo.id)}
-                    className="min-w-0 flex items-start gap-2 text-left flex-1"
-                  >
-                    <div className="w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-100 dark:bg-gray-800 shrink-0 flex items-center justify-center">
-                      {acervo.icone ? (
-                        <DynamicIcon name={acervo.icone} className="w-full h-full" />
-                      ) : (
-                        <BookOpen className="w-4 h-4 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{acervo.nome}</p>
-                      <p className="text-xs text-gray-500 line-clamp-2">{acervo.descricao}</p>
-                    </div>
-                  </button>
+              <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                {acervosSelecionados.map((acervo) => (
+                  <div key={acervo.id} className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/60 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors">
+                    <button
+                      type="button"
+                      onClick={() => setAcervoResumoId(acervo.id)}
+                      className="min-w-0 flex items-center gap-3 text-left flex-1"
+                    >
+                      <div className="w-10 h-10 rounded-lg border border-blue-100 dark:border-blue-900/30 overflow-hidden bg-blue-50/40 dark:bg-blue-950/10 shrink-0 flex items-center justify-center">
+                        {acervo.icone ? (
+                          <DynamicIcon name={acervo.icone} className="w-full h-full p-1 text-blue-600 dark:text-blue-400" />
+                        ) : (
+                          <BookOpen className="w-5 h-5 text-blue-400" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-950 dark:text-gray-50 truncate">{acervo.nome}</p>
+                        <p className="text-xs text-gray-500 line-clamp-1">{acervo.descricao}</p>
+                      </div>
+                    </button>
 
-                  <div className="flex items-center gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => setAcervoResumoId(acervo.id)}>
-                      <Eye className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => togglePowerArray(acervo.id)}>Remover</Button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button size="xs" variant="ghost" onClick={() => setAcervoResumoId(acervo.id)} className="h-8 w-8 !p-0" title="Ver Detalhes">
+                        <Eye className="w-4 h-4 text-gray-400 hover:text-blue-500" />
+                      </Button>
+                      <Button 
+                        size="xs" 
+                        variant="ghost" 
+                        onClick={() => togglePowerArray(acervo.id)} 
+                        className="h-8 w-8 !p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                        title="Remover"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
 
-            {acervosCompativeis.length === 0 && (
-              <p className="text-sm text-gray-500">Nenhum acervo compatível com o domínio atual.</p>
+            {acervosCompativeis.length === 0 && acervosSelecionados.length > 0 && (
+              <p className="text-xs text-amber-500 dark:text-amber-400 italic">Nenhum outro acervo compatível com os domínios atuais.</p>
             )}
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setConfirmarReset(true)}>
-                <RefreshCw className="w-4 h-4 mr-1" /> {state.editingItemId ? 'Cancelar Edição' : 'Resetar'}
-              </Button>
-            </div>
-            
-            <div className="flex gap-2">
-              <Tooltip content="Ver resumo completo do item atual">
-                <Button
-                  variant="outline"
-                  onClick={() => setModalResumoAberto(true)}
-                  className="flex items-center gap-2"
-                >
-                  <FileText className="w-4 h-4" /> Resumo
-                </Button>
-              </Tooltip>
-              <Button onClick={salvarItem} loading={salvando} disabled={loading}>
-                <Save className="w-4 h-4 mr-1" /> {state.editingItemId ? 'Atualizar Item' : 'Salvar Item'}
-              </Button>
-            </div>
+      {/* Floating Sticky Actions Bar */}
+      <div className="sticky bottom-4 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-xl flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between transition-all duration-200">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-100 dark:border-purple-900/30">
+            <Package className="w-5 h-5" />
           </div>
-        </CardContent>
-      </Card>
+          <div>
+            <p className="text-sm font-bold text-gray-900 dark:text-white">
+              {state.nome || 'Item Sem Nome'}
+            </p>
+            <p className="text-xs text-gray-500">
+              Nível {nivelCalculado} · {state.tipo === 'weapon' ? 'Arma' : state.tipo === 'defensive-equipment' ? 'Equipamento Defensivo' : state.tipo === 'consumable' ? 'Consumível' : state.tipo === 'upgrade-material' ? 'Material' : 'Outro'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 self-end sm:self-auto">
+          <Button variant="outline" onClick={() => setConfirmarReset(true)} className="flex items-center gap-1.5 h-10 border-gray-250 dark:border-gray-805">
+            <RefreshCw className="w-4 h-4" /> 
+            <span>{state.editingItemId ? 'Cancelar' : 'Resetar'}</span>
+          </Button>
+          
+          <Button
+            variant="outline"
+            onClick={() => setModalResumoAberto(true)}
+            className="flex items-center gap-1.5 h-10 border-gray-250 dark:border-gray-805"
+          >
+            <FileText className="w-4 h-4" /> 
+            <span>Resumo</span>
+          </Button>
+
+          <Button 
+            onClick={salvarItem} 
+            loading={salvando} 
+            disabled={loading}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold h-10 px-5 rounded-xl shadow-lg shadow-purple-500/20 flex items-center gap-1.5"
+          >
+            <Save className="w-4 h-4" /> 
+            <span>{state.editingItemId ? 'Atualizar Item' : 'Salvar Item'}</span>
+          </Button>
+        </div>
+      </div>
 
       <SeletorVinculosModal
         isOpen={modalPoderesAberto}
@@ -874,6 +1013,54 @@ export function CriadorDeItem({
         selectedPowerArrays={acervosSelecionados}
         onOpenPowerDetails={(id) => setPoderResumoId(id)}
         onOpenPowerArrayDetails={(id) => setAcervoResumoId(id)}
+        itemData={{
+          id: state.editingItemId || 'preview',
+          userId: null,
+          characterId: null,
+          tipo: state.tipo,
+          nome: state.nome.trim(),
+          descricao: state.descricao.trim(),
+          isPublic: state.isPublic,
+          canStack: false,
+          maxStack: 1,
+          icone: state.icone.trim(),
+          notas: state.notas.trim(),
+          dominio: state.dominios[0] || { name: 'general', areaConhecimento: null, peculiarId: null },
+          dominios: state.dominios,
+          custoBase: state.custoBase,
+          nivelItem: nivelCalculado,
+          valorBase: custoRealCalculado,
+          precoVenda: precoVendaCalculado,
+          durabilidade: 'INTACTO',
+          powerIds: state.powerIds,
+          powerArrayIds: state.powerArrayIds,
+          createdAt: new Date().toISOString(),
+          updatedAt: null,
+          userName: null,
+          // Weapon properties
+          danos: state.weapon.danos,
+          upgradeLevel: state.weapon.upgradeLevel,
+          upgradeLevelMax: 7,
+          critMargin: state.weapon.critMargin,
+          critMultiplier: state.weapon.critMultiplier,
+          alcance: state.weapon.alcance,
+          alcanceExtraMetros: state.weapon.alcanceExtraMetros,
+          atributoEscalonamento: state.tipo === 'weapon' ? state.weapon.atributoEscalonamento : state.tipo === 'defensive-equipment' ? state.defensive.atributoEscalonamento : null,
+          // Defensive properties
+          tipoEquipamento: state.defensive.tipoEquipamento,
+          baseRD: state.defensive.baseRD,
+          rdAtual: state.defensive.baseRD,
+          // Consumable properties
+          descritorEfeito: state.consumable.descritorEfeito,
+          qtdDoses: state.consumable.qtdDoses,
+          isRefeicao: state.consumable.isRefeicao,
+          spoilageState: 'NORMAL',
+          // Artifact properties
+          isAttuned: false,
+          // Upgrade Material properties
+          tier: UPGRADE_PATAMARES.find(p => p.id === state.upgradeMaterial.patamarId)?.tier || 1,
+          maxUpgradeLimit: UPGRADE_PATAMARES.find(p => p.id === state.upgradeMaterial.patamarId)?.maxUpgradeLimit || 3,
+        } as any}
       />
 
       <ResumoVinculoModal

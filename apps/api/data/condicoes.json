@@ -186,9 +186,15 @@
     "descricao": "O personagem é considerado Desprevenido, mas falha automaticamente em testes de Reflexos e Fortitude. Ele pode sofrer golpes de misericórdia."
   },
   {
-    "id": "paralisado",
-    "nome": "Paralisado",
+    "id": "morrendo",
+    "nome": "Morrendo",
     "patamar": "Extrema",
-    "descricao": "O personagem fica Imóvel, Indefeso e só pode realizar ações puramente mentais."
+    "descricao": "O personagem está à beira da morte (0 PV). No início de seus turnos, seu marcador de morte aumenta em 1. Se sofrer um ataque nesta condição, o marcador aumenta em 1 e um teste de lesão é rolado."
+  },
+  {
+    "id": "lesao",
+    "nome": "Lesão",
+    "patamar": "Média",
+    "descricao": "O personagem sofreu um ferimento grave. Sua qualidade de descanso cai em 1 nível e ele exige cuidados médicos para recuperar PV."
   }
 ]

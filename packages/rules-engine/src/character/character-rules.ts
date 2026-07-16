@@ -482,6 +482,21 @@ export function applyChangeLevel(character: any, newLevel: number): void {
 
 export function applyDamage(character: any, amount: number): { died: boolean } {
   if (amount < 0) throw new RulesValidationError('O dano não pode ser negativo.', 'damage');
+
+  if (character.deathState === 'DYING' && amount > 0) {
+    const nextCounter = (character.deathCounter || 0) + 1;
+    let died = false;
+    if (nextCounter >= 3) {
+      character.deathState = 'DEAD';
+      character.deathCounter = 3;
+      died = true;
+    } else {
+      character.deathCounter = nextCounter;
+    }
+
+    return { died };
+  }
+
   const finalDamage = amount * getIncomingDamageMultiplier(character.conditions);
 
   let remainingDamage = finalDamage;
@@ -509,8 +524,15 @@ export function applyDamage(character: any, amount: number): { died: boolean } {
   if (newCurrent <= 0) {
     if (character.deathState !== 'DEAD') {
       character.deathState = 'DYING';
-      character.deathCounter = 0;
+      if (character.deathCounter === undefined || character.deathCounter === null) {
+        character.deathCounter = 0;
+      }
       died = true;
+
+      const condSet = new Set(character.conditions || []);
+      condSet.add('Morrendo');
+      condSet.add('Caído');
+      character.conditions = Array.from(condSet);
     }
   }
   return { died };
@@ -526,7 +548,7 @@ export function applyHeal(character: any, amount: number): void {
 
   if (character.healthState.currentPV > 0 && character.deathState === 'DYING') {
     character.deathState = 'ALIVE';
-    character.deathCounter = 0;
+    character.conditions = (character.conditions || []).filter((c: string) => c !== 'Morrendo');
   }
 }
 
@@ -538,7 +560,7 @@ export function applyTickDeathCounter(character: any): { died: boolean } {
   let died = false;
   if (nextCounter >= 3) {
     character.deathState = 'DEAD';
-    character.deathCounter = nextCounter;
+    character.deathCounter = 3;
     died = true;
   } else {
     character.deathState = 'DYING';
@@ -644,14 +666,50 @@ export function applyCondition(character: any, condition: string): void {
     conditionsSet.add(condition);
   }
   character.conditions = Array.from(conditionsSet);
+
+  if (condition === 'Morrendo') {
+    character.deathState = 'DYING';
+    if (character.deathCounter === undefined || character.deathCounter === null) {
+      character.deathCounter = 0;
+    }
+    if (!conditionsSet.has('Caído')) {
+      conditionsSet.add('Caído');
+      character.conditions = Array.from(conditionsSet);
+    }
+  }
 }
 
 export function applyRemoveCondition(character: any, condition: string): void {
   character.conditions = (character.conditions || []).filter((c: string) => c !== condition);
+  if (condition === 'Morrendo') {
+    if (character.deathState === 'DYING') {
+      character.deathState = 'ALIVE';
+    }
+  }
 }
 
 export function applyUpdateConditions(character: any, conditions: string[]): void {
-  character.conditions = [...conditions];
+  const oldConditions = character.conditions || [];
+  const newConditions = [...conditions];
+
+  const wasMorrendo = oldConditions.includes('Morrendo');
+  const isMorrendo = newConditions.includes('Morrendo');
+
+  if (isMorrendo && !wasMorrendo) {
+    character.deathState = 'DYING';
+    if (character.deathCounter === undefined || character.deathCounter === null) {
+      character.deathCounter = 0;
+    }
+    if (!newConditions.includes('Caído')) {
+      newConditions.push('Caído');
+    }
+  } else if (!isMorrendo && wasMorrendo) {
+    if (character.deathState === 'DYING') {
+      character.deathState = 'ALIVE';
+    }
+  }
+
+  character.conditions = newConditions;
 }
 
 export function applyAddRunics(character: any, amount: number): void {
@@ -975,4 +1033,27 @@ export function applyRestResult(character: any, pvChange: number, peChange: numb
   } else if (peChange < 0) {
     applyConsumeEnergy(character, Math.abs(peChange));
   }
+}
+
+export function calcPsychicStressGain(powerGrau: number, characterLevel: number): number {
+  return Math.ceil(powerGrau / 2);
+}
+
+export function getPsychicPenalties(stress: number, level: number) {
+  const excess = stress - level;
+  return {
+    esmorecido: excess >= 3,
+    danoPsiquico: excess >= 5,
+    custoDuplicado: excess >= 8,
+    perdaEnergia: excess >= 11,
+    excess,
+  };
+}
+
+export function rollScientificPrecision(): { success: boolean; roll: number } {
+  const roll = Math.floor(Math.random() * 10) + 1;
+  return {
+    roll,
+    success: roll >= 3,
+  };
 }
