@@ -433,6 +433,8 @@ model CharacterPower {
   finalPdaCost Int
   slotCost    Int
   posicao     Int
+  isFreeAcquisition Boolean @default(false)
+  acquisitionNote   String?
 
   character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
   power     Power     @relation(fields: [powerId], references: [id], onDelete: Cascade)
@@ -451,6 +453,8 @@ model CharacterPowerArray {
   finalPdaCost  Int
   slotCost      Int
   posicao       Int
+  isFreeAcquisition Boolean @default(false)
+  acquisitionNote   String?
 
   character  Character  @relation(fields: [characterId], references: [id], onDelete: Cascade)
   powerArray PowerArray @relation(fields: [powerArrayId], references: [id], onDelete: Cascade)

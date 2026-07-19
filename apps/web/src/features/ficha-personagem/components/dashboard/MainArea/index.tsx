@@ -1,4 +1,4 @@
-import { CharacterResponse, SyncCharacterData } from '@/services/characters.types';
+import { CharacterResponse, PowerAcquisitionOptions, SyncCharacterData } from '@/services/characters.types';
 import type { EquipSlot } from '@/services/characters.types';
 import { Card } from '@/shared/ui';
 import { Sword, Zap, Gift, Backpack, BookOpen, StickyNote } from 'lucide-react';
@@ -17,8 +17,8 @@ interface MainAreaProps {
   isSyncing: boolean;
   onAcquireDomainMastery: (domainId: string, masteryLevel: 'INICIANTE' | 'PRATICANTE' | 'MESTRE') => Promise<void>;
   onDiscardDomainMastery: (domainId: string) => void;
-  onAcquirePower: (powerId: string) => Promise<void>;
-  onAcquirePowerArray: (powerArrayId: string) => Promise<void>;
+  onAcquirePower: (powerId: string, acquisition?: PowerAcquisitionOptions) => Promise<void>;
+  onAcquirePowerArray: (powerArrayId: string, acquisition?: PowerAcquisitionOptions) => Promise<void>;
   onEquipPower: (powerId: string) => Promise<void>;
   onUnequipPower: (powerId: string) => Promise<void>;
   onEquipPowerArray: (powerArrayId: string) => Promise<void>;

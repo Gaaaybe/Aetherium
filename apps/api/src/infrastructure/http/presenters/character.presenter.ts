@@ -215,6 +215,8 @@ export class CharacterPresenter {
         isEquipped: power.isEquipped,
         finalPdaCost: power.finalPdaCost,
         slotCost: power.slotCost,
+        isFreeAcquisition: power.isFreeAcquisition ?? false,
+        acquisitionNote: power.acquisitionNote ?? null,
       })),
       powerArrays: (character.powerArrays || []).map((powerArray) => ({
         id: powerArray.id.toString(),
@@ -222,6 +224,8 @@ export class CharacterPresenter {
         isEquipped: powerArray.isEquipped,
         finalPdaCost: powerArray.finalPdaCost,
         slotCost: powerArray.slotCost,
+        isFreeAcquisition: powerArray.isFreeAcquisition ?? false,
+        acquisitionNote: powerArray.acquisitionNote ?? null,
       })),
       benefits: (character.benefits || []).map((benefit) => ({
         id: benefit.id.toString(),

@@ -10,6 +10,7 @@ describe('Power Array Character Controllers (e2e)', () => {
   let accessToken: string;
   let characterId: string;
   let powerArrayId: string;
+  let sourcePowerArrayId: string;
   let power1Id: string;
   let power2Id: string;
 
@@ -134,6 +135,7 @@ describe('Power Array Character Controllers (e2e)', () => {
       });
 
     powerArrayId = powerArrayResponse.body.id;
+    sourcePowerArrayId = powerArrayResponse.body.id;
   });
 
   afterAll(async () => {
@@ -154,6 +156,40 @@ describe('Power Array Character Controllers (e2e)', () => {
     });
 
     powerArrayId = response.body.powerArrays[0].powerArrayId;
+  });
+
+  test('[POST] /characters/:characterId/power-arrays — should persist a free narrative acquisition without spending PdA', async () => {
+    const before = await request(app.getHttpServer())
+      .get(`/characters/${characterId}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    const response = await request(app.getHttpServer())
+      .post(`/characters/${characterId}/power-arrays`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        powerArrayId: sourcePowerArrayId,
+        isFreeAcquisition: true,
+        acquisitionNote: 'Treinamento concedido pelo mestre',
+      });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.body.pda.spent).toBe(before.body.pda.spent);
+    const acquiredArray = response.body.powerArrays.at(-1);
+    expect(acquiredArray).toMatchObject({
+      finalPdaCost: 0,
+      isFreeAcquisition: true,
+      acquisitionNote: 'Treinamento concedido pelo mestre',
+    });
+
+    const removal = await request(app.getHttpServer())
+      .post(`/characters/${characterId}/power-arrays/${acquiredArray.powerArrayId}/remove`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(removal.statusCode).toBe(200);
+    expect(removal.body.pda.spent).toBe(before.body.pda.spent);
+    expect(removal.body.powerArrays).not.toContainEqual(
+      expect.objectContaining({ powerArrayId: acquiredArray.powerArrayId }),
+    );
   });
 
   test('[POST] /characters/:characterId/power-arrays — should return 401 without token', async () => {

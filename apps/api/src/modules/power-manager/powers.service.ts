@@ -771,11 +771,15 @@ export class PowersService {
 
       // Recalculate linked character powers
       await tx.characterPower.updateMany({
-        where: { powerId },
+        where: { powerId, isFreeAcquisition: false },
         data: {
           finalPdaCost: finalPda,
           slotCost: finalEspacos,
         },
+      });
+      await tx.characterPower.updateMany({
+        where: { powerId, isFreeAcquisition: true },
+        data: { finalPdaCost: 0, slotCost: finalEspacos },
       });
 
       // Recalculate linked power arrays
@@ -819,11 +823,15 @@ export class PowersService {
         });
 
         await tx.characterPowerArray.updateMany({
-          where: { powerArrayId },
+          where: { powerArrayId, isFreeAcquisition: false },
           data: {
             finalPdaCost: highestPda + additionalPowersCost,
             slotCost: totalEspacos,
           },
+        });
+        await tx.characterPowerArray.updateMany({
+          where: { powerArrayId, isFreeAcquisition: true },
+          data: { finalPdaCost: 0, slotCost: totalEspacos },
         });
       }
 
@@ -1298,11 +1306,15 @@ export class PowersService {
 
       // Recalculate character links
       await tx.characterPowerArray.updateMany({
-        where: { powerArrayId },
+        where: { powerArrayId, isFreeAcquisition: false },
         data: {
           finalPdaCost: finalPda,
           slotCost: finalEspacos,
         },
+      });
+      await tx.characterPowerArray.updateMany({
+        where: { powerArrayId, isFreeAcquisition: true },
+        data: { finalPdaCost: 0, slotCost: finalEspacos },
       });
 
       // Recalculate spent pda for all impacted characters

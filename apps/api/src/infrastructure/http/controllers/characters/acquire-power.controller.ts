@@ -22,6 +22,8 @@ import { CharacterPresenter } from '../../presenters/character.presenter';
 
 const acquirePowerBodySchema = z.object({
   powerId: z.string().uuid(),
+  isFreeAcquisition: z.boolean().optional().default(false),
+  acquisitionNote: z.string().trim().max(300).optional(),
 });
 
 type AcquirePowerBodySchema = z.infer<typeof acquirePowerBodySchema>;
@@ -42,6 +44,10 @@ export class AcquirePowerController {
         characterId,
         user.sub,
         body.powerId,
+        {
+          isFreeAcquisition: body.isFreeAcquisition,
+          acquisitionNote: body.acquisitionNote,
+        },
       );
 
       return CharacterPresenter.toHTTP(character);

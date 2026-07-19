@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { charactersService } from '@/services/characters.service';
-import type { CharacterResponse, SyncCharacterData } from '@/services/characters.types';
+import type { CharacterResponse, PowerAcquisitionOptions, SyncCharacterData } from '@/services/characters.types';
 import type { EquipSlot } from '@/services/characters.types';
 import { toast } from '@/shared/ui';
 
@@ -112,12 +112,12 @@ export function useCharacterSheet(characterId: string) {
     });
   };
 
-  const acquirePower = async (powerId: string) => {
+  const acquirePower = async (powerId: string, acquisition?: PowerAcquisitionOptions) => {
     if (!character) return;
     
     setIsSyncing(true);
     try {
-      const updated = await charactersService.acquirePower(characterId, powerId);
+      const updated = await charactersService.acquirePower(characterId, powerId, acquisition);
       setCharacter(updated);
       toast.success('Poder adicionado ao acervo do personagem!');
     } catch (err: any) {
@@ -128,12 +128,12 @@ export function useCharacterSheet(characterId: string) {
     }
   };
 
-  const acquirePowerArray = async (powerArrayId: string) => {
+  const acquirePowerArray = async (powerArrayId: string, acquisition?: PowerAcquisitionOptions) => {
     if (!character) return;
     
     setIsSyncing(true);
     try {
-      const updated = await charactersService.acquirePowerArray(characterId, powerArrayId);
+      const updated = await charactersService.acquirePowerArray(characterId, powerArrayId, acquisition);
       setCharacter(updated);
       toast.success('Acervo adicionado ao personagem!');
     } catch (err: any) {
