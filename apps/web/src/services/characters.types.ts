@@ -89,11 +89,38 @@ export interface PsychicState {
   stress: number;
 }
 
+export type CharacterResourceStyle = 'BAR' | 'DOTS' | 'COUNTER';
+
+export interface CharacterCustomResource {
+  id: string;
+  name: string;
+  description: string | null;
+  style: CharacterResourceStyle;
+  color: 'indigo' | 'blue' | 'emerald' | 'amber' | 'rose' | 'violet';
+  current: number;
+  minimum: number;
+  maximum: number | null;
+  step: number;
+  position: number;
+}
+
+export interface CharacterCustomResourceInput {
+  name: string;
+  description?: string | null;
+  style: CharacterResourceStyle;
+  color: CharacterCustomResource['color'];
+  current: number;
+  minimum: number;
+  maximum?: number | null;
+  step: number;
+}
+
 export interface CharacterResponse {
   id: string;
   userId: string;
   level: number;
   inspiration: number;
+  customResources?: CharacterCustomResource[];
   calamityRank: string;
   efficiencyBonus: number;
   narrative: {

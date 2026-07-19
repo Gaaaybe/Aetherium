@@ -1,4 +1,4 @@
-import { useState, useRef, ReactNode, useLayoutEffect } from 'react';
+import { useState, useRef, ReactNode, useLayoutEffect, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 interface TooltipProps {
@@ -9,9 +9,34 @@ interface TooltipProps {
 
 export function Tooltip({ content, children, position = 'top' }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!isPinned) return;
+    const closeIfOutside = (event: MouseEvent | TouchEvent) => {
+      if (!triggerRef.current?.contains(event.target as Node)) {
+        setIsPinned(false);
+        setIsVisible(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsPinned(false);
+        setIsVisible(false);
+      }
+    };
+    document.addEventListener('mousedown', closeIfOutside);
+    document.addEventListener('touchstart', closeIfOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeIfOutside);
+      document.removeEventListener('touchstart', closeIfOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isPinned]);
 
   useLayoutEffect(() => {
     if (isVisible && triggerRef.current) {
@@ -119,7 +144,16 @@ export function Tooltip({ content, children, position = 'top' }: TooltipProps) {
       ref={triggerRef}
       className="relative inline-block"
       onMouseEnter={() => setIsVisible(true)}
-      onMouseLeave={() => setIsVisible(false)}
+      onMouseLeave={() => !isPinned && setIsVisible(false)}
+      onFocusCapture={() => setIsVisible(true)}
+      onBlurCapture={() => !isPinned && setIsVisible(false)}
+      onClick={() => {
+        setIsPinned(previous => {
+          const next = !previous;
+          setIsVisible(next);
+          return next;
+        });
+      }}
     >
       {children}
       {isVisible && createPortal(

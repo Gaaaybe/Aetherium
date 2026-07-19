@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalFooter, Button, Input } from '@/shared/ui';
-import { Settings, Heart, Zap, Lock, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Settings, Heart, Zap, Lock, AlertTriangle } from 'lucide-react';
 import type { CharacterResponse, SyncCharacterData } from '@/services/characters.types';
 
 interface FichaPropertiesModalProps {

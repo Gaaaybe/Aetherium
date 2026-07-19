@@ -490,14 +490,17 @@ export function DefenseCard({ character, activePowers, onSync }: DefenseCardProp
   const [parryRollConfig, setParryRollConfig] = useState<{
     label: string;
     modifier: number;
+    damageFormula?: string;
+    damageModifier?: number;
     critMargin?: number;
     critMultiplier?: number;
+    efficiencyBonus?: number;
+    initialApplyEfficiency?: boolean;
     initialRule?: 'advantage' | 'disadvantage' | 'normal';
     initialExtraDice?: number;
   } | null>(null);
 
   const [handsDetails, setHandsDetails] = useState<Record<string, any>>({});
-  const [isFetchingHands, setIsFetchingHands] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -508,7 +511,6 @@ export function DefenseCard({ character, activePowers, onSync }: DefenseCardProp
         if (active) setHandsDetails({});
         return;
       }
-      if (active) setIsFetchingHands(true);
       try {
         const results = await Promise.all(itemIds.map(id => getItemById(id).catch(() => null)));
         if (!active) return;
@@ -519,8 +521,6 @@ export function DefenseCard({ character, activePowers, onSync }: DefenseCardProp
         setHandsDetails(map);
       } catch (err) {
         console.error('Error fetching hands details for parry:', err);
-      } finally {
-        if (active) setIsFetchingHands(false);
       }
     };
     fetchHands();

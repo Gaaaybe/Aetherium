@@ -1035,7 +1035,7 @@ export function applyRestResult(character: any, pvChange: number, peChange: numb
   }
 }
 
-export function calcPsychicStressGain(powerGrau: number, characterLevel: number): number {
+export function calcPsychicStressGain(powerGrau: number, _characterLevel: number): number {
   return Math.ceil(powerGrau / 2);
 }
 

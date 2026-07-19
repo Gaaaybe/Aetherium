@@ -2,7 +2,6 @@ import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePowerUsage, describeMutations } from '@/features/ficha-personagem/hooks/usePowerUsage';
 import { resolvePower, applyMutations } from '@/services/powers.service';
-import * as RulesEngine from '@aetherium/rules-engine';
 
 vi.mock('@/services/powers.service', () => ({
   resolvePower: vi.fn(),
@@ -19,34 +18,34 @@ vi.mock('@/shared/ui', () => ({
 
 describe('describeMutations', () => {
   test('deve descrever corretamente as mutações suportadas', () => {
-    expect(describeMutations([{ type: 'DEAL_DAMAGE', formula: '2d6', damageType: 'fogo' }])).toEqual([
+    expect(describeMutations([{ type: 'DEAL_DAMAGE', formula: '2d6', damageType: 'fogo', targetId: null }])).toEqual([
       { text: 'Causa 2d6 de dano (fogo)', type: 'DEAL_DAMAGE' }
     ]);
-    expect(describeMutations([{ type: 'DEAL_DAMAGE', formula: '1d4', isSelfInflicted: true }])).toEqual([
+    expect(describeMutations([{ type: 'DEAL_DAMAGE', formula: '1d4', isSelfInflicted: true, targetId: null }])).toEqual([
       { text: 'Causa 1d4 de dano (físico) em você mesmo', type: 'DEAL_DAMAGE' }
     ]);
-    expect(describeMutations([{ type: 'HEAL', formula: '10' }])).toEqual([
+    expect(describeMutations([{ type: 'HEAL', formula: '10', targetId: null }])).toEqual([
       { text: 'Cura 10 PV', type: 'HEAL' }
     ]);
-    expect(describeMutations([{ type: 'RESTORE_PE', formula: '5' }])).toEqual([
+    expect(describeMutations([{ type: 'RESTORE_PE', formula: '5', targetId: null }])).toEqual([
       { text: 'Restaura 5 PE', type: 'RESTORE_PE' }
     ]);
-    expect(describeMutations([{ type: 'ADD_TEMP_PV', formula: '1d128' }])).toEqual([
+    expect(describeMutations([{ type: 'ADD_TEMP_PV', formula: '1d128', targetId: null }])).toEqual([
       { text: 'Concede 1d128 PV temporários', type: 'ADD_TEMP_PV' }
     ]);
-    expect(describeMutations([{ type: 'ADD_TEMP_PE', formula: '12' }])).toEqual([
+    expect(describeMutations([{ type: 'ADD_TEMP_PE', formula: '12', targetId: null }])).toEqual([
       { text: 'Concede 12 PE temporários', type: 'ADD_TEMP_PE' }
     ]);
-    expect(describeMutations([{ type: 'APPLY_CONDITION', condicaoId: 'Abalado' }])).toEqual([
+    expect(describeMutations([{ type: 'APPLY_CONDITION', condicaoId: 'Abalado', targetId: null }])).toEqual([
       { text: 'Aplica condição: Abalado', type: 'APPLY_CONDITION' }
     ]);
-    expect(describeMutations([{ type: 'APPLY_MARKER', markerId: 'm-1', label: 'Marca' }])).toEqual([
+    expect(describeMutations([{ type: 'APPLY_MARKER', markerId: 'm-1', label: 'Marca', targetId: null }])).toEqual([
       { text: 'Marca alvo: Marca', type: 'APPLY_MARKER' }
     ]);
-    expect(describeMutations([{ type: 'REGISTER_TRIGGER', trigger: { evento: 'DANO_RECEBIDO' } }])).toEqual([
+    expect(describeMutations([{ type: 'REGISTER_TRIGGER', trigger: { evento: 'DANO_RECEBIDO', condicao: '', efeitosFilhos: [] }, targetId: null }])).toEqual([
       { text: 'Registra gatilho: DANO_RECEBIDO', type: 'REGISTER_TRIGGER' }
     ]);
-    expect(describeMutations([{ type: 'UNKNOWN_TYPE' as any }])).toEqual([
+    expect(describeMutations([{ type: 'UNKNOWN_TYPE' as any, targetId: null }])).toEqual([
       { text: 'Efeito: UNKNOWN_TYPE', type: 'UNKNOWN_TYPE' }
     ]);
   });
@@ -77,6 +76,21 @@ describe('usePowerUsage hook', () => {
     expect(result.current.activePowers).toEqual([]);
   });
 
+  test('deve persistir o progresso manual de Gradativo por personagem', () => {
+    const { result } = renderHook(() => usePowerUsage({ characterId, onSync: onSyncMock }));
+
+    act(() => {
+      result.current.updateGradativoProgress('power-1:effect:effect-1', 4);
+    });
+
+    expect(result.current.gradativoProgress).toEqual({
+      'power-1:effect:effect-1': 4,
+    });
+    expect(JSON.parse(localStorage.getItem(`gradativo-progress-${characterId}`) || '{}')).toEqual({
+      'power-1:effect:effect-1': 4,
+    });
+  });
+
   test('should preview power resolving attribute modifiers', async () => {
     vi.mocked(resolvePower).mockResolvedValueOnce({ effects: [] } as any);
 
@@ -97,6 +111,7 @@ describe('usePowerUsage hook', () => {
     expect(resolvePower).toHaveBeenCalledWith('power-1', {
       sceneId: `free-use-${characterId}`,
       candidateTargetIds: [],
+      descargaMultiplier: 1,
       casterState: {
         id: characterId,
         keyPhysicalModifier: 3,
@@ -105,6 +120,62 @@ describe('usePowerUsage hook', () => {
       },
     });
     expect(res).toEqual({ resolution: { effects: [] }, peCost: 2 });
+  });
+
+  test('should preview power forwarding descarga multiplier', async () => {
+    vi.mocked(resolvePower).mockResolvedValueOnce({ effects: [] } as any);
+
+    const { result } = renderHook(() => usePowerUsage({ characterId, onSync: onSyncMock }));
+
+    const power = {
+      powerId: 'power-2',
+      nome: 'Descarga',
+      duracao: 0,
+      peCost: 4,
+    };
+
+    await act(async () => {
+      await result.current.previewPower(power, mockCharacter as any, 3);
+    });
+
+    expect(resolvePower).toHaveBeenCalledWith('power-2', {
+      sceneId: `free-use-${characterId}`,
+      candidateTargetIds: [],
+      descargaMultiplier: 3,
+      casterState: {
+        id: characterId,
+        keyPhysicalModifier: 3,
+        keyMentalModifier: 4,
+        level: 5,
+      },
+    });
+  });
+
+  test('deve encaminhar progresso local e global de Gradativo no preview', async () => {
+    vi.mocked(resolvePower).mockResolvedValueOnce({ effects: [] } as any);
+    const { result } = renderHook(() => usePowerUsage({ characterId, onSync: onSyncMock }));
+
+    await act(async () => {
+      await result.current.previewPower({
+        powerId: 'power-gradativo',
+        nome: 'Gradativo',
+        duracao: 0,
+        peCost: 2,
+      }, mockCharacter as any, 1, {
+        global: 3,
+        effects: { 'effect-1': 5 },
+      });
+    });
+
+    expect(resolvePower).toHaveBeenCalledWith(
+      'power-gradativo',
+      expect.objectContaining({
+        gradativoProgress: {
+          global: 3,
+          effects: { 'effect-1': 5 },
+        },
+      }),
+    );
   });
 
   test('deve tratar erro no previewPower exibindo toast.error', async () => {
@@ -182,6 +253,22 @@ describe('usePowerUsage hook', () => {
     expect(result.current.activePowers).toHaveLength(1);
   });
 
+  test('não deve consumir PE ao usar um poder Permanente com ação Nenhuma', async () => {
+    const { result } = renderHook(() => usePowerUsage({ characterId, onSync: onSyncMock }));
+
+    await act(async () => {
+      await result.current.confirmUsePower({
+        powerId: 'power-passivo',
+        nome: 'Passivo Permanente',
+        duracao: 4,
+        acao: 5,
+        peCost: 12,
+      });
+    });
+
+    expect(onSyncMock).not.toHaveBeenCalled();
+  });
+
   test('deve somar mutações e aplicar no onSync durante confirmUsePower apenas para o caster', async () => {
     const { result } = renderHook(() => usePowerUsage({ characterId, onSync: onSyncMock }));
 
@@ -215,6 +302,33 @@ describe('usePowerUsage hook', () => {
       `free-use-${characterId}`,
       characterId,
       [{ type: 'HEAL', formula: '20', targetId: 'other-character-id' }]
+    );
+  });
+
+  test('deve aplicar Descarga ao custo de PE e às mutações com fórmula', async () => {
+    const { result } = renderHook(() => usePowerUsage({ characterId, onSync: onSyncMock }));
+
+    const power = {
+      powerId: 'power-descarga',
+      nome: 'Golpe Descarregado',
+      duracao: 0,
+      peCost: 4,
+    };
+
+    const mutations = [
+      { type: 'DEAL_DAMAGE', formula: '2d8 + 4', targetId: characterId },
+      { type: 'DEAL_DAMAGE', formula: '2d8 + 4', targetId: 'other-character-id' },
+    ];
+
+    await act(async () => {
+      await result.current.confirmUsePower(power, { mutations, descargaMultiplier: 3 });
+    });
+
+    expect(onSyncMock).toHaveBeenCalledWith({ peChange: -12 });
+    expect(applyMutations).toHaveBeenCalledWith(
+      `free-use-${characterId}`,
+      characterId,
+      [{ type: 'DEAL_DAMAGE', formula: '2d8 + 4', targetId: 'other-character-id' }]
     );
   });
 

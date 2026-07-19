@@ -169,6 +169,12 @@ enum ModificationScope {
   LOCAL
 }
 
+enum CharacterResourceStyle {
+  BAR
+  DOTS
+  COUNTER
+}
+
 enum ModificationType {
   EXTRA
   FALHA
@@ -391,10 +397,32 @@ model Character {
   items              Item[]
   clonedPowers       Power[]                @relation("CharacterClonedPowers")
   clonedPowerArrays  PowerArray[]           @relation("CharacterClonedPowerArrays")
+  customResources    CharacterResource[]
 
   @@index([userId])
   @@index([userId, updatedAt])
   @@map("characters")
+}
+
+model CharacterResource {
+  id          String                 @id @default(uuid())
+  characterId String
+  name        String
+  description String?
+  style       CharacterResourceStyle @default(COUNTER)
+  color       String                 @default("indigo")
+  current     Int                    @default(0)
+  minimum     Int                    @default(0)
+  maximum     Int?
+  step        Int                    @default(1)
+  position    Int                    @default(0)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId, position])
+  @@map("character_resources")
 }
 
 model CharacterPower {
@@ -484,6 +512,7 @@ model ItemPower {
   itemId  String
   powerId String
   posicao Int    @default(0)
+  ownsPower Boolean @default(false)
 
   item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 

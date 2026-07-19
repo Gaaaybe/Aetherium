@@ -34,6 +34,7 @@ import { UnequipPowerArrayController } from '@/infrastructure/http/controllers/c
 import { UnlockSpiritualPrincipleController } from '@/infrastructure/http/controllers/characters/unlock-spiritual-principle.controller';
 import { UpdateUnarmedMasteryController } from '@/infrastructure/http/controllers/characters/update-unarmed-mastery.controller';
 import { UpgradeItemController } from '@/infrastructure/http/controllers/characters/upgrade-item.controller';
+import { CustomResourcesController } from '@/infrastructure/http/controllers/characters/custom-resources.controller';
 import { ItemManagerModule } from '@/modules/item-manager/item-manager.module';
 import { PowerManagerModule } from '@/modules/power-manager/power-manager.module';
 import { CharactersService } from './characters.service';
@@ -74,6 +75,7 @@ import { CharactersService } from './characters.service';
     DeletePowerArrayFromCharacterController,
     AcquireBenefitController,
     DiscardBenefitController,
+    CustomResourcesController,
   ],
   providers: [CharactersService],
   exports: [CharactersService],

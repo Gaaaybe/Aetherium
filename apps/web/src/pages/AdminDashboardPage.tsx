@@ -631,11 +631,7 @@ export function AdminDashboardPage() {
     return powers.find((p) => p.id === itemPoderResumoId) || vinculosExtras.poderes.find((p) => p.id === itemPoderResumoId);
   }, [itemPoderResumoId, powers, vinculosExtras.poderes]);
   
-  const [exportandoId, setExportandoId] = useState<string | null>(null);
-  const [exportandoItemId, setExportandoItemId] = useState<string | null>(null);
-
   const handleExportarPoder = (poder: PoderResponse) => {
-    setExportandoId(poder.id);
     try {
       const blob = new Blob([JSON.stringify(poder, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -647,15 +643,12 @@ export function AdminDashboardPage() {
       toast.success(`"${poder.nome}" exportado!`);
     } catch {
       toast.error('Erro ao exportar poder.');
-    } finally {
-      setExportandoId(null);
     }
   };
 
   const handleExportarItem = async (item: ItemResponse) => {
-    setExportandoItemId(item.id);
     try {
-      const sanitized = await exportarItem(item.id);
+      const sanitized = await exportItem(item.id);
       const blob = new Blob([JSON.stringify(sanitized, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -666,8 +659,6 @@ export function AdminDashboardPage() {
       toast.success(`"${item.nome}" exportado!`);
     } catch (err) {
       toast.error('Erro ao exportar item.');
-    } finally {
-      setExportandoItemId(null);
     }
   };
 

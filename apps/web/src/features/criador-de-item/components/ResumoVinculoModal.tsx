@@ -14,9 +14,10 @@ interface ResumoVinculoModalProps {
   onClose: () => void;
   poder?: PoderResponse;
   acervo?: AcervoResponse;
+  onEditPower?: () => void;
 }
 
-export function ResumoVinculoModal({ isOpen, onClose, poder, acervo }: ResumoVinculoModalProps) {
+export function ResumoVinculoModal({ isOpen, onClose, poder, acervo, onEditPower }: ResumoVinculoModalProps) {
   const { efeitos, modificacoes } = useCatalog();
 
   const poderConvertido = useMemo(
@@ -44,6 +45,7 @@ export function ResumoVinculoModal({ isOpen, onClose, poder, acervo }: ResumoVin
         onClose={onClose}
         poder={poderConvertido}
         detalhes={detalhesPoder}
+        onEdit={onEditPower}
       />
     );
   }

@@ -10,7 +10,7 @@ import { DescansoModal } from './dashboard/DescansoModal';
 import { usePowerUsage } from '../hooks/usePowerUsage';
 import { useDeathTheme } from '../hooks/useDeathTheme';
 import { charactersService } from '@/services/characters.service';
-import { obterBonusVidaEnergiaFortalecer } from '../utils/fortalecerHelper';
+import { aplicarGradativoAosEfeitosDoPoder, obterBonusVidaEnergiaFortalecer } from '../utils/fortalecerHelper';
 import { getPowerById } from '@/services/powers.service';
 import { getPowerArrayById } from '@/services/powerArrays.service';
 import { useAuth } from '@/context/useAuth';
@@ -127,6 +127,8 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
     confirmUsePower,
     maintainPower,
     deactivatePower,
+    gradativoProgress,
+    updateGradativoProgress,
   } = usePowerUsage({
     characterId,
     onSync: sync,
@@ -242,20 +244,28 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
   ]);
 
   const allActivePowers = [
-    ...(activePowers || []),
-    ...equippedPassives.map(p => ({
-      id: p.id,
-      powerId: p.id,
-      nome: p.nome,
-      icone: p.icone,
-      duracao: p.parametros?.duracao ?? 4,
-      peCostPerRound: 0,
-      activatedAt: Date.now(),
-      effects: p.effects || p.efeitos || [],
-      efeitos: p.effects || p.efeitos || [],
-      originItemId: p.originItemId,
-      originItemTipo: p.originItemTipo,
-    }))
+    // Permanentes são derivados diretamente dos poderes equipados. Ignorar aqui
+    // snapshots antigos evita que um registro salvo antes desta regra concorra
+    // com o grau Gradativo atual.
+    ...(activePowers || []).filter(power => power.duracao !== 4),
+    ...equippedPassives.map(p => {
+      const progressiveEffects = aplicarGradativoAosEfeitosDoPoder(p, gradativoProgress);
+      return {
+        id: p.id,
+        powerId: p.id,
+        nome: p.nome,
+        icone: p.icone,
+        duracao: p.parametros?.duracao ?? 4,
+        acao: p.parametros?.acao ?? 5,
+        dominio: p.dominio,
+        peCostPerRound: 0,
+        activatedAt: Date.now(),
+        effects: progressiveEffects,
+        efeitos: progressiveEffects,
+        originItemId: p.originItemId,
+        originItemTipo: p.originItemTipo,
+      };
+    })
   ];
 
   const [isRestModalOpen, setIsRestModalOpen] = useState(false);
@@ -412,6 +422,8 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
             confirmUsePower={confirmUsePower}
             maintainPower={maintainPower}
             deactivatePower={deactivatePower}
+            gradativoProgress={gradativoProgress}
+            updateGradativoProgress={updateGradativoProgress}
           />
         </div>
       </div>
@@ -500,7 +512,7 @@ export function CharacterSheetDashboard({ characterId }: CharacterSheetDashboard
                     
                     {u.id !== character?.userId && (
                       <Button
-                        size="xs"
+                        size="sm"
                         variant="primary"
                         onClick={() => handleTransferOwner(u.id, u.name)}
                         disabled={isTransferring}

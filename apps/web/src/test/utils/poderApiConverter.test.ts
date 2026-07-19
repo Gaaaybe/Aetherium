@@ -17,6 +17,8 @@ const mockPoderResponse: PoderResponse = {
   icone: 'https://example.com/icon.png',
   dominio: {
     name: 'sagrado',
+    areaConhecimento: null,
+    peculiarId: null
   },
   parametros: {
     acao: 1,
@@ -31,12 +33,15 @@ const mockPoderResponse: PoderResponse = {
       configuracaoId: 'op1',
       inputValue: 'fogo',
       dadoModularizado: '1d6',
+      custo: { pda: 2, pe: 1, espacos: 1 },
+      nota: null,
       modifications: [
         {
           modificationBaseId: 'area',
           scope: 'local',
           grau: 1,
-          parametros: { tamanho: 5 }
+          parametros: { tamanho: 5 },
+          nota: null
         }
       ]
     }
@@ -45,7 +50,9 @@ const mockPoderResponse: PoderResponse = {
     {
       modificationBaseId: 'custo-pe-dobrado',
       scope: 'global',
-      grau: 1
+      grau: 1,
+      parametros: null,
+      nota: null
     }
   ],
   custoTotal: {
@@ -53,8 +60,13 @@ const mockPoderResponse: PoderResponse = {
     pe: 2,
     espacos: 2
   },
+  custoAlternativo: null,
+  isPublic: true,
+  notas: null,
   createdAt: '2026-07-04T12:00:00Z',
-  updatedAt: '2026-07-04T13:00:00Z'
+  updatedAt: '2026-07-04T13:00:00Z',
+  userId: null,
+  userName: null
 };
 
 describe('Conversor de API de Poder - poderApiConverter.ts', () => {
@@ -99,7 +111,9 @@ describe('Conversor de API de Poder - poderApiConverter.ts', () => {
         icone: 'https://example.com/acervo.png',
         powers: [mockPoderResponse],
         dominio: {
-          name: 'sagrado'
+          name: 'sagrado',
+          areaConhecimento: null,
+          peculiarId: null
         },
         custoTotal: {
           pda: 4,
@@ -107,7 +121,12 @@ describe('Conversor de API de Poder - poderApiConverter.ts', () => {
           espacos: 2
         },
         createdAt: '2026-07-04T12:00:00Z',
-        updatedAt: '2026-07-04T13:00:00Z'
+        updatedAt: '2026-07-04T13:00:00Z',
+        userId: null,
+        isPublic: true,
+        notas: null,
+        parametrosBase: null,
+        userName: null
       };
 
       const acervo = acervoResponseToAcervo(mockAcervoResponse);
@@ -133,8 +152,8 @@ describe('Conversor de API de Poder - poderApiConverter.ts', () => {
       expect(payload.effects.length).toBe(1);
       expect(payload.effects[0].effectBaseId).toBe('dano');
       expect(payload.effects[0].dadoModularizado).toBe('1d6');
-      expect(payload.globalModifications.length).toBe(1);
-      expect(payload.globalModifications[0].modificationBaseId).toBe('custo-pe-dobrado');
+      expect(payload.globalModifications!.length).toBe(1);
+      expect(payload.globalModifications![0].modificationBaseId).toBe('custo-pe-dobrado');
     });
 
     it('deve padronizar a descrição com tamanho mínimo exigido pela API', () => {

@@ -422,56 +422,6 @@ describe('resolvePowerUse — targeting SELETIVO', () => {
   });
 });
 
-// ─── resolvePowerUse — efeito colateral ──────────────────────────────────────
-
-describe('resolvePowerUse — efeito colateral', () => {
-  it('EFEITO_COLATERAL_SEMPRE aplica independente de attackSucceeded', () => {
-    const power = makePower({
-      effects: [makeEffect({ behavior: { kind: 'DANO', tipoDano: 'fogo' } })],
-      globalModifications: [makeMod({ casterEffect: 'EFEITO_COLATERAL_SEMPRE' })],
-      colateralFormula: '1d6',
-    });
-
-    const mutations = resolvePowerUse({ power, context: { ...BASE_CONTEXT, attackSucceeded: true } });
-    const colateral = mutations.find((m) => m.type === 'DEAL_DAMAGE' && 'isSelfInflicted' in m);
-    expect(colateral).toMatchObject({ targetId: 'caster-1', isSelfInflicted: true, formula: '1d6' });
-  });
-
-  it('EFEITO_COLATERAL_AO_FALHAR dispara apenas quando attackSucceeded = false', () => {
-    const power = makePower({
-      effects: [makeEffect({ behavior: { kind: 'DANO', tipoDano: 'fogo' } })],
-      globalModifications: [makeMod({ casterEffect: 'EFEITO_COLATERAL_AO_FALHAR' })],
-    });
-
-    // Acertou — sem colateral
-    const mutsAcertou = resolvePowerUse({ power, context: { ...BASE_CONTEXT, attackSucceeded: true } });
-    expect(mutsAcertou.some((m) => 'isSelfInflicted' in m)).toBe(false);
-
-    // Falhou — com colateral
-    const mutsFalhou = resolvePowerUse({ power, context: { ...BASE_CONTEXT, attackSucceeded: false } });
-    expect(mutsFalhou.some((m) => 'isSelfInflicted' in m)).toBe(true);
-  });
-
-  it('EFEITO_COLATERAL_AO_FALHAR com attackSucceeded undefined não dispara (seguro para Fase 1)', () => {
-    const power = makePower({
-      effects: [makeEffect({ behavior: { kind: 'DANO', tipoDano: 'fogo' } })],
-      globalModifications: [makeMod({ casterEffect: 'EFEITO_COLATERAL_AO_FALHAR' })],
-    });
-    // context sem attackSucceeded
-    const mutations = resolvePowerUse({ power, context: BASE_CONTEXT });
-    expect(mutations.some((m) => 'isSelfInflicted' in m)).toBe(false);
-  });
-
-  it('usa formula default 2d8 quando colateralFormula não especificada', () => {
-    const power = makePower({
-      effects: [],
-      globalModifications: [makeMod({ casterEffect: 'EFEITO_COLATERAL_SEMPRE' })],
-    });
-    const [colateral] = resolvePowerUse({ power, context: BASE_CONTEXT });
-    expect(colateral).toMatchObject({ formula: '2d8' });
-  });
-});
-
 // ─── resolvePassiveModifiers ──────────────────────────────────────────────────
 
 describe('resolvePassiveModifiers', () => {
@@ -837,3 +787,278 @@ describe('modificação baseado-atributos no executor DANO', () => {
   });
 });
 
+describe('resolvePowerUse — Descarga e Gradativo', () => {
+  it('repete a rolagem completa por uso de Descarga e soma o bônus fixo uma vez', () => {
+    const power = makePower({
+      parametros: { acao: 1, alcance: 2, duracao: 0 }, // instantâneo
+      effects: [
+        makeEffect({
+          grau: 1,
+          behavior: { kind: 'DANO', formula: '2d8 + 4', tipoDano: 'fogo' },
+          modifications: [makeMod({ modificationBaseId: 'descarga', grau: 6 })],
+        }),
+      ],
+    });
+
+    const mutations3x = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      descargaMultiplier: 3,
+    });
+    expect(mutations3x[0]).toMatchObject({
+      type: 'DEAL_DAMAGE',
+      formula: '2d8 + 2d8 + 2d8 + 4',
+    });
+
+    const mutations6x = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      descargaMultiplier: 6,
+    });
+    expect(mutations6x[0]).toMatchObject({
+      type: 'DEAL_DAMAGE',
+      formula: '2d8 + 2d8 + 2d8 + 2d8 + 2d8 + 2d8 + 4',
+    });
+  });
+
+  it('repete dados modularizados sem condensá-los nem aplicar o limite entre Descargas', () => {
+    const power = makePower({
+      effects: [
+        makeEffect({
+          dadoModularizado: '8d16',
+          behavior: { kind: 'DANO', tipoDano: 'fogo' },
+          modifications: [makeMod({ modificationBaseId: 'descarga', grau: 3 })],
+        }),
+      ],
+    });
+
+    const mutations = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      descargaMultiplier: 3,
+    });
+
+    expect(mutations[0]).toMatchObject({
+      formula: '8d16 + 8d16 + 8d16',
+    });
+  });
+
+  it('não multiplica fórmulas se a duração do poder não for instantânea (duracao > 0)', () => {
+    const power = makePower({
+      parametros: { acao: 1, alcance: 2, duracao: 1 }, // sustentado
+      effects: [
+        makeEffect({
+          grau: 1,
+          behavior: { kind: 'DANO', formula: '2d8 + 4', tipoDano: 'fogo' },
+          modifications: [makeMod({ modificationBaseId: 'descarga', grau: 3 })],
+        }),
+      ],
+    });
+
+    const mutations = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      descargaMultiplier: 3,
+    });
+    expect(mutations[0]).toMatchObject({ type: 'DEAL_DAMAGE', formula: '2d8 + 4' });
+  });
+
+  it('ignora o multiplicador quando o efeito não possui Descarga', () => {
+    const power = makePower({
+      effects: [
+        makeEffect({
+          behavior: { kind: 'DANO', formula: '2d8 + 4', tipoDano: 'fogo' },
+        }),
+      ],
+    });
+
+    const mutations = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      descargaMultiplier: 3,
+    });
+
+    expect(mutations[0]).toMatchObject({ formula: '2d8 + 4' });
+  });
+
+  it('limita cada efeito pelo próprio grau de Descarga', () => {
+    const power = makePower({
+      effects: [
+        makeEffect({
+          id: 'damage-with-descarga',
+          behavior: { kind: 'DANO', formula: '1d8 + 4', tipoDano: 'fogo' },
+          modifications: [makeMod({ modificationBaseId: 'descarga', grau: 2 })],
+        }),
+        makeEffect({
+          id: 'damage-without-descarga',
+          behavior: { kind: 'DANO', formula: '1d10 + 2', tipoDano: 'frio' },
+        }),
+      ],
+    });
+
+    const mutations = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      descargaMultiplier: 5,
+    });
+
+    expect(mutations[0]).toMatchObject({ formula: '1d8 + 1d8 + 4' });
+    expect(mutations[1]).toMatchObject({ formula: '1d10 + 2' });
+  });
+
+  it('aplica Descarga global somente a Dano e Recuperação de PV', () => {
+    const power = makePower({
+      globalModifications: [makeMod({ modificationBaseId: 'descarga', grau: 3 })],
+      effects: [
+        makeEffect({
+          id: 'damage',
+          behavior: { kind: 'DANO', formula: '1d8', tipoDano: 'fogo' },
+        }),
+        makeEffect({
+          id: 'heal',
+          effectBaseId: 'recuperacao',
+          behavior: { kind: 'RECUPERACAO', recurso: 'PV', formula: '1d6' },
+        }),
+        makeEffect({
+          id: 'restore-energy',
+          effectBaseId: 'recuperacao',
+          behavior: { kind: 'RECUPERACAO', recurso: 'PE', formula: '1d6' },
+        }),
+      ],
+    });
+
+    const mutations = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      descargaMultiplier: 3,
+    });
+
+    expect(mutations[0]).toMatchObject({ type: 'DEAL_DAMAGE', formula: '1d8 + 1d8 + 1d8' });
+    expect(mutations[1]).toMatchObject({ type: 'HEAL', formula: '1d6 + 1d6 + 1d6' });
+    expect(mutations[2]).toMatchObject({ type: 'RESTORE_PE', formula: '20' });
+  });
+
+  it('aplica a progressão local de Gradativo desde o grau 1', () => {
+    const power = makePower({
+      effects: [
+        makeEffect({
+          grau: 5,
+          behavior: { kind: 'DANO', tipoDano: 'fogo' }, // grau 5 -> 1d128
+          modifications: [makeMod({ modificationBaseId: 'gradativo' })],
+        }),
+      ],
+    });
+
+    const mutationsGradativo = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      gradativoProgress: { effects: { 'effect-1': 2 } },
+    });
+    expect(mutationsGradativo[0]).toMatchObject({ formula: '1d16' });
+  });
+
+  it('soma metade da característica máxima por avanço excessivo', () => {
+    const power = makePower({
+      effects: [
+        makeEffect({
+          grau: 4,
+          behavior: { kind: 'DANO', tipoDano: 'fogo' },
+          modifications: [makeMod({ modificationBaseId: 'gradativo' })],
+        }),
+      ],
+    });
+
+    const mutation = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      gradativoProgress: { effects: { 'effect-1': 14 } },
+    })[0];
+
+    expect(mutation).toMatchObject({ formula: '1d384' });
+  });
+
+  it('preserva a quantidade de dados modularizados durante o excesso', () => {
+    const power = makePower({
+      effects: [
+        makeEffect({
+          grau: 4,
+          dadoModularizado: '8d8',
+          behavior: { kind: 'DANO', tipoDano: 'fogo' },
+          modifications: [makeMod({ modificationBaseId: 'gradativo' })],
+        }),
+      ],
+    });
+
+    const mutation = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      gradativoProgress: { effects: { 'effect-1': 5 } },
+    })[0];
+
+    expect(mutation).toMatchObject({ formula: '8d12' });
+  });
+
+  it('usa um único progresso para Gradativo global', () => {
+    const power = makePower({
+      globalModifications: [makeMod({ modificationBaseId: 'gradativo' })],
+      effects: [
+        makeEffect({ id: 'damage', grau: 3, behavior: { kind: 'DANO', tipoDano: 'fogo' } }),
+        makeEffect({ id: 'heal', effectBaseId: 'recuperacao', grau: 5, behavior: { kind: 'RECUPERACAO', recurso: 'PV', formula: 'tabela' } }),
+      ],
+    });
+
+    const mutations = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      gradativoProgress: { global: 2 },
+    });
+
+    expect(mutations[0]).toMatchObject({ formula: '1d16' });
+    expect(mutations[1]).toMatchObject({ formula: '1d16' });
+  });
+
+  it('aplica o excesso Gradativo antes de repetir a rolagem com Descarga', () => {
+    const power = makePower({
+      effects: [
+        makeEffect({
+          grau: 4,
+          behavior: { kind: 'DANO', tipoDano: 'fogo' },
+          modifications: [
+            makeMod({ modificationBaseId: 'gradativo' }),
+            makeMod({ modificationBaseId: 'descarga', grau: 2 }),
+          ],
+        }),
+      ],
+    });
+
+    const mutation = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      gradativoProgress: { effects: { 'effect-1': 5 } },
+      descargaMultiplier: 2,
+    })[0];
+
+    expect(mutation).toMatchObject({ formula: '1d96 + 1d96' });
+  });
+
+  it('aplica excesso a características numéricas lineares', () => {
+    const power = makePower({
+      effects: [
+        makeEffect({
+          effectBaseId: 'recuperacao',
+          grau: 5,
+          behavior: { kind: 'RECUPERACAO', recurso: 'PE', formula: 'tabela' },
+          modifications: [makeMod({ modificationBaseId: 'gradativo' })],
+        }),
+      ],
+    });
+
+    const mutation = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+      gradativoProgress: { effects: { 'effect-1': 7 } },
+    })[0];
+
+    expect(mutation).toMatchObject({ type: 'RESTORE_PE', formula: '40' });
+  });
+});

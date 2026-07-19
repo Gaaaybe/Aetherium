@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Sparkles, FileText, Zap, Library, Edit3, X } from 'lucide-react';
+import { Save, Sparkles, FileText, Zap, Library, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button, Card, CardHeader, CardTitle, CardContent, CardFooter, Badge, Input, Textarea, Select, toast, HelpIcon, Tooltip, ConfirmDialog, InlineHelp, EmptyState } from '../../../shared/ui';
 import { usePoderCalculator } from '../hooks/usePoderCalculator';
@@ -23,9 +23,10 @@ import type { Poder } from '../types';
 interface CriadorDePoderProps {
   poderInicial?: Poder;
   onSaved?: (poderSalvo: Poder) => void;
+  onUpdateRequest?: (id: string, payload: any) => Promise<any>;
 }
 
-export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = {}) {
+export function CriadorDePoder({ poderInicial, onSaved, onUpdateRequest }: CriadorDePoderProps = {}) {
   const { peculiaridades, criar: criarPeculiaridade } = usePeculiaridades();
   const { modificacoes: todasModificacoes } = useCatalog();
 
@@ -172,12 +173,16 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
       const isApiId = /^[0-9a-f]{8}-([0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(poder.id);
 
       if (isApiId) {
-        await atualizar(poder.id, {
+        const updatePayload = {
           ...payload,
           icone: poder.icone?.trim() ? poder.icone.trim() : null,
-        });
+        };
+        const saved = onUpdateRequest
+          ? await onUpdateRequest(poder.id, updatePayload)
+          : await atualizar(poder.id, updatePayload);
+        if (saved?.id && saved.id !== poder.id) atualizarIdPoder(saved.id);
         toast.success(`Poder "${poder.nome}" atualizado com sucesso!`);
-        if (onSaved) onSaved(poder);
+        if (onSaved) onSaved((saved ?? poder) as Poder);
       } else {
         const novo = await criar(payload);
         // Atualiza o ID local com o UUID da API para que saves futuros sejam updates
@@ -185,8 +190,12 @@ export function CriadorDePoder({ poderInicial, onSaved }: CriadorDePoderProps = 
         toast.success(`Poder "${poder.nome}" salvo com sucesso!`);
         if (onSaved) onSaved(novo as any);
       }
-    } catch {
-      toast.error('Erro ao salvar poder. Tente novamente.');
+    } catch (error: any) {
+      if (error?.response?.status === 409) {
+        toast.error('Este poder foi alterado em outra tela. Recarregue o item antes de salvar.');
+      } else {
+        toast.error('Erro ao salvar poder. Tente novamente.');
+      }
     } finally {
       setSalvando(false);
     }

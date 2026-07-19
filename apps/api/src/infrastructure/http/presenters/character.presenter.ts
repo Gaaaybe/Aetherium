@@ -79,12 +79,25 @@ export class CharacterPresenter {
     const availablePda = totalPda - spentPda;
 
     const uMastery = character.unarmedMastery;
+    const customResources = ((character as any).customResources || []).map((resource: any) => ({
+      id: resource.id,
+      name: resource.name,
+      description: resource.description ?? null,
+      style: resource.style,
+      color: resource.color,
+      current: resource.current,
+      minimum: resource.minimum,
+      maximum: resource.maximum ?? null,
+      step: resource.step,
+      position: resource.position,
+    }));
 
     return {
       id: character.id.toString(),
       userId: character.userId.toString(),
       level: character.level,
       inspiration: character.inspiration,
+      customResources,
       calamityRank: getCalamityRank(character.level),
       efficiencyBonus: getEfficiencyBonus(character.level),
       narrative: {

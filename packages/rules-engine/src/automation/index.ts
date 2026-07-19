@@ -30,6 +30,9 @@ export type { ModificationBaseAutomation } from './schemas.js';
 // Pipeline ON_USE
 export { resolvePowerUse } from './resolve-power-use.js';
 export type { PowerUseInput } from './resolve-power-use.js';
+export { applyDescargaToFormula } from './resolve-power-use.js';
+export { applyGradativoExcessToFormula, resolveGradativoStage } from './resolve-power-use.js';
+export type { GradativoStage } from './resolve-power-use.js';
 
 // Pipeline PASSIVE
 export { resolvePassiveModifiers } from './resolve-passive.js';
@@ -52,5 +55,4 @@ export {
   parseFortalecerCaracteristicaItem,
   type FortalecerCaracteristicaItemInput,
 } from './behaviors/fortalecer.behavior.js';
-
 

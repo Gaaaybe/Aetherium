@@ -9,6 +9,13 @@ const resolvePowerBodySchema = z.object({
   sceneId: z.string().min(1, 'ID da cena é obrigatório'),
   candidateTargetIds: z.array(z.string()).default([]),
   selectedTargetIds: z.array(z.string()).optional(),
+  descargaMultiplier: z.number().int().min(1).max(10).optional(),
+  gradativoProgress: z
+    .object({
+      global: z.number().int().min(1).max(30).optional(),
+      effects: z.record(z.string(), z.number().int().min(1).max(30)).optional(),
+    })
+    .optional(),
   casterState: z.object({
     id: z.string().min(1, 'ID do conjurador é obrigatório'),
     keyPhysicalModifier: z.number().int(),
@@ -31,7 +38,15 @@ export class ResolvePowerController {
     @Body(new ZodValidationPipe(resolvePowerBodySchema)) body: ResolvePowerBodySchema,
     @CurrentUser() _user: UserPayload, // Garante que o usuário está autenticado
   ) {
-    const { sceneId, candidateTargetIds, selectedTargetIds, casterState, attackSucceeded } = body;
+    const {
+      sceneId,
+      candidateTargetIds,
+      selectedTargetIds,
+      descargaMultiplier,
+      gradativoProgress,
+      casterState,
+      attackSucceeded,
+    } = body;
 
     const result = await this.powerResolutionService.resolvePower({
       powerId,
@@ -44,6 +59,8 @@ export class ResolvePowerController {
         attackSucceeded,
       },
       selectedTargetIds,
+      descargaMultiplier,
+      gradativoProgress,
     });
 
     return {
