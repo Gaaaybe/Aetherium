@@ -123,9 +123,17 @@ export function AcoesTab({
   };
 
   const handleUsePowerFromActive = async (activePower: ActivePower) => {
-    const powerDetail = detailedPowers[activePower.powerId];
+    let powerDetail = detailedPowers[activePower.powerId];
     if (!powerDetail) {
-      toast.error('Detalhes do poder não encontrados.');
+      try {
+        powerDetail = await getPowerById(activePower.powerId);
+        setDetailedPowers((previous) => ({ ...previous, [powerDetail!.id]: powerDetail! }));
+      } catch {
+        // A mensagem abaixo também cobre snapshots ativos de uma cópia já removida.
+      }
+    }
+    if (!powerDetail) {
+      toast.error('Detalhes do poder não encontrados. O registro ativo pode ser de uma versão antiga.');
       return;
     }
     setUsingPower(powerDetail);
@@ -258,7 +266,8 @@ export function AcoesTab({
 
       const allPowerIds = Array.from(new Set([
         ...character.powers.map(p => p.powerId),
-        ...itemPowerIds
+        ...itemPowerIds,
+        ...activePowers.map((power) => power.powerId),
       ]));
 
       const allPowerArrayIds = Array.from(new Set([
@@ -314,7 +323,8 @@ export function AcoesTab({
     character.equipment.hands,
     character.equipment.quickAccess,
     character.powers,
-    character.powerArrays
+    character.powerArrays,
+    activePowers,
   ]);
 
   // Filtra itens e poderes que seriam exibidos como ações
@@ -975,17 +985,33 @@ export function AcoesTab({
                     });
                   });
 
+                  activePowers.forEach((activePower) => {
+                    const alreadyListed = Array.from(entries.values()).some(
+                      (entry) => entry.powerId === activePower.powerId,
+                    );
+                    if (!alreadyListed) {
+                      entries.set(`character:${activePower.powerId}`, {
+                        powerId: activePower.powerId,
+                        source: 'character',
+                      });
+                    }
+                  });
+
                   const passiveEntries = Array.from(entries.values())
                     .map((entry) => ({ ...entry, detail: detailedPowers[entry.powerId] }))
                     .filter((entry) => {
                       if (!entry.detail) return false;
                       const isPassivePermanent = entry.detail.parametros?.duracao === 4 && entry.detail.parametros?.acao === 5;
-                      const isActiveInScene = entry.detail.parametros?.duracao === 3 && activePowers.some((activePower) => activePower.powerId === entry.powerId);
-                      return isPassivePermanent || isActiveInScene;
+                      const isCurrentlyActive = activePowers.some((activePower) => activePower.powerId === entry.powerId);
+                      return isPassivePermanent || isCurrentlyActive;
                     });
 
                   const characterPassivePowers = passiveEntries.filter((entry) => entry.source === 'character' && entry.detail.parametros?.duracao === 4 && entry.detail.parametros?.acao === 5);
-                  const characterActivePowers = passiveEntries.filter((entry) => entry.source === 'character' && entry.detail.parametros?.duracao === 3);
+                  const characterActivePowers = passiveEntries.filter((entry) =>
+                    entry.source === 'character' &&
+                    !(entry.detail.parametros?.duracao === 4 && entry.detail.parametros?.acao === 5) &&
+                    activePowers.some((activePower) => activePower.powerId === entry.powerId),
+                  );
                   const itemPowers = passiveEntries.filter((entry) => entry.source === 'item');
                   const conditions = character.conditions;
 
@@ -996,7 +1022,7 @@ export function AcoesTab({
                     badgeTone: 'emerald' | 'purple' | 'slate' | null,
                   ) => {
                     const detail = entry.detail;
-                    const isAtivo = detail.parametros?.duracao === 3 && activePowers.some((activePower) => activePower.powerId === entry.powerId);
+                    const isAtivo = activePowers.some((activePower) => activePower.powerId === entry.powerId);
                     const iconToneClass = accent === 'emerald'
                       ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-100/60 dark:border-emerald-900/30 text-emerald-500 dark:text-emerald-400'
                       : accent === 'purple'
@@ -1032,7 +1058,7 @@ export function AcoesTab({
                                 {detail.nome || entry.powerId}
                               </h4>
                               {badgeText && badgeTone && <span className={chipClass(badgeTone)}>{badgeText}</span>}
-                              {isAtivo && detail.parametros?.duracao === 3 && <span className={chipClass('purple')}>LIGADO</span>}
+                              {isAtivo && !badgeText && <span className={chipClass('purple')}>ATIVO</span>}
                               {sourceLabel(entry.originItemName)}
                             </div>
                             <p className={`text-[11px] mt-1 italic leading-relaxed ${accent === 'emerald' ? 'text-emerald-700/80 dark:text-emerald-300/80' : accent === 'purple' ? 'text-purple-700/80 dark:text-purple-300/80' : 'text-slate-600 dark:text-slate-400'}`}>
@@ -1074,8 +1100,9 @@ export function AcoesTab({
                           <div className="space-y-2">
                             {itemPowers.map((entry) => {
                               const accent = entry.detail.parametros?.duracao === 4 ? 'slate' : 'purple';
-                              const badgeText = entry.detail.parametros?.duracao === 3 ? 'LIGADO' : null;
-                              const badgeTone = entry.detail.parametros?.duracao === 3 ? 'purple' : null;
+                              const isActive = activePowers.some((activePower) => activePower.powerId === entry.powerId);
+                              const badgeText = isActive ? 'ATIVO' : null;
+                              const badgeTone = isActive ? 'purple' : null;
                               return renderPowerRow(entry, accent, badgeText, badgeTone);
                             })}
                           </div>

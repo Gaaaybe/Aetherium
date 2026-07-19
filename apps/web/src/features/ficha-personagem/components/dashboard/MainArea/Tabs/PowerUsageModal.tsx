@@ -207,11 +207,11 @@ export function PowerUsageModal({
 
   const getBaseFormula = (grau: number, effectBaseId?: string, configId?: string) => {
     if (effectBaseId === 'recuperacao') {
-      if (isRecuperacaoAcoplada) {
-        return `1d${4 * Math.pow(2, Math.max(1, grau) - 1)}`;
-      }
       if (configId === 'energia' || configId === 'pe') {
         return String(grau * 4);
+      }
+      if (isRecuperacaoAcoplada) {
+        return `1d${4 * Math.pow(2, Math.max(1, grau) - 1)}`;
       }
       const danoInfo = buscarGrauNaTabela(grau);
       return danoInfo ? danoInfo.dano : '1d6';

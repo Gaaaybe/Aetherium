@@ -23,7 +23,7 @@ export function executeRecuperacao(
   const type = behavior.recurso === 'PV' ? ('HEAL' as const) : ('RESTORE_PE' as const);
 
   const row = UNIVERSAL_TABLE.find((r) => r.grau === grau);
-  const baseRecuperacao = isRecuperacaoAcoplada
+  const baseRecuperacao = isRecuperacaoAcoplada && behavior.recurso === 'PV'
     ? `1d${4 * Math.pow(2, Math.max(1, grau) - 1)}`
     : (behavior.recurso === 'PV'
       ? (row?.dano ?? '1d6')
