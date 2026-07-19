@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CharacterResponse, SyncCharacterData } from '@/services/characters.types';
+import { CharacterResponse, PowerAcquisitionOptions, SyncCharacterData } from '@/services/characters.types';
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalFooter, Select, DynamicIcon, Input } from '@/shared/ui';
 import { Zap, Plus, Search, Layers, Shield, Sparkles, Sword, Trash2, ChevronLeft, Package, Edit2, Info, Clock, Ruler, Timer, ChevronDown, ChevronUp, Check, Bookmark } from 'lucide-react';
 import { DOMINIOS, ESCALAS } from '@/data';
@@ -30,8 +30,8 @@ interface PoderesTabProps {
   _onSync: (data: SyncCharacterData) => Promise<void>;
   onAcquireDomainMastery: (domainId: string, masteryLevel: 'INICIANTE' | 'PRATICANTE' | 'MESTRE') => Promise<void>;
   onDiscardDomainMastery: (domainId: string) => void | Promise<void>;
-  onAcquirePower: (powerId: string) => Promise<void>;
-  onAcquirePowerArray: (powerArrayId: string) => Promise<void>;
+  onAcquirePower: (powerId: string, acquisition?: PowerAcquisitionOptions) => Promise<void>;
+  onAcquirePowerArray: (powerArrayId: string, acquisition?: PowerAcquisitionOptions) => Promise<void>;
   onEquipPower: (powerId: string) => Promise<void>;
   onUnequipPower: (powerId: string) => Promise<void>;
   onEquipPowerArray: (powerArrayId: string) => Promise<void>;
@@ -281,7 +281,12 @@ export function PoderesTab({
                   {isActive && <div className="bg-indigo-500 text-white rounded-full p-0.5 shadow-sm animate-in zoom-in duration-200"><Check className="w-3 h-3" /></div>}
                 </div>
                 <div className="flex items-center gap-x-2 gap-y-1 mt-1 flex-wrap text-[10px] font-bold">
-                  <span className="flex items-center gap-1 text-gray-500 whitespace-nowrap"><Sparkles className="w-3 h-3" /> {(isNested ? (detail.custoTotal?.pda ?? detail.pdaCost) : power.finalPdaCost)} PdA</span>
+                  <span
+                    className={`flex items-center gap-1 whitespace-nowrap ${!isNested && power.isFreeAcquisition ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500'}`}
+                    title={!isNested ? power.acquisitionNote || undefined : undefined}
+                  >
+                    <Sparkles className="w-3 h-3" /> {!isNested && power.isFreeAcquisition ? 'Gratuito' : `${isNested ? (detail.custoTotal?.pda ?? detail.pdaCost) : power.finalPdaCost} PdA`}
+                  </span>
                   <span className="text-gray-300 hidden xs:inline">•</span>
                   <span className="text-gray-500 whitespace-nowrap">{(isNested ? (detail.custoTotal?.espacos ?? detail.slotCost) : power.slotCost)} Espaços</span>
                   <span className="text-gray-300 hidden xs:inline">•</span>
@@ -405,8 +410,8 @@ export function PoderesTab({
                 <h4 className={`font-black truncate text-base leading-tight ${isEquipped ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-400'}`}>
                   {detail?.nome || array.powerArrayId}
                 </h4>
-                <p className={`text-[10px] font-bold mt-1 ${isEquipped ? 'text-indigo-600' : 'text-gray-500'}`}>
-                  Acervo • {array.finalPdaCost} PdA • {array.slotCost} Espaços {peCostValue > 0 && `• ${peCostValue} PE`}
+                <p className={`text-[10px] font-bold mt-1 ${isEquipped ? 'text-indigo-600' : 'text-gray-500'}`} title={array.acquisitionNote || undefined}>
+                  Acervo • {array.isFreeAcquisition ? 'Gratuito' : `${array.finalPdaCost} PdA`} • {array.slotCost} Espaços {peCostValue > 0 && `• ${peCostValue} PE`}
                 </p>
               </div>
             </div>
@@ -937,7 +942,7 @@ export function PoderesTab({
         </ModalFooter>
       </Modal>
 
-      <BibliotecaAdicionarPoderModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAcquirePower={async id => { await onAcquirePower(id); setIsAddModalOpen(false); }} onAcquirePowerArray={async id => { await onAcquirePowerArray(id); setIsAddModalOpen(false); }} isProcessing={isProcessing} />
+      <BibliotecaAdicionarPoderModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAcquirePower={async (id, acquisition) => { await onAcquirePower(id, acquisition); setIsAddModalOpen(false); }} onAcquirePowerArray={async (id, acquisition) => { await onAcquirePowerArray(id, acquisition); setIsAddModalOpen(false); }} isProcessing={isProcessing} />
 
       {viewingPower && (
         <ResumoPoder

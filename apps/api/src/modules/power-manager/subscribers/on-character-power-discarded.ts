@@ -16,8 +16,10 @@ export class OnCharacterPowerDiscarded {
     });
 
     if (power && !power.isPublic) {
-      await this.prisma.power.delete({
-        where: { id: discardedPowerId },
+      // A limpeza pode ser disparada mais de uma vez por sessões concorrentes.
+      // deleteMany mantém a operação idempotente caso outra execução já tenha removido a cópia.
+      await this.prisma.power.deleteMany({
+        where: { id: discardedPowerId, isPublic: false },
       });
     }
   }

@@ -1,6 +1,6 @@
 import { api } from '../lib/api';
 import type { ItemResponse, PoderResponse, AcervoResponse } from './types';
-import type { CharacterCustomResource, CharacterCustomResourceInput, CharacterResponse, SyncCharacterData } from './characters.types';
+import type { CharacterCustomResource, CharacterCustomResourceInput, CharacterResponse, PowerAcquisitionOptions, SyncCharacterData } from './characters.types';
 
 export const charactersService = {
   // ─── CRUD Básico ─────────────────────────────────────────────────────────────
@@ -173,8 +173,8 @@ export const charactersService = {
     return data.powers;
   },
 
-  async acquirePower(id: string, powerId: string): Promise<CharacterResponse> {
-    const { data } = await api.post<CharacterResponse>(`/characters/${id}/powers`, { powerId });
+  async acquirePower(id: string, powerId: string, acquisition: PowerAcquisitionOptions = {}): Promise<CharacterResponse> {
+    const { data } = await api.post<CharacterResponse>(`/characters/${id}/powers`, { powerId, ...acquisition });
     return data;
   },
 
@@ -204,8 +204,8 @@ export const charactersService = {
     return data.powerArrays;
   },
 
-  async acquirePowerArray(id: string, powerArrayId: string): Promise<CharacterResponse> {
-    const { data } = await api.post<CharacterResponse>(`/characters/${id}/power-arrays`, { powerArrayId });
+  async acquirePowerArray(id: string, powerArrayId: string, acquisition: PowerAcquisitionOptions = {}): Promise<CharacterResponse> {
+    const { data } = await api.post<CharacterResponse>(`/characters/${id}/power-arrays`, { powerArrayId, ...acquisition });
     return data;
   },
 

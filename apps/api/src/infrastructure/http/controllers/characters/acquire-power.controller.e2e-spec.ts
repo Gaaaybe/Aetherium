@@ -126,6 +126,40 @@ describe('AcquirePowerController (e2e)', () => {
     });
   });
 
+  test('[POST] /characters/:characterId/powers — should persist a free narrative acquisition without spending PdA', async () => {
+    const before = await request(app.getHttpServer())
+      .get(`/characters/${characterId}`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    const response = await request(app.getHttpServer())
+      .post(`/characters/${characterId}/powers`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({
+        powerId,
+        isFreeAcquisition: true,
+        acquisitionNote: 'Recompensa da campanha',
+      });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.body.pda.spent).toBe(before.body.pda.spent);
+    const acquiredPower = response.body.powers.at(-1);
+    expect(acquiredPower).toMatchObject({
+      finalPdaCost: 0,
+      isFreeAcquisition: true,
+      acquisitionNote: 'Recompensa da campanha',
+    });
+
+    const removal = await request(app.getHttpServer())
+      .post(`/characters/${characterId}/powers/${acquiredPower.powerId}/remove`)
+      .set('Authorization', `Bearer ${accessToken}`);
+
+    expect(removal.statusCode).toBe(200);
+    expect(removal.body.pda.spent).toBe(before.body.pda.spent);
+    expect(removal.body.powers).not.toContainEqual(
+      expect.objectContaining({ powerId: acquiredPower.powerId }),
+    );
+  });
+
   test('[POST] /characters/:characterId/powers — should return 401 without token', async () => {
     const response = await request(app.getHttpServer())
       .post(`/characters/${characterId}/powers`)

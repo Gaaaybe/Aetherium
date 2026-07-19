@@ -1,14 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, Zap, Layers, Sparkles, AlertCircle } from 'lucide-react';
 import { Modal, Button, Input, DynamicIcon, Badge } from '@/shared/ui';
 import { usePoderes } from '@/features/criador-de-poder/hooks/usePoderes';
 import { usePowerArrays } from '@/features/criador-de-poder/hooks/usePowerArrays';
+import type { PowerAcquisitionOptions } from '@/services/characters.types';
 
 interface BibliotecaAdicionarPoderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAcquirePower: (powerId: string) => Promise<void>;
-  onAcquirePowerArray: (powerArrayId: string) => Promise<void>;
+  onAcquirePower: (powerId: string, acquisition?: PowerAcquisitionOptions) => Promise<void>;
+  onAcquirePowerArray: (powerArrayId: string, acquisition?: PowerAcquisitionOptions) => Promise<void>;
   isProcessing: boolean;
 }
 
@@ -24,6 +25,15 @@ export function BibliotecaAdicionarPoderModal({
   
   const [busca, setBusca] = useState('');
   const [filtro, setFiltro] = useState<'tudo' | 'poder' | 'acervo'>('tudo');
+  const [isFreeAcquisition, setIsFreeAcquisition] = useState(false);
+  const [acquisitionNote, setAcquisitionNote] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsFreeAcquisition(false);
+      setAcquisitionNote('');
+    }
+  }, [isOpen]);
 
   const itensFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -45,10 +55,13 @@ export function BibliotecaAdicionarPoderModal({
   }, [poderes, acervos, busca, filtro]);
 
   const handleAcquire = async (item: any) => {
+    const acquisition = isFreeAcquisition
+      ? { isFreeAcquisition: true, acquisitionNote: acquisitionNote.trim() || undefined }
+      : undefined;
     if (item.tipoItem === 'poder') {
-      await onAcquirePower(item.id);
+      await onAcquirePower(item.id, acquisition);
     } else {
-      await onAcquirePowerArray(item.id);
+      await onAcquirePowerArray(item.id, acquisition);
     }
   };
 
@@ -91,6 +104,29 @@ export function BibliotecaAdicionarPoderModal({
               Acervos
             </Button>
           </div>
+        </div>
+
+        <div className="rounded-xl border border-amber-300/50 bg-amber-50/60 p-3 dark:border-amber-800/60 dark:bg-amber-950/20">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={isFreeAcquisition}
+              onChange={(event) => setIsFreeAcquisition(event.target.checked)}
+              className="mt-1 h-4 w-4 accent-amber-500"
+            />
+            <span>
+              <span className="block text-sm font-bold text-amber-900 dark:text-amber-200">Aquisição gratuita / narrativa</span>
+              <span className="block text-xs text-amber-800/70 dark:text-amber-300/70">Não consome PdA. Use para recompensas de campanha, treinamentos ou concessões do mestre.</span>
+            </span>
+          </label>
+          {isFreeAcquisition && (
+            <Input
+              value={acquisitionNote}
+              onChange={(event) => setAcquisitionNote(event.target.value.slice(0, 300))}
+              placeholder="Origem opcional (ex.: treinamento com Mestre Aldren)"
+              className="mt-3"
+            />
+          )}
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
@@ -162,7 +198,7 @@ export function BibliotecaAdicionarPoderModal({
                       : 'bg-indigo-600 hover:bg-indigo-700 text-white'
                   }`}
                 >
-                  Adicionar
+                  {isFreeAcquisition ? 'Adicionar grátis' : 'Adicionar'}
                 </Button>
               </div>
             ))

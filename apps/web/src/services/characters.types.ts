@@ -29,6 +29,8 @@ export interface CharacterPowerResponse {
   isEquipped: boolean;
   finalPdaCost: number;
   slotCost: number;
+  isFreeAcquisition?: boolean;
+  acquisitionNote?: string | null;
 }
 
 export interface CharacterPowerArrayResponse {
@@ -37,6 +39,13 @@ export interface CharacterPowerArrayResponse {
   isEquipped: boolean;
   finalPdaCost: number;
   slotCost: number;
+  isFreeAcquisition?: boolean;
+  acquisitionNote?: string | null;
+}
+
+export interface PowerAcquisitionOptions {
+  isFreeAcquisition?: boolean;
+  acquisitionNote?: string;
 }
 
 export interface CharacterBenefitResponse {

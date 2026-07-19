@@ -252,6 +252,8 @@ export class CharactersService {
       finalPdaCost: power.finalPdaCost,
       slotCost: power.slotCost,
       posicao: index,
+      isFreeAcquisition: power.isFreeAcquisition ?? false,
+      acquisitionNote: power.acquisitionNote ?? null,
     }));
     const powerArrays = (character.powerArrays || []).map((powerArray: any, index: number) => ({
       id: powerArray.id.toString(),
@@ -260,6 +262,8 @@ export class CharactersService {
       finalPdaCost: powerArray.finalPdaCost,
       slotCost: powerArray.slotCost,
       posicao: index,
+      isFreeAcquisition: powerArray.isFreeAcquisition ?? false,
+      acquisitionNote: powerArray.acquisitionNote ?? null,
     }));
     const benefits = (character.benefits || []).map((benefit: any, index: number) => ({
       id: benefit.id.toString(),
@@ -1283,7 +1287,12 @@ export class CharactersService {
     return character;
   }
 
-  async acquirePower(characterId: string, userId: string, powerId: string) {
+  async acquirePower(
+    characterId: string,
+    userId: string,
+    powerId: string,
+    acquisition: { isFreeAcquisition?: boolean; acquisitionNote?: string } = {},
+  ) {
     const character = await this.getCharacterOrThrow(characterId, userId);
 
     const powerInfo = await this.powersLookupPort.findById(powerId);
@@ -1328,7 +1337,9 @@ export class CharactersService {
 
     const globalModificationIdToInject = mastery ? mastery.modificationIdToInject : null;
 
-    runRules(() => applySpendPda(character, powerInfo.pdaCost));
+    const isFreeAcquisition = acquisition.isFreeAcquisition === true;
+    const finalPdaCost = isFreeAcquisition ? 0 : powerInfo.pdaCost;
+    if (finalPdaCost > 0) runRules(() => applySpendPda(character, finalPdaCost));
 
     const powerData = {
       id: crypto.randomUUID(),
@@ -1336,8 +1347,10 @@ export class CharactersService {
       powerId: newInstanceId,
       posicao: character.powers!.length,
       isEquipped: false,
-      finalPdaCost: powerInfo.pdaCost,
+      finalPdaCost,
       slotCost: powerInfo.slotCost,
+      isFreeAcquisition,
+      acquisitionNote: isFreeAcquisition ? acquisition.acquisitionNote?.trim() || null : null,
     };
     character.powers!.push(powerData);
 
@@ -1384,7 +1397,12 @@ export class CharactersService {
     return character;
   }
 
-  async acquirePowerArray(characterId: string, userId: string, powerArrayId: string) {
+  async acquirePowerArray(
+    characterId: string,
+    userId: string,
+    powerArrayId: string,
+    acquisition: { isFreeAcquisition?: boolean; acquisitionNote?: string } = {},
+  ) {
     const character = await this.getCharacterOrThrow(characterId, userId);
 
     const arrayInfo = await this.powerArraysLookupPort.findById(powerArrayId);
@@ -1431,7 +1449,9 @@ export class CharactersService {
 
     const globalModificationIdToInject = mastery ? mastery.modificationIdToInject : null;
 
-    runRules(() => applySpendPda(character, arrayInfo.pdaCost));
+    const isFreeAcquisition = acquisition.isFreeAcquisition === true;
+    const finalPdaCost = isFreeAcquisition ? 0 : arrayInfo.pdaCost;
+    if (finalPdaCost > 0) runRules(() => applySpendPda(character, finalPdaCost));
 
     const arrayData = {
       id: crypto.randomUUID(),
@@ -1439,8 +1459,10 @@ export class CharactersService {
       powerArrayId: newInstanceId,
       posicao: character.powerArrays!.length,
       isEquipped: false,
-      finalPdaCost: arrayInfo.pdaCost,
+      finalPdaCost,
       slotCost: arrayInfo.slotCost,
+      isFreeAcquisition,
+      acquisitionNote: isFreeAcquisition ? acquisition.acquisitionNote?.trim() || null : null,
     };
     character.powerArrays!.push(arrayData);
 

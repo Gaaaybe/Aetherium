@@ -139,6 +139,8 @@ export type Character = z.infer<typeof CharacterSchema> & {
     finalPdaCost: number;
     slotCost: number;
     posicao?: number;
+    isFreeAcquisition?: boolean;
+    acquisitionNote?: string | null;
   }[];
   powerArrays?: {
     id: string;
@@ -147,6 +149,8 @@ export type Character = z.infer<typeof CharacterSchema> & {
     finalPdaCost: number;
     slotCost: number;
     posicao?: number;
+    isFreeAcquisition?: boolean;
+    acquisitionNote?: string | null;
   }[];
   benefits?: {
     id: string;
@@ -162,4 +166,3 @@ export type Character = z.infer<typeof CharacterSchema> & {
     masteryLevel: 'INICIANTE' | 'PRATICANTE' | 'MESTRE';
   }[];
 };
-
