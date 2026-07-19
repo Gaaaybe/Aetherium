@@ -1,7 +1,7 @@
 import { Card, CardContent, Badge, Button, DynamicIcon } from '@/shared/ui';
 import { MarkdownText } from '@/shared/components';
 import { useSwipeToDismiss, useIsTouchDevice } from '@/shared/hooks';
-import { Trash2, Sparkles, Globe, Lock, Pencil } from 'lucide-react';
+import { Trash2, Sparkles, Globe, Lock, Pencil, Download } from 'lucide-react';
 import type { PeculiaridadeResponse } from '@/services/types';
 
 interface SwipeablePeculiaridadeCardProps {
@@ -9,6 +9,7 @@ interface SwipeablePeculiaridadeCardProps {
   onEditar: () => void;
   onDeletar: () => void;
   onTogglePublic: () => void;
+  onExportar: () => void;
   onVerResumo?: () => void;
   isDeletando?: boolean;
   togglePublicId: string | null;
@@ -19,6 +20,7 @@ export function SwipeablePeculiaridadeCard({
   onEditar,
   onDeletar,
   onTogglePublic,
+  onExportar,
   onVerResumo,
   isDeletando = false,
   togglePublicId,
@@ -87,6 +89,15 @@ export function SwipeablePeculiaridadeCard({
 
                 {/* Ações rápidas */}
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onExportar}
+                    title="Exportar peculiaridade"
+                    className="h-10 w-10 p-0 text-indigo-500 hover:text-indigo-700"
+                  >
+                    <Download className="w-5 h-5" />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"

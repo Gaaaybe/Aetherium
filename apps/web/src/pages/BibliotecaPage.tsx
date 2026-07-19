@@ -22,6 +22,7 @@ import { CriadorDePoderModal } from '../features/gerenciador-criaturas/component
 import { updateLibraryItemPower } from '../services/items.service';
 import { useAuth } from '../context/useAuth';
 import { getPowerById } from '../services/powers.service';
+import { canEditItemPower } from '../features/criador-de-item/utils/itemPowerPermissions';
 
 export function BibliotecaPage() {
   const navigate = useNavigate();
@@ -987,8 +988,12 @@ export function BibliotecaPage() {
         }}
         poder={itemPoderResumoSelecionado}
         acervo={itemAcervoResumoSelecionado}
-        onEditPower={itemPoderResumoSelecionado && itemVisualizando && user
-          && (itemVisualizando.userId === user.id || user.isAdmin) ? () => {
+        onEditPower={itemPoderResumoSelecionado && itemVisualizando && canEditItemPower({
+          currentUserId: user?.id,
+          isAdmin: user?.isAdmin,
+          itemUserId: itemVisualizando.userId,
+          powerUserId: itemPoderResumoSelecionado.userId,
+        }) ? () => {
           setItemPowerEditing(itemPoderResumoSelecionado);
           setItemPoderResumoId(null);
         } : undefined}

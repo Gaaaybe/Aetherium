@@ -183,6 +183,26 @@ describe('resolvePowerUse — RECUPERACAO', () => {
     expect(mut.type).toBe('RESTORE_PE');
   });
 
+  it('mantém recuperação de PE fixa mesmo quando a recuperação está acoplada', () => {
+    const power = makePower({
+      effects: [makeEffect({
+        grau: 3,
+        behavior: { kind: 'RECUPERACAO', recurso: 'PE', formula: 'tabela' },
+      })],
+      isRecuperacaoAcoplada: true,
+    });
+
+    const result = resolvePowerUse({
+      power,
+      context: { ...BASE_CONTEXT, candidateTargetIds: ['target-1'] },
+    });
+
+    expect(result[0]).toMatchObject({
+      type: 'RESTORE_PE',
+      formula: '12',
+    });
+  });
+
   it('PV com formula "tabela" usa valor da tabela universal pelo grau', () => {
     const power = makePower({
       effects: [makeEffect({ grau: 5, behavior: { kind: 'RECUPERACAO', recurso: 'PV', formula: 'tabela' } })],
