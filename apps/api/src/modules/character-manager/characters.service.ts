@@ -1,7 +1,7 @@
 import { Character } from '@aetherium/rules-engine';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { DomainMasteryLevel, UserRole } from '@prisma/client';
+import { DomainMasteryLevel, Prisma, UserRole } from '@prisma/client';
 import { CatalogBenefitsLookupAdapter } from '@/infrastructure/database/catalog-benefits-lookup-adapter';
 import { CatalogDomainsLookupAdapter } from '@/infrastructure/database/catalog-domains-lookup-adapter';
 import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
@@ -81,6 +81,7 @@ const INCLUDE = {
   powerArrays: true,
   benefits: true,
   domains: true,
+  customResources: { orderBy: { position: 'asc' as const } },
 } as const;
 
 function runRules<T>(fn: () => T): T {
@@ -105,6 +106,21 @@ export class CharactersService {
     private benefitsLookupPort: CatalogBenefitsLookupAdapter,
     private eventEmitter: EventEmitter2,
   ) {}
+
+  private async serializableTransaction<T>(
+    operation: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        return await this.prisma.$transaction(operation, {
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+        });
+      } catch (error: any) {
+        if (error?.code !== 'P2034' || attempt === 2) throw error;
+      }
+    }
+    throw new Error('Não foi possível concluir a transação');
+  }
 
   private validateAndMigrateJSONB(raw: any): { updatedFields: any; migrated: boolean } {
     let migrated = false;
@@ -256,6 +272,18 @@ export class CharactersService {
       domainId: domain.domainId,
       masteryLevel: domain.masteryLevel,
     }));
+
+    const unarmedMasteryCost = getUnarmedMasteryTotalPdaCost(character.unarmedMastery);
+    const recalculatedSpent =
+      (character.powers || []).reduce((sum: number, p: any) => sum + (p.finalPdaCost ?? 0), 0) +
+      (character.powerArrays || []).reduce((sum: number, pa: any) => sum + (pa.finalPdaCost ?? 0), 0) +
+      (character.benefits || []).reduce((sum: number, b: any) => sum + (b.pdaCost ?? 0), 0) +
+      unarmedMasteryCost;
+
+    character.pdaState = {
+      ...(character.pdaState || {}),
+      spentPda: recalculatedSpent,
+    };
 
     await tx.characterPower.deleteMany({ where: { characterId: id } });
     await tx.characterPowerArray.deleteMany({ where: { characterId: id } });
@@ -662,6 +690,12 @@ export class CharactersService {
     }
 
     runRules(() => applySpendPda(character, 15));
+
+    const currentExtra = (character.pdaState as any)?.extraPda ?? 0;
+    character.pdaState = {
+      ...(character.pdaState || {}),
+      extraPda: Math.max(0, currentExtra - 15),
+    };
 
     character.spiritualPrinciple = {
       isUnlocked: true,
@@ -1546,6 +1580,169 @@ export class CharactersService {
     await this.saveCharacter(this.prisma, character);
 
     return character;
+  }
+
+  async createCustomResource(
+    characterId: string,
+    userId: string,
+    data: {
+      name: string;
+      description?: string | null;
+      style: 'BAR' | 'DOTS' | 'COUNTER';
+      color: string;
+      current: number;
+      minimum: number;
+      maximum?: number | null;
+      step: number;
+    },
+  ) {
+    await this.getCharacterOrThrow(characterId, userId);
+    if ((data.style === 'BAR' || data.style === 'DOTS') && data.maximum == null) {
+      throw new DomainValidationError('Este estilo exige um valor máximo');
+    }
+    if (data.maximum != null && data.maximum < data.minimum) {
+      throw new DomainValidationError('O máximo deve ser maior ou igual ao mínimo');
+    }
+    const current = Math.max(
+      data.minimum,
+      data.maximum === null || data.maximum === undefined
+        ? data.current
+        : Math.min(data.maximum, data.current),
+    );
+
+    await this.serializableTransaction(async (tx) => {
+      const resources = await tx.characterResource.findMany({
+        where: { characterId },
+        select: { id: true },
+      });
+      if (resources.length >= 50) {
+        throw new DomainValidationError('Cada ficha pode ter no máximo 50 recursos');
+      }
+      await tx.characterResource.create({
+        data: {
+          characterId,
+          ...data,
+          description: data.description?.trim() || null,
+          current,
+          maximum: data.maximum ?? null,
+          position: resources.length,
+        },
+      });
+    });
+    return this.getCharacterOrThrow(characterId, userId);
+  }
+
+  async updateCustomResource(
+    characterId: string,
+    userId: string,
+    resourceId: string,
+    data: {
+      name?: string;
+      description?: string | null;
+      style?: 'BAR' | 'DOTS' | 'COUNTER';
+      color?: string;
+      current?: number;
+      minimum?: number;
+      maximum?: number | null;
+      step?: number;
+    },
+  ) {
+    await this.getCharacterOrThrow(characterId, userId);
+    const resource = await this.prisma.characterResource.findFirst({
+      where: { id: resourceId, characterId },
+    });
+    if (!resource) throw new ResourceNotFoundError('Recurso não encontrado');
+
+    const minimum = data.minimum ?? resource.minimum;
+    const maximum = data.maximum !== undefined ? data.maximum : resource.maximum;
+    const style = data.style ?? resource.style;
+    if ((style === 'BAR' || style === 'DOTS') && maximum === null) {
+      throw new DomainValidationError('Este estilo exige um valor máximo');
+    }
+    if (maximum !== null && maximum < minimum) {
+      throw new DomainValidationError('O máximo deve ser maior ou igual ao mínimo');
+    }
+    if (style === 'DOTS' && maximum !== null && maximum - minimum > 30) {
+      throw new DomainValidationError('Pontos permitem no máximo 30 posições');
+    }
+    const requestedCurrent = data.current ?? resource.current;
+    const current = Math.max(
+      minimum,
+      maximum === null ? requestedCurrent : Math.min(maximum, requestedCurrent),
+    );
+    await this.prisma.characterResource.update({
+      where: { id: resourceId },
+      data: {
+        ...data,
+        description: data.description === undefined ? undefined : data.description?.trim() || null,
+        maximum,
+        current,
+      },
+    });
+    return this.getCharacterOrThrow(characterId, userId);
+  }
+
+  async adjustCustomResource(
+    characterId: string,
+    userId: string,
+    resourceId: string,
+    delta: number,
+  ) {
+    await this.getCharacterOrThrow(characterId, userId);
+    await this.serializableTransaction(async (tx) => {
+      const resource = await tx.characterResource.findFirst({
+        where: { id: resourceId, characterId },
+      });
+      if (!resource) throw new ResourceNotFoundError('Recurso não encontrado');
+      const requested = resource.current + delta;
+      const current = Math.max(
+        resource.minimum,
+        resource.maximum === null ? requested : Math.min(resource.maximum, requested),
+      );
+      await tx.characterResource.update({ where: { id: resourceId }, data: { current } });
+    });
+    return this.getCharacterOrThrow(characterId, userId);
+  }
+
+  async reorderCustomResources(characterId: string, userId: string, resourceIds: string[]) {
+    await this.getCharacterOrThrow(characterId, userId);
+    await this.serializableTransaction(async (tx) => {
+      const resources = await tx.characterResource.findMany({ where: { characterId } });
+      const existingIds = new Set(resources.map((resource) => resource.id));
+      const requestedIds = new Set(resourceIds);
+      if (
+        resourceIds.length !== resources.length ||
+        requestedIds.size !== resourceIds.length ||
+        resourceIds.some((id) => !existingIds.has(id))
+      ) {
+        throw new DomainValidationError('A ordem precisa conter todos os recursos da ficha');
+      }
+      for (const [position, id] of resourceIds.entries()) {
+        await tx.characterResource.update({ where: { id }, data: { position } });
+      }
+    });
+    return this.getCharacterOrThrow(characterId, userId);
+  }
+
+  async deleteCustomResource(characterId: string, userId: string, resourceId: string) {
+    await this.getCharacterOrThrow(characterId, userId);
+    await this.serializableTransaction(async (tx) => {
+      const resource = await tx.characterResource.findFirst({
+        where: { id: resourceId, characterId },
+      });
+      if (!resource) throw new ResourceNotFoundError('Recurso não encontrado');
+      await tx.characterResource.delete({ where: { id: resourceId } });
+      const remaining = await tx.characterResource.findMany({
+        where: { characterId },
+        orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
+      });
+      for (const [position, item] of remaining.entries()) {
+        if (item.position !== position) {
+          await tx.characterResource.update({ where: { id: item.id }, data: { position } });
+        }
+      }
+    });
+    return this.getCharacterOrThrow(characterId, userId);
   }
 
   async changeOwner(id: string, newOwnerId: string, currentUserId: string) {

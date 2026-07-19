@@ -4,11 +4,12 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Modal, ModalFo
 import { Plus, Search, Coins, Shield, Sword, Package, Backpack, Trash2, Info, Hammer, Gem, Sparkles, Box, AlertCircle, ChevronLeft, ChevronRight, ChevronDown, Zap, Layers, Dices } from 'lucide-react';
 import { DiceRoller } from '@/shared/components/DiceRoller';
 import { toast } from '@/shared/ui';
-import { getItemById, copyPublicItem } from '@/services/items.service';
+import { getItemById, copyPublicItem, updateCharacterItemPower } from '@/services/items.service';
 import type { ItemResponse, ItemType, WeaponItemResponse, DefensiveItemResponse, ConsumableItemResponse, AcervoResponse } from '@/services/types';
 import { BibliotecaAdicionarItemModal } from './BibliotecaAdicionarItemModal';
 import { UpgradeItemModal } from './UpgradeItemModal';
 import { CriadorDeItemModal } from '@/features/criador-de-item/components/CriadorDeItemModal';
+import { CriadorDePoderModal } from '@/features/gerenciador-criaturas/components/CriadorDePoderModal';
 import { ResumoItem } from '@/features/criador-de-item/components/ResumoItem';
 import { ResumoPoder } from '@/features/criador-de-poder/components/ResumoPoder';
 import { ResumoAcervo } from '@/features/criador-de-poder/components/ResumoAcervo';
@@ -16,6 +17,7 @@ import { calcularDetalhesPoder } from '@/features/criador-de-poder/regras/calcul
 import { poderResponseToPoder, acervoResponseToAcervo } from '@/features/criador-de-poder/utils/poderApiConverter';
 import { useCatalog } from '@/context/useCatalog';
 import { obterGrauBeneficio, isArmaDistancia, isArmaCorpoACorpo, obterReducaoCriticoParaArma } from '@/features/ficha-personagem/utils/benefitsHelper';
+import type { ActivePower } from '@/features/ficha-personagem/hooks/usePowerUsage';
 
 const TYPE_LABELS: Record<ItemType, string> = {
   weapon: 'Arma',
@@ -263,6 +265,7 @@ interface InventarioTabProps {
   onSpendRunics: (amount: number) => Promise<void>;
   onUpgradeItem: (itemId: string, materialId: string, runicsCost: number) => Promise<void>;
   isSyncing: boolean;
+  activePowers: ActivePower[];
 }
 
 export function InventarioTab({
@@ -276,6 +279,7 @@ export function InventarioTab({
   onSpendRunics,
   onUpgradeItem,
   isSyncing,
+  activePowers,
 }: InventarioTabProps) {
   const [detailedItems, setDetailedItems] = useState<Record<string, ItemResponse>>({});
   const [detailedPowers, setDetailedPowers] = useState<Record<string, any>>({});
@@ -291,6 +295,7 @@ export function InventarioTab({
   const [editingItem, setEditingItem] = useState<ItemResponse | null>(null);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [viewingPower, setViewingPower] = useState<any | null>(null);
+  const [editingItemPower, setEditingItemPower] = useState<any | null>(null);
   const [viewingArray, setViewingArray] = useState<any | null>(null);
   const [upgradeModalItem, setUpgradeModalItem] = useState<ItemResponse | null>(null);
   const [rollingAction, setRollingAction] = useState<{
@@ -926,6 +931,7 @@ export function InventarioTab({
 
       {viewingPower && (() => {
         const pCon = (viewingPower as any).efeitos ? viewingPower : poderResponseToPoder(viewingPower);
+        const isActive = activePowers.some((activePower) => activePower.powerId === viewingPower.id);
         return (
           <ResumoPoder
             isOpen={!!viewingPower}
@@ -943,9 +949,44 @@ export function InventarioTab({
                 peTotal: baseDetails.peTotal * peCostMultiplier,
               };
             })()}
+            onEdit={viewingItem?.powerIds?.includes(viewingPower.id) && !isActive ? () => {
+              setEditingItemPower(viewingPower);
+              setViewingPower(null);
+            } : undefined}
+            editDisabledReason={viewingItem?.powerIds?.includes(viewingPower.id) && isActive
+              ? 'Desative este poder antes de editá-lo.'
+              : undefined}
           />
         );
       })()}
+
+      {editingItemPower && viewingItem && (
+        <CriadorDePoderModal
+          isOpen
+          onClose={() => setEditingItemPower(null)}
+          poderParaEditar={poderResponseToPoder(editingItemPower) as any}
+          onUpdateRequest={async (powerId, payload) => {
+            const result = await updateCharacterItemPower(
+              character.id,
+              viewingItem.id,
+              powerId,
+              payload,
+              editingItemPower.updatedAt,
+            );
+            setDetailedItems((previous) => ({ ...previous, [result.item.id]: result.item }));
+            setDetailedPowers((previous) => {
+              const next = { ...previous };
+              delete next[powerId];
+              next[result.power.id] = result.power;
+              return next;
+            });
+            setViewingItem(result.item);
+            setRefreshKey((key) => key + 1);
+            return result.power;
+          }}
+          onSave={() => setEditingItemPower(null)}
+        />
+      )}
 
       {viewingArray && (() => {
         const aCon = (viewingArray as any).poderes ? viewingArray : acervoResponseToAcervo(viewingArray as AcervoResponse);

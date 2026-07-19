@@ -3,8 +3,7 @@ import {
   obterParametroMaisRestritivo,
   calcularModificadorParametro,
   ESCALA_ACAO,
-  ESCALA_ALCANCE,
-  ESCALA_DURACAO
+  ESCALA_ALCANCE
 } from '../../features/criador-de-poder/regras/escalas';
 
 describe('Escalas de Parâmetros - escalas.ts', () => {

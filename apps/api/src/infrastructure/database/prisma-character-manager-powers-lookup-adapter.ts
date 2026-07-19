@@ -111,6 +111,7 @@ export class PrismaCharacterManagerPowersLookupAdapter {
                 grau: effect.grau,
                 configuracaoId: effect.configuracaoId,
                 inputValue: effect.inputValue,
+                dadoModularizado: effect.dadoModularizado,
                 nota: effect.nota,
                 posicao: effect.posicao,
                 custoPda: effect.custoPda,

@@ -14,6 +14,8 @@ interface ResumoPoderProps {
   onClose: () => void;
   poder: Poder;
   detalhes: DetalhesPoder;
+  onEdit?: () => void;
+  editDisabledReason?: string;
 }
 
 // Helper para obter nome da escala
@@ -22,7 +24,7 @@ function getNomeEscala(tipo: 'acao' | 'alcance' | 'duracao', valor: number): str
   return escala?.nome || `Nível ${valor}`;
 }
 
-export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderProps) {
+export function ResumoPoder({ isOpen, onClose, poder, detalhes, onEdit, editDisabledReason }: ResumoPoderProps) {
   const { peculiaridades } = usePeculiaridades();
   const { modificacoes: todasModificacoes } = useCatalog();
 
@@ -588,6 +590,17 @@ export function ResumoPoder({ isOpen, onClose, poder, detalhes }: ResumoPoderPro
       </div>
 
       <ModalFooter>
+        {(onEdit || editDisabledReason) && (
+          <Button
+            variant="outline"
+            onClick={onEdit}
+            disabled={!!editDisabledReason}
+            title={editDisabledReason}
+            className="w-full sm:w-auto"
+          >
+            {editDisabledReason ? 'Desative para editar' : 'Editar neste item'}
+          </Button>
+        )}
         <Button variant="outline" onClick={copiarResumo} className="w-full sm:w-auto">
           <Copy className="w-4 h-4 mr-2" />
           Copiar Resumo

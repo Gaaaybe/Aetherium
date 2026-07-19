@@ -36,9 +36,9 @@ export function CroppedImage({ src, alt, className, style, onError }: { src: str
         style={{
           width: aspectRatio > 1 ? 'auto' : '100%',
           height: aspectRatio > 1 ? '100%' : 'auto',
-          transform: `translate(calc(-50% + ${x}%), calc(-50% + ${y}%)) scale(${zoom})`,
-          left: '50%',
-          top: '50%',
+          left: `calc(50% + ${x}%)`,
+          top: `calc(50% + ${y}%)`,
+          transform: `translate(-50%, -50%) scale(${zoom})`,
         }}
         onLoad={(e) => setAspectRatio(e.currentTarget.naturalWidth / e.currentTarget.naturalHeight)}
         onError={onError}

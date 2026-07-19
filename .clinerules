@@ -1,0 +1,61 @@
+# Regras e Diretrizes do Projeto Aetherium (Espírito e Caos)
+
+Este arquivo define os padrões de desenvolvimento, arquitetura do projeto e regras de domínio para orientar agentes e assistentes de codificação.
+
+---
+
+## 1. Estrutura do Monorepo e Tecnologias
+
+O projeto é configurado como um monorepo PNPM composto pelos seguintes pacotes:
+
+- **`apps/web`**: Frontend SPA construído com **React 19**, **Vite (Rolldown)**, **Tailwind CSS v3**, **Zustand** (gerenciamento de estado) e **React Router**.
+- **`apps/api`**: Backend construído com **NestJS**, **Prisma ORM** e **PostgreSQL**.
+- **`packages/rules-engine`**: Biblioteca compartilhada contendo schemas do Zod, catálogo de regras do RPG, lógica de custo de poderes e executores de automação.
+
+---
+
+## 2. Nomenclatura e Branding do Sistema
+
+- O nome do RPG de mesa é **Espírito e Caos** (sempre com acentuação correta e inicial maiúscula).
+- **Estilização Visual**: O nome do sistema deve usar cores coordenadas e integradas ao visual do Aetherium:
+  - **Espírito**: `text-espirito-500` / `dark:text-espirito-400`
+  - **e Caos**: `text-caos-500` / `dark:text-caos-400`
+  - **Peso/Fonte**: Use apenas `font-semibold` no mesmo contexto de texto (evite misturar fontes serifadas gritantes ou aplicar `uppercase` que quebrem a fluidez visual do restante do app).
+
+---
+
+## 3. Arquitetura e Regras de Domínio
+
+### 3.1. Termos de RPG
+- **PV** (Pontos de Vida) e **PE** (Pontos de Energia).
+- **PdA** (Pontos de Aprendizado) - Recurso para adquirir poderes e atributos.
+- **Princípio Espiritual** (Spiritual Principle) - Pode ser desbloqueado para liberar acesso a habilidades especiais.
+
+### 3.2. Mecânica de Automação (`rules-engine`)
+- **Modos de Resolução**: `ON_USE` (poderes ativos com tempo de ação), `PASSIVE` (poderes e condições passivas) e `NARRATIVE` (sem mecânica automatizada).
+- **Behaviors**: Executores de regras do motor (`DANO`, `RECUPERACAO`, `MARCADOR`, `GATILHO`).
+- **Outputs**:
+  - `GameMutation[]` (para resoluções `ON_USE` - gera mutações persistentes ou temporárias no banco/estado).
+  - `PassiveModifier[]` (para resoluções `PASSIVE` - bônus aplicados continuamente no cálculo de atributos).
+
+---
+
+## 4. Diretrizes para Testes E2E (Playwright)
+
+Ao criar ou modificar testes em `apps/web/e2e/`:
+
+1. **Evitar Contaminação de Estado**:
+   - Telas que utilizam abas salvas em `localStorage` (ex: `criador-aba-ativa` na página Criador) devem ter a aba desejada clicada explicitamente no início do teste para garantir o estado inicial correto.
+2. **Mock Total da API (`http://localhost:3333/**`)**:
+   - Sempre intercepte **todas** as chamadas à API nos testes autenticados usando `page.route('http://localhost:3333/**', ...)`.
+   - Se o token JWT fictício (mockado no `auth.fixture.ts`) for enviado a um endpoint não mockado do backend real em execução, o servidor retornará `401 Unauthorized`, engatando o handler automático que limpa a sessão e redireciona o browser para a tela de login (`/Aetherium/entrar`), fazendo o teste falhar por timeout.
+   - Retorne dados fictícios estruturalmente corretos (`[]` para listas como `/powers/me` ou `/peculiarities`, `{}` para objetos) nas chamadas interceptadas.
+
+---
+
+## 5. Padrões de Código e Ferramentas
+
+- **Backend (`apps/api`)**: Usa **Biome** para linting e formatação. Sempre execute `pnpm run lint` e `pnpm run format` dentro do diretório do app.
+- **Frontend (`apps/web`)**: Usa **ESLint** e **Prettier/Tailwind plugins**.
+- **Validação TypeScript**: Antes de dar qualquer tarefa por concluída, execute `pnpm --filter aetherium build` no diretório raiz do monorepo para garantir que alterações de tipos compartilhados não quebraram o build dos apps frontend/backend.
+- **Testes Unitários**: Rode `pnpm test` nos respectivos pacotes para validar a integridade após refatorações nas regras de cálculo.

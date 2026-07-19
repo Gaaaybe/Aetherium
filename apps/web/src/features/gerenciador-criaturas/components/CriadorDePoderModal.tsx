@@ -11,9 +11,10 @@ interface CriadorDePoderModalProps {
   onPoderCriado?: (poder: Poder) => void;
   onSave?: (poder: Poder) => void;
   poderParaEditar?: Poder;
+  onUpdateRequest?: (id: string, payload: any) => Promise<any>;
 }
 
-export function CriadorDePoderModal({ isOpen, onClose, onPoderCriado, onSave, poderParaEditar }: CriadorDePoderModalProps) {
+export function CriadorDePoderModal({ isOpen, onClose, onPoderCriado, onSave, poderParaEditar, onUpdateRequest }: CriadorDePoderModalProps) {
   const { poderes } = useBibliotecaPoderes();
   const prevPoderesCount = useRef(poderes.length);
   const lastPoder = poderes[poderes.length - 1];
@@ -85,7 +86,7 @@ export function CriadorDePoderModal({ isOpen, onClose, onPoderCriado, onSave, po
           </div>
         )}
         
-        <CriadorDePoder poderInicial={poderParaEditar} onSaved={onSave ? (poderSalvo) => onSave(poderSalvo) : undefined} />
+        <CriadorDePoder poderInicial={poderParaEditar} onSaved={onSave ? (poderSalvo) => onSave(poderSalvo) : undefined} onUpdateRequest={onUpdateRequest} />
       </div>
     </Modal>
   );

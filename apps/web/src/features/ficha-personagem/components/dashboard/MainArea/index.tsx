@@ -43,6 +43,8 @@ interface MainAreaProps {
   confirmUsePower: any;
   maintainPower: any;
   deactivatePower: any;
+  gradativoProgress: Record<string, number>;
+  updateGradativoProgress: (key: string, value: number) => void;
 }
 
 export function MainArea({ 
@@ -79,6 +81,8 @@ export function MainArea({
   confirmUsePower,
   maintainPower,
   deactivatePower,
+  gradativoProgress,
+  updateGradativoProgress,
 }: MainAreaProps) {
   const tabs = [
     { id: 'acoes', label: 'Ações', icon: <Sword className="w-4 h-4" /> },
@@ -131,6 +135,8 @@ export function MainArea({
             confirmUsePower={confirmUsePower}
             maintainPower={maintainPower}
             deactivatePower={deactivatePower}
+            gradativoProgress={gradativoProgress}
+            updateGradativoProgress={updateGradativoProgress}
           />
         )}
         {activeTab === 'poderes' && (
@@ -163,6 +169,7 @@ export function MainArea({
             onSpendRunics={onSpendRunics}
             onUpgradeItem={onUpgradeItem}
             isSyncing={isSyncing}
+            activePowers={activePowers}
           />
         )}
         {activeTab === 'narrativa' && <NarrativeTab character={character} _onSync={onSync} />}

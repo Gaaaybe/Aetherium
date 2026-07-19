@@ -108,6 +108,7 @@ export class PrismaCharacterManagerItemsLookupAdapter {
                 grau: effect.grau,
                 configuracaoId: effect.configuracaoId,
                 inputValue: effect.inputValue,
+                dadoModularizado: effect.dadoModularizado,
                 nota: effect.nota,
                 posicao: effect.posicao,
                 custoPda: effect.custoPda,
@@ -172,6 +173,7 @@ export class PrismaCharacterManagerItemsLookupAdapter {
                   grau: effect.grau,
                   configuracaoId: effect.configuracaoId,
                   inputValue: effect.inputValue,
+                  dadoModularizado: effect.dadoModularizado,
                   nota: effect.nota,
                   posicao: effect.posicao,
                   custoPda: effect.custoPda,
@@ -278,6 +280,7 @@ export class PrismaCharacterManagerItemsLookupAdapter {
             create: clonedPowerIdsByPosition.map((entry) => ({
               powerId: entry.powerId,
               posicao: entry.posicao,
+              ownsPower: true,
             })),
           },
           itemPowerArrays: {

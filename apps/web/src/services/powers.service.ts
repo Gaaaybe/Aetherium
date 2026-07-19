@@ -37,6 +37,11 @@ export interface ResolvePowerInput {
   selectedTargetIds?: string[];
   casterState: CasterState;
   attackSucceeded?: boolean;
+  descargaMultiplier?: number;
+  gradativoProgress?: {
+    global?: number;
+    effects?: Record<string, number>;
+  };
 }
 
 export async function fetchMyPowers(page = 1): Promise<PoderResponse[]> {

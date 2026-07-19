@@ -1,6 +1,6 @@
-import { calculatePowerCost, DomainName } from '@aetherium/rules-engine';
+import { calculatePowerCost, DomainName, getUnarmedMasteryTotalPdaCost } from '@aetherium/rules-engine';
 import { Injectable, Logger } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { Prisma, UserRole } from '@prisma/client';
 import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
 import {
   CreatePeculiarityBodySchema,
@@ -474,8 +474,19 @@ export class PowersService {
     });
   }
 
-  async updatePower(powerId: string, userId: string, body: UpdatePowerBodySchema, isAdmin = false) {
-    const existing = await this.prisma.power.findUnique({
+  async updatePower(
+    powerId: string,
+    userId: string,
+    body: UpdatePowerBodySchema,
+    isAdmin = false,
+    options?: {
+      tx?: Prisma.TransactionClient;
+      skipOwnershipCheck?: boolean;
+      allowItemDomainChange?: boolean;
+    },
+  ) {
+    const db = options?.tx ?? this.prisma;
+    const existing = await db.power.findUnique({
       where: { id: powerId },
       include: POWER_INCLUDE,
     });
@@ -484,7 +495,7 @@ export class PowersService {
       throw new ResourceNotFoundError('Poder não encontrado');
     }
 
-    if (!isAdmin && !canBeEditedBy(existing, userId)) {
+    if (!options?.skipOwnershipCheck && !isAdmin && !canBeEditedBy(existing, userId)) {
       throw new NotAllowedError();
     }
 
@@ -505,14 +516,14 @@ export class PowersService {
     if (dominio) {
       const newDomainUpper = dominio.name.toUpperCase().replace(/-/g, '_') as any;
       if (existing.domainName !== newDomainUpper) {
-        const isLinkedToAnyItem = await this.prisma.itemPower.count({ where: { powerId } });
-        if (isLinkedToAnyItem > 0) {
+        const isLinkedToAnyItem = await db.itemPower.count({ where: { powerId } });
+        if (isLinkedToAnyItem > 0 && !options?.allowItemDomainChange) {
           throw new DependencyConflictError(
             'Não é possível alterar o domínio deste poder enquanto ele estiver vinculado a itens',
           );
         }
 
-        const linkedPowerArrays = await this.prisma.powerArray.findMany({
+        const linkedPowerArrays = await db.powerArray.findMany({
           where: {
             powerArrayPowers: {
               some: { powerId },
@@ -609,14 +620,14 @@ export class PowersService {
       if (isPublic) {
         const pecId = dominio?.peculiarId || existing.domainPeculiarId;
         if (pecId) {
-          const peculiarity = await this.prisma.peculiarity.findUnique({ where: { id: pecId } });
+          const peculiarity = await db.peculiarity.findUnique({ where: { id: pecId } });
           if (!peculiarity) {
             throw new InvalidVisibilityError(
               'Não é possível tornar o poder público pois a peculiaridade referenciada não foi encontrada',
             );
           }
           if (!peculiarity.isPublic) {
-            await this.prisma.peculiarity.update({
+            await db.peculiarity.update({
               where: { id: pecId },
               data: { isPublic: true },
             });
@@ -629,7 +640,7 @@ export class PowersService {
       ? (dominio.name.toUpperCase().replace(/-/g, '_') as DomainName)
       : undefined;
 
-    return this.prisma.$transaction(async (tx) => {
+    const performUpdate = async (tx: Prisma.TransactionClient) => {
       // Recreate applied effects & modifications if cost recalculation or effects update happened
       if (effects !== undefined || globalModifications !== undefined || parametros !== undefined) {
         await tx.appliedEffect.deleteMany({ where: { powerId } });
@@ -856,17 +867,19 @@ export class PowersService {
           }),
           tx.character.findUnique({
             where: { id: characterId },
-            select: { pdaState: true },
+            select: { pdaState: true, unarmedMastery: true, spiritualPrinciple: true },
           }),
         ]);
 
         if (!character) continue;
 
         const currentPdaState = (character.pdaState ?? {}) as Record<string, unknown>;
+        const unarmedMasteryCost = getUnarmedMasteryTotalPdaCost(character.unarmedMastery);
         const recalculatedSpent =
           (powersSum._sum.finalPdaCost ?? 0) +
           (arraysSum._sum.finalPdaCost ?? 0) +
-          (benefitsSum._sum.pdaCost ?? 0);
+          (benefitsSum._sum.pdaCost ?? 0) +
+          unarmedMasteryCost;
 
         await tx.character.update({
           where: { id: characterId },
@@ -880,7 +893,11 @@ export class PowersService {
       }
 
       return updated;
-    });
+    };
+
+    return options?.tx
+      ? performUpdate(options.tx)
+      : this.prisma.$transaction((tx) => performUpdate(tx));
   }
 
   async deletePower(powerId: string, userId: string, isAdmin = false) {
@@ -1041,8 +1058,16 @@ export class PowersService {
   }
 
   async fetchUserPowers(userId: string, page: number) {
+    const ownedLinks = await this.prisma.itemPower.findMany({
+      where: { ownsPower: true },
+      select: { powerId: true },
+    });
     return this.prisma.power.findMany({
-      where: { userId, characterId: null },
+      where: {
+        userId,
+        characterId: null,
+        id: { notIn: ownedLinks.map((link) => link.powerId) },
+      },
       include: POWER_INCLUDE,
       orderBy: { createdAt: 'desc' },
       take: 20,
@@ -1303,17 +1328,19 @@ export class PowersService {
           }),
           tx.character.findUnique({
             where: { id: characterId },
-            select: { pdaState: true },
+            select: { pdaState: true, unarmedMastery: true, spiritualPrinciple: true },
           }),
         ]);
 
         if (!character) continue;
 
         const currentPdaState = (character.pdaState ?? {}) as Record<string, unknown>;
+        const unarmedMasteryCost = getUnarmedMasteryTotalPdaCost(character.unarmedMastery);
         const recalculatedSpent =
           (powersSum._sum.finalPdaCost ?? 0) +
           (arraysSum._sum.finalPdaCost ?? 0) +
-          (benefitsSum._sum.pdaCost ?? 0);
+          (benefitsSum._sum.pdaCost ?? 0) +
+          unarmedMasteryCost;
 
         await tx.character.update({
           where: { id: characterId },
@@ -1562,6 +1589,12 @@ export class PowersService {
   }
 
   async fetchAllPowers() {
+    const ownedPowerIds = new Set(
+      (await this.prisma.itemPower.findMany({
+        where: { ownsPower: true },
+        select: { powerId: true },
+      })).map((link) => link.powerId),
+    );
     const powers = await this.prisma.power.findMany({
       include: POWER_INCLUDE,
       orderBy: {
@@ -1570,7 +1603,10 @@ export class PowersService {
     });
 
     return powers.filter(
-      (power) => power.userId !== null && power.characterId === null && !power.user?.roles?.includes('ADMIN'),
+      (power) => power.userId !== null
+        && power.characterId === null
+        && !ownedPowerIds.has(power.id)
+        && !power.user?.roles?.includes('ADMIN'),
     );
   }
 

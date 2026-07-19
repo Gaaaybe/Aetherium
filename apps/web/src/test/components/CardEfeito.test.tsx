@@ -23,6 +23,7 @@ describe('CardEfeito Component', () => {
   const mockEfeitoDetalhado = {
     efeito: {
       id: 'efeito-123',
+      efeitoBaseId: 'dano',
       grau: 5,
       modificacoesLocais: [],
       inputCustomizado: '',

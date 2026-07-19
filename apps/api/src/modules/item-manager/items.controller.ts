@@ -1,5 +1,5 @@
 import { ItemType } from '@aetherium/rules-engine';
-import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, Headers, HttpCode, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { CurrentUser } from '@/infrastructure/auth/current-user-decorator';
 import type { UserPayload } from '@/infrastructure/auth/jwt.strategy';
 import { Public } from '@/infrastructure/auth/public';
@@ -16,6 +16,8 @@ import {
   updateItemBodySchema,
 } from './dto/item.dto';
 import { ItemsService } from './items.service';
+import type { UpdatePowerBodySchema } from '@/modules/power-manager/dto/power.dto';
+import { formatPowerToHTTP, updatePowerBodySchema } from '@/modules/power-manager/dto/power.dto';
 
 const VALID_TYPES = Object.values(ItemType) as string[];
 
@@ -41,6 +43,51 @@ export class ItemsController {
   ) {
     const raw = await this.itemsService.update(itemId, user.sub, body, user.isAdmin);
     return formatItemToHTTP(raw);
+  }
+
+  @Put('/items/:itemId/powers/:powerId')
+  async updateLibraryItemPower(
+    @Param('itemId') itemId: string,
+    @Param('powerId') powerId: string,
+    @Body(new ZodValidationPipe(updatePowerBodySchema)) body: UpdatePowerBodySchema,
+    @Headers('if-match') expectedUpdatedAt: string | undefined,
+    @CurrentUser() user: UserPayload,
+  ) {
+    const result = await this.itemsService.updateDirectItemPower(
+      itemId,
+      powerId,
+      user.sub,
+      body,
+      { isAdmin: user.isAdmin, expectedUpdatedAt },
+    );
+    return {
+      power: formatPowerToHTTP(result.power),
+      item: formatItemToHTTP(result.item),
+      isolated: result.isolated,
+    };
+  }
+
+  @Put('/characters/:characterId/items/:itemId/powers/:powerId')
+  async updateCharacterItemPower(
+    @Param('characterId') characterId: string,
+    @Param('itemId') itemId: string,
+    @Param('powerId') powerId: string,
+    @Body(new ZodValidationPipe(updatePowerBodySchema)) body: UpdatePowerBodySchema,
+    @Headers('if-match') expectedUpdatedAt: string | undefined,
+    @CurrentUser() user: UserPayload,
+  ) {
+    const result = await this.itemsService.updateDirectItemPower(
+      itemId,
+      powerId,
+      user.sub,
+      body,
+      { characterId, expectedUpdatedAt },
+    );
+    return {
+      power: formatPowerToHTTP(result.power),
+      item: formatItemToHTTP(result.item),
+      isolated: result.isolated,
+    };
   }
 
   @Delete('/items/:itemId')
@@ -103,7 +150,7 @@ export class ItemsController {
     @CurrentUser() user: UserPayload,
   ) {
     const raw = await this.itemsService.importItem(user.sub, body);
-    return formatItemToHTTP(raw);
+    return { ...formatItemToHTTP(raw), importWarnings: body.importWarnings };
   }
 
   @Get('/admin/items')

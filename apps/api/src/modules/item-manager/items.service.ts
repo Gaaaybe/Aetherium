@@ -1,6 +1,8 @@
 import { ItemType, WeaponRange } from '@aetherium/rules-engine';
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '@/infrastructure/database/prisma/prisma.service';
+import { UpdatePowerBodySchema } from '@/modules/power-manager/dto/power.dto';
 import { PowersService } from '@/modules/power-manager/powers.service';
 import { CreateItemBodySchema, ImportItemBodySchema, UpdateItemBodySchema } from './dto/item.dto';
 import {
@@ -74,17 +76,89 @@ export class ItemsService {
     private powersService: PowersService,
   ) {}
 
+  private async clonePowerForItem(
+    tx: Prisma.TransactionClient,
+    sourcePowerId: string,
+    userId: string,
+    characterId: string | null,
+  ) {
+    const source = await tx.power.findUnique({
+      where: { id: sourcePowerId },
+      include: {
+        appliedEffects: {
+          orderBy: { posicao: 'asc' },
+          include: { appliedModifications: { orderBy: { posicao: 'asc' } } },
+        },
+      },
+    });
+
+    if (!source) {
+      throw new ResourceNotFoundError('Poder vinculado ao item não encontrado');
+    }
+
+    return tx.power.create({
+      data: {
+        userId,
+        characterId,
+        nome: source.nome,
+        descricao: source.descricao,
+        isPublic: false,
+        icone: source.icone,
+        notas: source.notas,
+        domainName: source.domainName,
+        domainAreaConhecimento: source.domainAreaConhecimento,
+        domainPeculiarId: source.domainPeculiarId,
+        parametrosAcao: source.parametrosAcao,
+        parametrosAlcance: source.parametrosAlcance,
+        parametrosDuracao: source.parametrosDuracao,
+        custoTotalPda: source.custoTotalPda,
+        custoTotalPe: source.custoTotalPe,
+        custoTotalEspacos: source.custoTotalEspacos,
+        custoAlternativoTipo: source.custoAlternativoTipo,
+        custoAlternativoQuantidade: source.custoAlternativoQuantidade,
+        custoAlternativoDescricao: source.custoAlternativoDescricao,
+        custoAlternativoAtributo: source.custoAlternativoAtributo,
+        custoAlternativoItemId: source.custoAlternativoItemId,
+        appliedEffects: {
+          create: source.appliedEffects.map((effect) => ({
+            effectBaseId: effect.effectBaseId,
+            grau: effect.grau,
+            configuracaoId: effect.configuracaoId,
+            inputValue: effect.inputValue,
+            dadoModularizado: effect.dadoModularizado,
+            nota: effect.nota,
+            posicao: effect.posicao,
+            custoPda: effect.custoPda,
+            custoPe: effect.custoPe,
+            custoEspacos: effect.custoEspacos,
+            appliedModifications: {
+              create: effect.appliedModifications.map((modification) => ({
+                modificationBaseId: modification.modificationBaseId,
+                scope: modification.scope,
+                grau: modification.grau,
+                parametros: modification.parametros ?? undefined,
+                nota: modification.nota,
+                posicao: modification.posicao,
+              })),
+            },
+          })),
+        },
+      },
+    });
+  }
+
   private async calculateItemLevel(
     domains: string[],
     powerIds?: string[],
     powerArrayIds?: string[],
+    db: Prisma.TransactionClient | PrismaService = this.prisma,
   ): Promise<number> {
     let totalContribution = 0;
     const targetPrismaDomains = domains.map((d) => DOMAIN_MAP[d]);
 
     if (powerIds && powerIds.length > 0) {
       for (const powerId of powerIds) {
-        const power = await this.prisma.power.findUnique({
+        const power = await db.power.findUnique({
           where: { id: powerId },
           select: {
             nome: true,
@@ -109,7 +183,7 @@ export class ItemsService {
 
     if (powerArrayIds && powerArrayIds.length > 0) {
       for (const powerArrayId of powerArrayIds) {
-        const powerArray = await this.prisma.powerArray.findUnique({
+        const powerArray = await db.powerArray.findUnique({
           where: { id: powerArrayId },
           select: {
             nome: true,
@@ -215,6 +289,7 @@ export class ItemsService {
         create: body.powerIds.map((pid, index) => ({
           powerId: pid,
           posicao: index,
+          ownsPower: false,
         })),
       };
     }
@@ -291,6 +366,7 @@ export class ItemsService {
     }
 
     const updates: any[] = [];
+    const ownedPowerIdsToDelete: string[] = [];
 
     if (body.tipo === ItemType.WEAPON) {
       baseData.critMargin = body.critMargin !== undefined ? body.critMargin : existing.critMargin;
@@ -342,11 +418,22 @@ export class ItemsService {
     }
 
     if (body.powerIds !== undefined) {
+      for (const link of existing.itemPowers) {
+        if (!link.ownsPower || body.powerIds.includes(link.powerId)) continue;
+        const [itemReferences, arrayReferences] = await Promise.all([
+          this.prisma.itemPower.count({ where: { powerId: link.powerId } }),
+          this.prisma.powerArrayPower.count({ where: { powerId: link.powerId } }),
+        ]);
+        if (itemReferences === 1 && arrayReferences === 0) {
+          ownedPowerIdsToDelete.push(link.powerId);
+        }
+      }
       updates.push(this.prisma.itemPower.deleteMany({ where: { itemId } }));
       baseData.itemPowers = {
         create: body.powerIds.map((pid, index) => ({
           powerId: pid,
           posicao: index,
+          ownsPower: existing.itemPowers.find((entry) => entry.powerId === pid)?.ownsPower ?? false,
         })),
       };
     }
@@ -367,6 +454,9 @@ export class ItemsService {
         data: baseData,
       }),
     );
+    if (ownedPowerIdsToDelete.length > 0) {
+      updates.push(this.prisma.power.deleteMany({ where: { id: { in: ownedPowerIdsToDelete } } }));
+    }
 
     await this.prisma.$transaction(updates);
 
@@ -378,9 +468,112 @@ export class ItemsService {
     return updated!;
   }
 
+  async updateDirectItemPower(
+    itemId: string,
+    powerId: string,
+    userId: string,
+    body: UpdatePowerBodySchema,
+    options: { isAdmin?: boolean; characterId?: string; expectedUpdatedAt?: string } = {},
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const item = await tx.item.findUnique({
+        where: { id: itemId },
+        include: {
+          character: { select: { id: true, userId: true } },
+          itemPowers: { orderBy: { posicao: 'asc' } },
+          itemPowerArrays: { orderBy: { posicao: 'asc' } },
+        },
+      });
+
+      if (!item) throw new ResourceNotFoundError('Item não encontrado');
+
+      const isCharacterContext = options.characterId !== undefined;
+      if (isCharacterContext) {
+        if (item.characterId !== options.characterId || item.character?.userId !== userId) {
+          throw new NotAllowedError('Este item não pertence ao personagem informado');
+        }
+      } else {
+        if (item.characterId) {
+          throw new NotAllowedError('Itens de personagem devem ser editados pela ficha');
+        }
+        if (!options.isAdmin && item.userId !== userId) {
+          throw new NotAllowedError('Você não pode editar este item');
+        }
+      }
+
+      const itemPower = item.itemPowers.find((entry) => entry.powerId === powerId);
+      if (!itemPower) {
+        throw new ResourceNotFoundError('O poder não está vinculado diretamente a este item');
+      }
+
+      if (body.dominio) {
+        const requestedDomain = DOMAIN_MAP[body.dominio.name];
+        if (!requestedDomain || !item.domains.includes(requestedDomain as any)) {
+          throw new InvalidItemDomainError('O domínio do poder precisa ser compatível com o item');
+        }
+      }
+
+      const source = await tx.power.findUnique({
+        where: { id: powerId },
+        select: { characterId: true, updatedAt: true },
+      });
+      if (!source) throw new ResourceNotFoundError('Poder vinculado ao item não encontrado');
+
+      if (options.expectedUpdatedAt !== undefined) {
+        const expected = options.expectedUpdatedAt.replace(/^"|"$/g, '');
+        const current = source.updatedAt?.toISOString() ?? 'null';
+        if (expected !== current) {
+          throw new ConflictException(
+            'Este poder foi alterado em outra tela. Recarregue o item antes de salvar novamente.',
+          );
+        }
+      }
+
+      const referenceCount = await tx.itemPower.count({ where: { powerId } });
+      const needsIsolation =
+        !itemPower.ownsPower || source.characterId !== item.characterId || referenceCount > 1;
+
+      let targetPowerId = powerId;
+      if (needsIsolation) {
+        const cloned = await this.clonePowerForItem(tx, powerId, userId, item.characterId);
+        targetPowerId = cloned.id;
+        await tx.itemPower.update({
+          where: { id: itemPower.id },
+          data: { powerId: targetPowerId, ownsPower: true },
+        });
+      }
+
+      const updatedPower = await this.powersService.updatePower(
+        targetPowerId,
+        userId,
+        { ...body, isPublic: false },
+        options.isAdmin ?? false,
+        { tx, skipOwnershipCheck: true, allowItemDomainChange: true },
+      );
+
+      const finalPowerIds = item.itemPowers.map((entry) =>
+        entry.id === itemPower.id ? targetPowerId : entry.powerId,
+      );
+      const nivelItem = await this.calculateItemLevel(
+        item.domains.map((domain) => domain.toLowerCase().replace(/_/g, '-')),
+        finalPowerIds,
+        item.itemPowerArrays.map((entry) => entry.powerArrayId),
+        tx,
+      );
+      const updatedItem = await tx.item.update({
+        where: { id: itemId },
+        data: { nivelItem },
+        include: INCLUDE,
+      });
+
+      return { power: updatedPower, item: updatedItem, isolated: needsIsolation };
+    });
+  }
+
   async delete(itemId: string, userId: string, isAdmin = false) {
     const existing = await this.prisma.item.findUnique({
       where: { id: itemId },
+      include: { itemPowers: true },
     });
 
     if (!existing) {
@@ -393,8 +586,21 @@ export class ItemsService {
       throw new NotAllowedError();
     }
 
-    await this.prisma.item.delete({
-      where: { id: itemId },
+    const ownedPowerIdsToDelete: string[] = [];
+    for (const link of existing.itemPowers) {
+      if (!link.ownsPower) continue;
+      const [itemReferences, arrayReferences] = await Promise.all([
+        this.prisma.itemPower.count({ where: { powerId: link.powerId } }),
+        this.prisma.powerArrayPower.count({ where: { powerId: link.powerId } }),
+      ]);
+      if (itemReferences === 1 && arrayReferences === 0) ownedPowerIdsToDelete.push(link.powerId);
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.item.delete({ where: { id: itemId } });
+      if (ownedPowerIdsToDelete.length > 0) {
+        await tx.power.deleteMany({ where: { id: { in: ownedPowerIdsToDelete } } });
+      }
     });
   }
 
@@ -490,6 +696,7 @@ export class ItemsService {
                 grau: effect.grau,
                 configuracaoId: effect.configuracaoId,
                 inputValue: effect.inputValue,
+                dadoModularizado: effect.dadoModularizado,
                 nota: effect.nota,
                 posicao: effect.posicao,
                 custoPda: effect.custoPda,
@@ -554,6 +761,7 @@ export class ItemsService {
                   grau: effect.grau,
                   configuracaoId: effect.configuracaoId,
                   inputValue: effect.inputValue,
+                  dadoModularizado: effect.dadoModularizado,
                   nota: effect.nota,
                   posicao: effect.posicao,
                   custoPda: effect.custoPda,
@@ -660,6 +868,7 @@ export class ItemsService {
             create: clonedPowerIdsByPosition.map((entry) => ({
               powerId: entry.powerId,
               posicao: entry.posicao,
+              ownsPower: true,
             })),
           },
           itemPowerArrays: {
@@ -742,6 +951,7 @@ export class ItemsService {
         .filter((am: any) => am.scope !== 'GLOBAL')
         .map((am: any) => ({
           modificationBaseId: am.modificationBaseId,
+          scope: 'local',
           grau: am.grau,
           parametros: am.parametros ?? undefined,
           nota: am.nota ?? undefined,
@@ -751,6 +961,7 @@ export class ItemsService {
         if (am.scope === 'GLOBAL') {
           globalModifications.push({
             modificationBaseId: am.modificationBaseId,
+            scope: 'global',
             grau: am.grau,
             parametros: am.parametros ?? undefined,
             nota: am.nota ?? undefined,
@@ -763,6 +974,7 @@ export class ItemsService {
         grau: ae.grau,
         configuracaoId: ae.configuracaoId ?? undefined,
         inputValue: ae.inputValue ?? undefined,
+        dadoModularizado: ae.dadoModularizado ?? undefined,
         nota: ae.nota ?? undefined,
         modifications,
       };
@@ -862,6 +1074,8 @@ export class ItemsService {
       .filter((p): p is NonNullable<typeof p> => !!p);
 
     const base: any = {
+      schemaVersion: 2,
+      exportedAt: new Date().toISOString(),
       tipo: item.tipo.toLowerCase().replace(/_/g, '-'),
       nome: item.nome,
       descricao: item.descricao,
@@ -918,33 +1132,55 @@ export class ItemsService {
 
     // Create powers
     if (body.powers && body.powers.length > 0) {
-      for (const powerBody of body.powers) {
-        const createdPower = await this.powersService.createPower(userId, powerBody);
-        createdPowerIds.push(createdPower.id);
+      for (const [index, powerBody] of body.powers.entries()) {
+        try {
+          const createdPower = await this.powersService.createPower(userId, powerBody);
+          createdPowerIds.push(createdPower.id);
+        } catch {
+          body.importWarnings.push(`Poder ${index + 1} ignorado por usar dados que não existem mais no catálogo.`);
+        }
       }
     }
 
     // Create power arrays
     if (body.powerArrays && body.powerArrays.length > 0) {
-      for (const arrayBody of body.powerArrays) {
+      for (const [arrayIndex, arrayBody] of body.powerArrays.entries()) {
         const nestedPowerIds: string[] = [];
-        for (const nestedPowerBody of arrayBody.powers) {
-          const createdPower = await this.powersService.createPower(userId, nestedPowerBody);
-          nestedPowerIds.push(createdPower.id);
+        for (const [powerIndex, nestedPowerBody] of arrayBody.powers.entries()) {
+          try {
+            const createdPower = await this.powersService.createPower(userId, nestedPowerBody);
+            nestedPowerIds.push(createdPower.id);
+            createdPowerIds.push(createdPower.id);
+          } catch {
+            body.importWarnings.push(`Poder ${powerIndex + 1} do acervo ${arrayIndex + 1} ignorado por incompatibilidade de catálogo.`);
+          }
         }
 
-        const createdArray = await this.powersService.createPowerArray(userId, {
-          nome: arrayBody.nome,
-          descricao: arrayBody.descricao,
-          dominio: arrayBody.dominio,
-          parametrosBase: arrayBody.parametrosBase,
-          powerIds: nestedPowerIds,
-          isPublic: arrayBody.isPublic,
-          notas: arrayBody.notas,
-          icone: arrayBody.icone,
-        });
+        if (nestedPowerIds.length === 0) {
+          body.importWarnings.push(`Acervo ${arrayIndex + 1} ignorado porque nenhum poder pôde ser recuperado.`);
+          continue;
+        }
 
-        createdPowerArrayIds.push(createdArray.id);
+        try {
+          const createdArray = await this.powersService.createPowerArray(userId, {
+            nome: arrayBody.nome,
+            descricao: arrayBody.descricao,
+            dominio: arrayBody.dominio,
+            parametrosBase: arrayBody.parametrosBase,
+            powerIds: nestedPowerIds,
+            isPublic: false,
+            notas: arrayBody.notas,
+            icone: arrayBody.icone,
+          });
+          createdPowerArrayIds.push(createdArray.id);
+        } catch {
+          body.importWarnings.push(`Acervo ${arrayIndex + 1} ignorado por incompatibilidade.`);
+          await this.prisma.power.deleteMany({ where: { id: { in: nestedPowerIds } } });
+          for (const id of nestedPowerIds) {
+            const createdIndex = createdPowerIds.indexOf(id);
+            if (createdIndex >= 0) createdPowerIds.splice(createdIndex, 1);
+          }
+        }
       }
     }
 
@@ -1000,7 +1236,23 @@ export class ItemsService {
         : {}),
     } as any;
 
-    return this.create(userId, createItemBody);
+    let item;
+    try {
+      item = await this.create(userId, createItemBody);
+    } catch (error) {
+      await this.prisma.$transaction([
+        this.prisma.powerArray.deleteMany({ where: { id: { in: createdPowerArrayIds } } }),
+        this.prisma.power.deleteMany({ where: { id: { in: createdPowerIds } } }),
+      ]);
+      throw error;
+    }
+    if (createdPowerIds.length > 0) {
+      await this.prisma.itemPower.updateMany({
+        where: { itemId: item.id, powerId: { in: createdPowerIds } },
+        data: { ownsPower: true },
+      });
+    }
+    return this.prisma.item.findUniqueOrThrow({ where: { id: item.id }, include: INCLUDE });
   }
 
   async promoteItem(itemId: string) {

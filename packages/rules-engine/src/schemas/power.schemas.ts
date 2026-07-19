@@ -49,7 +49,7 @@ export const createPowerBodySchema = z.object({
   custoAlternativo: custoAlternativoSchema.optional(),
   isPublic: z.boolean().default(false),
   notas: z.string().max(2000).optional(),
-  icone: z.string().url('Ícone deve ser um link válido').optional(),
+  icone: z.string().min(1, 'Ícone inválido').optional(),
 });
 
 export const updatePowerBodySchema = z.object({
@@ -68,7 +68,7 @@ export const updatePowerBodySchema = z.object({
   custoAlternativo: custoAlternativoSchema.optional(),
   isPublic: z.boolean().optional(),
   notas: z.string().max(2000).optional(),
-  icone: z.union([z.string().url('Ícone deve ser um link válido'), z.null()]).optional(),
+  icone: z.union([z.string().min(1, 'Ícone inválido'), z.null()]).optional(),
 });
 
 export const createPowerArrayBodySchema = z.object({
@@ -85,7 +85,7 @@ export const createPowerArrayBodySchema = z.object({
   powerIds: z.array(z.string()).min(1),
   isPublic: z.boolean().default(false),
   notas: z.string().max(2000).optional(),
-  icone: z.string().url('Ícone deve ser um link válido').optional(),
+  icone: z.string().min(1, 'Ícone inválido').optional(),
 });
 
 export const updatePowerArrayBodySchema = z.object({
@@ -102,7 +102,7 @@ export const updatePowerArrayBodySchema = z.object({
   powerIds: z.array(z.string()).min(1).optional(),
   isPublic: z.boolean().optional(),
   notas: z.string().max(2000).optional(),
-  icone: z.union([z.string().url('Ícone deve ser um link válido'), z.null()]).optional(),
+  icone: z.union([z.string().min(1, 'Ícone inválido'), z.null()]).optional(),
 });
 
 export const createPeculiarityBodySchema = z.object({

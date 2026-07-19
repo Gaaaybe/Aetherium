@@ -18,9 +18,14 @@ import { Library, Sparkles, Plus, Package, RefreshCw, AlertCircle, Download, Upl
 import { getErrorMessage } from '../shared/utils/error-handler';
 import type { PoderResponse, CreatePoderPayload, ItemResponse } from '../services/types';
 import type { PoderSalvo } from '../features/criador-de-poder/types';
+import { CriadorDePoderModal } from '../features/gerenciador-criaturas/components/CriadorDePoderModal';
+import { updateLibraryItemPower } from '../services/items.service';
+import { useAuth } from '../context/useAuth';
+import { getPowerById } from '../services/powers.service';
 
 export function BibliotecaPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { poderes, loading, error, deletar, criar, atualizar, carregar: recarregar } = usePoderes();
   const { acervos } = usePowerArrays();
   const {
@@ -39,6 +44,8 @@ export function BibliotecaPage() {
   const [itemVisualizando, setItemVisualizando] = useState<ItemResponse | null>(null);
   const [itemPoderResumoId, setItemPoderResumoId] = useState<string | null>(null);
   const [itemAcervoResumoId, setItemAcervoResumoId] = useState<string | null>(null);
+  const [itemPowerEditing, setItemPowerEditing] = useState<PoderResponse | null>(null);
+  const [itemPowerDetails, setItemPowerDetails] = useState<Record<string, PoderResponse>>({});
 
   const poderVisualizandoConvertido = useMemo(() => {
     if (!poderVisualizando) return null;
@@ -47,10 +54,12 @@ export function BibliotecaPage() {
     return { poder, detalhes };
   }, [poderVisualizando, efeitos, modificacoes]);
 
-  const itemPoderesSelecionados = useMemo(
-    () => (itemVisualizando ? poderes.filter((poder) => itemVisualizando.powerIds.includes(poder.id)) : []),
-    [itemVisualizando, poderes],
-  );
+  const itemPoderesSelecionados = useMemo(() => {
+    if (!itemVisualizando) return [];
+    return itemVisualizando.powerIds
+      .map((id) => itemPowerDetails[id] ?? poderes.find((poder) => poder.id === id))
+      .filter((power): power is PoderResponse => !!power);
+  }, [itemVisualizando, itemPowerDetails, poderes]);
 
   const itemAcervosSelecionados = useMemo(
     () => (itemVisualizando ? acervos.filter((acervo) => itemVisualizando.powerArrayIds.includes(acervo.id)) : []),
@@ -58,9 +67,29 @@ export function BibliotecaPage() {
   );
 
   const itemPoderResumoSelecionado = useMemo(
-    () => (itemPoderResumoId ? poderes.find((poder) => poder.id === itemPoderResumoId) : undefined),
-    [itemPoderResumoId, poderes],
+    () => (itemPoderResumoId
+      ? itemPowerDetails[itemPoderResumoId] ?? poderes.find((poder) => poder.id === itemPoderResumoId)
+      : undefined),
+    [itemPoderResumoId, itemPowerDetails, poderes],
   );
+
+  useEffect(() => {
+    if (!itemVisualizando?.powerIds.length) return;
+    let cancelled = false;
+    Promise.all(itemVisualizando.powerIds.map((id) => getPowerById(id)))
+      .then((details) => {
+        if (!cancelled) {
+          setItemPowerDetails((previous) => ({
+            ...previous,
+            ...Object.fromEntries(details.map((power) => [power.id, power])),
+          }));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) toast.error('Não foi possível carregar os poderes internos do item.');
+      });
+    return () => { cancelled = true; };
+  }, [itemVisualizando?.id, itemVisualizando?.powerIds]);
 
   const itemAcervoResumoSelecionado = useMemo(
     () => (itemAcervoResumoId ? acervos.find((acervo) => acervo.id === itemAcervoResumoId) : undefined),
@@ -399,12 +428,19 @@ export function BibliotecaPage() {
     try {
       const text = await file.text();
       const parsed = JSON.parse(text);
-      const lista = Array.isArray(parsed) ? parsed : [parsed];
+      const wrappedItems = parsed?.items ?? parsed?.itens;
+      const lista = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(wrappedItems)
+          ? wrappedItems
+          : [parsed];
       let ok = 0;
       let falhou = 0;
+      const avisos: string[] = [];
       for (const rawItem of lista) {
         try {
-          await importarItem(rawItem);
+          const imported = await importarItem(rawItem);
+          avisos.push(...(imported.importWarnings ?? []));
           ok++;
         } catch (err) {
           console.error(err);
@@ -416,6 +452,10 @@ export function BibliotecaPage() {
         recarregarItens();
       }
       if (falhou > 0) toast.error(`${falhou} item(ns) falhou na importação devido a erros de validação.`);
+      if (avisos.length > 0) {
+        toast.info(`Importação recuperada com ${avisos.length} ajuste(s) de compatibilidade.`);
+        console.info('Ajustes realizados durante a importação:', avisos);
+      }
     } catch (err: any) {
       toast.error(err?.message || 'Arquivo inválido. Certifique-se de usar um JSON exportado pelo Aetherium.');
     } finally {
@@ -947,7 +987,38 @@ export function BibliotecaPage() {
         }}
         poder={itemPoderResumoSelecionado}
         acervo={itemAcervoResumoSelecionado}
+        onEditPower={itemPoderResumoSelecionado && itemVisualizando && user
+          && (itemVisualizando.userId === user.id || user.isAdmin) ? () => {
+          setItemPowerEditing(itemPoderResumoSelecionado);
+          setItemPoderResumoId(null);
+        } : undefined}
       />
+
+      {itemPowerEditing && itemVisualizando && (
+        <CriadorDePoderModal
+          isOpen
+          onClose={() => setItemPowerEditing(null)}
+          poderParaEditar={poderResponseToPoder(itemPowerEditing) as any}
+          onUpdateRequest={async (powerId, payload) => {
+            const result = await updateLibraryItemPower(
+              itemVisualizando.id,
+              powerId,
+              payload,
+              itemPowerEditing.updatedAt,
+            );
+            setItemVisualizando(result.item);
+            setItemPowerDetails((previous) => {
+              const next = { ...previous };
+              delete next[powerId];
+              next[result.power.id] = result.power;
+              return next;
+            });
+            await Promise.all([recarregar(), recarregarItens()]);
+            return result.power;
+          }}
+          onSave={() => setItemPowerEditing(null)}
+        />
+      )}
 
       {/* Modais de Confirmação */}
       <ConfirmDialog

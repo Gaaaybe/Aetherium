@@ -1,6 +1,6 @@
 import { api } from '../lib/api';
 import type { ItemResponse, PoderResponse, AcervoResponse } from './types';
-import type { CharacterResponse, SyncCharacterData } from './characters.types';
+import type { CharacterCustomResource, CharacterCustomResourceInput, CharacterResponse, SyncCharacterData } from './characters.types';
 
 export const charactersService = {
   // ─── CRUD Básico ─────────────────────────────────────────────────────────────
@@ -21,7 +21,9 @@ export const charactersService = {
   },
 
   async createCharacter(payload: {
-    narrative: CharacterResponse['narrative'];
+    narrative: Omit<CharacterResponse['narrative'], 'generalNotes' | 'deity' | 'psychicState'> & {
+      generalNotes?: string;
+    };
     attributes: Omit<CharacterResponse['attributes'], 'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma'> & {
       strength: number;
       dexterity: number;
@@ -78,6 +80,31 @@ export const charactersService = {
   async tickDeathCounter(id: string): Promise<CharacterResponse> {
     const { data } = await api.post<CharacterResponse>(`/characters/${id}/death-tick`);
     return data;
+  },
+
+  async createCustomResource(id: string, payload: CharacterCustomResourceInput): Promise<CharacterCustomResource[]> {
+    const { data } = await api.post<{ customResources: CharacterCustomResource[] }>(`/characters/${id}/resources`, payload);
+    return data.customResources;
+  },
+
+  async updateCustomResource(id: string, resourceId: string, payload: Partial<CharacterCustomResourceInput>): Promise<CharacterCustomResource[]> {
+    const { data } = await api.patch<{ customResources: CharacterCustomResource[] }>(`/characters/${id}/resources/${resourceId}`, payload);
+    return data.customResources;
+  },
+
+  async adjustCustomResource(id: string, resourceId: string, delta: number): Promise<CharacterCustomResource[]> {
+    const { data } = await api.patch<{ customResources: CharacterCustomResource[] }>(`/characters/${id}/resources/${resourceId}/value`, { delta });
+    return data.customResources;
+  },
+
+  async reorderCustomResources(id: string, resourceIds: string[]): Promise<CharacterCustomResource[]> {
+    const { data } = await api.patch<{ customResources: CharacterCustomResource[] }>(`/characters/${id}/resources/order`, { resourceIds });
+    return data.customResources;
+  },
+
+  async deleteCustomResource(id: string, resourceId: string): Promise<CharacterCustomResource[]> {
+    const { data } = await api.delete<{ customResources: CharacterCustomResource[] }>(`/characters/${id}/resources/${resourceId}`);
+    return data.customResources;
   },
 
   async unlockSpiritualPrinciple(id: string, payload: { stage: 'NORMAL' | 'DIVINE' }): Promise<CharacterResponse> {

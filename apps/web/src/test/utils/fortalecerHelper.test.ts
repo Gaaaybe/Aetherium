@@ -7,8 +7,35 @@ import {
   obterBonusFortalecerRD,
   obterBonusFortalecerAcoes,
   obterBonusFortalecerCaracteristicasItem,
-  obterBonusFortalecerCaracteristicasDesarmado
+  obterBonusFortalecerCaracteristicasDesarmado,
+  aplicarGradativoAosEfeitosDoPoder,
 } from '../../features/ficha-personagem/utils/fortalecerHelper';
+
+describe('aplicarGradativoAosEfeitosDoPoder', () => {
+  it('deve aplicar o mesmo progresso global a todos os efeitos do poder', () => {
+    const effects = aplicarGradativoAosEfeitosDoPoder({
+      id: 'power-global',
+      globalModifications: [{ modificationBaseId: 'gradativo' }],
+      effects: [
+        { id: 'fort-1', effectBaseId: 'fortalecer', grau: 5, modifications: [] },
+        { id: 'fort-2', effectBaseId: 'fortalecer', grau: 3, modifications: [] },
+      ],
+    }, { 'power-global:global': 4 });
+
+    expect(effects[0]).toMatchObject({ grau: 4, gradativoMaxDegree: 5, gradativoExcessiveSteps: 0 });
+    expect(effects[1]).toMatchObject({ grau: 3, gradativoMaxDegree: 3, gradativoExcessiveSteps: 1 });
+  });
+
+  it('deve aceitar os nomes legados usados por poderes de acervos', () => {
+    const effects = aplicarGradativoAosEfeitosDoPoder({
+      id: 'power-legado',
+      modificacoesGlobais: [{ modificacaoBaseId: 'gradativo' }],
+      efeitos: [{ id: 'fort-1', efeitoBaseId: 'fortalecer', grau: 5 }],
+    }, { 'power-legado:global': 3 });
+
+    expect(effects[0]).toMatchObject({ grau: 3, gradativoMaxDegree: 5 });
+  });
+});
 
 describe('obterMaximoFormulaDados', () => {
   it('deve extrair o valor máximo de fórmulas simples e complexas', () => {
@@ -159,6 +186,68 @@ describe('obterBonusFortalecerAtivos', () => {
     // Soma total = 4 + 3 = 7
     const res = obterBonusFortalecerAtivos(activePowers, charBase);
     expect(res.atributos.forca).toBe(7);
+  });
+
+  it('deve reduzir proporcionalmente as alocações de um Fortalecer gradativo', () => {
+    const activePowers = [{
+      id: 'p-gradativo',
+      effects: [{
+        efeitoBaseId: 'fortalecer',
+        grau: 1,
+        gradativoMaxDegree: 5,
+        gradativoExcessiveSteps: 0,
+        inputCustomizado: JSON.stringify([
+          { tipo: 'atributo', alvo: 'forca', bonus: 25 },
+          { tipo: 'pericia', alvo: 'luta', bonus: 15 },
+        ]),
+      }],
+    }];
+
+    const res = obterBonusFortalecerAtivos(activePowers, charBase);
+    expect(res.atributos.forca).toBe(2);
+    expect(res.pericias.luta).toBe(1);
+  });
+
+  it('deve aplicar o excesso gradativo às alocações do grau máximo', () => {
+    const activePowers = [{
+      id: 'p-gradativo',
+      effects: [{
+        efeitoBaseId: 'fortalecer',
+        grau: 5,
+        gradativoMaxDegree: 5,
+        gradativoExcessiveSteps: 2,
+        inputCustomizado: JSON.stringify([
+          { tipo: 'atributo', alvo: 'forca', bonus: 25 },
+          { tipo: 'pericia', alvo: 'luta', bonus: 15 },
+        ]),
+      }],
+    }];
+
+    const res = obterBonusFortalecerAtivos(activePowers, charBase);
+    expect(res.atributos.forca).toBe(50);
+    expect(res.pericias.luta).toBe(30);
+  });
+
+  it('deve aplicar Gradativo a um Fortalecer antigo que guarda somente o nome do atributo', () => {
+    const power = {
+      id: 'liberacao',
+      globalModifications: [{ modificationBaseId: 'gradativo' }],
+      effects: [{
+        id: 'fort-con',
+        effectBaseId: 'fortalecer',
+        configuracaoId: 'atributo',
+        inputValue: 'Constituição',
+        grau: 5,
+        modifications: [],
+      }],
+    };
+    const progressiveEffects = aplicarGradativoAosEfeitosDoPoder(
+      power,
+      { 'liberacao:global': 2 },
+    );
+
+    const res = obterBonusFortalecerAtivos([{ ...power, effects: progressiveEffects }], charBase);
+    expect(res.atributos.constitution).toBe(5);
   });
 });
 

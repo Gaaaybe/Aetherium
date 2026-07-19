@@ -265,16 +265,16 @@ describe('useCharacterSheet hook', () => {
     // Equipar item
     vi.mocked(charactersService.equipItem).mockResolvedValueOnce(mockCharacter as any);
     await act(async () => {
-      await result.current.equipItem('item-1', 'PEITO', 1);
+      await result.current.equipItem('item-1', 'suit', 1);
     });
-    expect(charactersService.equipItem).toHaveBeenCalledWith('char-123', 'item-1', 'PEITO', 1);
+    expect(charactersService.equipItem).toHaveBeenCalledWith('char-123', 'item-1', 'suit', 1);
 
     // Desequipar item
     vi.mocked(charactersService.unequipItem).mockResolvedValueOnce(mockCharacter as any);
     await act(async () => {
-      await result.current.unequipItem('item-1', 'PEITO', 1);
+      await result.current.unequipItem('item-1', 'suit', 1);
     });
-    expect(charactersService.unequipItem).toHaveBeenCalledWith('char-123', 'item-1', 'PEITO', 1);
+    expect(charactersService.unequipItem).toHaveBeenCalledWith('char-123', 'item-1', 'suit', 1);
   });
 
   test('deve gerenciar recursos rúnicos: adicionar e gastar', async () => {

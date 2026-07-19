@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { resolvePower, applyMutations, type ResolvePowerResponse, type GameMutation } from '@/services/powers.service';
 import type { CharacterResponse } from '@/services/characters.types';
 import { toast } from '@/shared/ui';
-import { calcPsychicStressGain, getPsychicPenalties, rollScientificPrecision } from '@aetherium/rules-engine';
+import { calcPsychicStressGain, getPsychicPenalties, resolveGradativoStage } from '@aetherium/rules-engine';
 
 // ─── Assistente de Rolagem de Dados Interno ──────────────────────────────────
 function rollDiceFormula(formula: string): number {
@@ -64,6 +64,11 @@ export interface UsePowerResult {
   peCost: number;
 }
 
+export interface GradativoProgress {
+  global?: number;
+  effects?: Record<string, number>;
+}
+
 interface UsePowerUsageOptions {
   characterId: string;
   onSync: (data: any) => Promise<void>;
@@ -72,6 +77,7 @@ interface UsePowerUsageOptions {
 // ─── Persistência local dos poderes ativos ────────────────────────────────────
 
 const buildStorageKey = (characterId: string) => `active-powers-${characterId}`;
+const buildGradativoStorageKey = (characterId: string) => `gradativo-progress-${characterId}`;
 
 function loadActivePowers(characterId: string): ActivePower[] {
   try {
@@ -86,6 +92,19 @@ function saveActivePowers(characterId: string, powers: ActivePower[]): void {
   localStorage.setItem(buildStorageKey(characterId), JSON.stringify(powers));
 }
 
+function loadGradativoProgress(characterId: string): Record<string, number> {
+  try {
+    const raw = localStorage.getItem(buildGradativoStorageKey(characterId));
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveGradativoProgress(characterId: string, progress: Record<string, number>): void {
+  localStorage.setItem(buildGradativoStorageKey(characterId), JSON.stringify(progress));
+}
+
 // ─── Hook principal ───────────────────────────────────────────────────────────
 
 export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
@@ -94,10 +113,48 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
   );
   const [isResolving, setIsResolving] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [gradativoProgress, setGradativoProgress] = useState<Record<string, number>>(() =>
+    loadGradativoProgress(characterId),
+  );
 
   useEffect(() => {
     setActivePowers(loadActivePowers(characterId));
+    setGradativoProgress(loadGradativoProgress(characterId));
   }, [characterId]);
+
+  const updateGradativoProgress = useCallback(
+    (key: string, value: number) => {
+      setGradativoProgress((previous) => {
+        const next = { ...previous, [key]: Math.max(1, Math.trunc(value)) };
+        saveGradativoProgress(characterId, next);
+        return next;
+      });
+      const separator = key.includes(':effect:') ? ':effect:' : ':global';
+      const [powerId, effectId] = key.split(separator);
+      setActivePowers((previous) => {
+        const next = previous.map((activePower) => {
+          if (activePower.powerId !== powerId || !activePower.efeitos) return activePower;
+          return {
+            ...activePower,
+            efeitos: activePower.efeitos.map((effect: any) => {
+              if (effectId && effect.id !== effectId) return effect;
+              const maxDegree = effect.gradativoMaxDegree ?? effect.grau;
+              const stage = resolveGradativoStage(maxDegree, value);
+              return {
+                ...effect,
+                grau: stage.effectiveDegree,
+                gradativoMaxDegree: maxDegree,
+                gradativoExcessiveSteps: stage.excessiveSteps,
+              };
+            }),
+          };
+        });
+        saveActivePowers(characterId, next);
+        return next;
+      });
+    },
+    [characterId],
+  );
 
   const updateActive = useCallback(
     (updater: (prev: ActivePower[]) => ActivePower[]) => {
@@ -124,9 +181,12 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
         nome: string;
         icone?: string | null;
         duracao: number;
+        acao?: number;
         peCost: number;
       },
       character: CharacterResponse,
+      descargaMultiplier = 1,
+      currentGradativoProgress?: GradativoProgress,
     ): Promise<UsePowerResult | null> => {
       setIsResolving(true);
       try {
@@ -138,6 +198,8 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
         const resolution = await resolvePower(power.powerId, {
           sceneId: `free-use-${characterId}`,
           candidateTargetIds: [], // Sem alvo selecionado ainda — usado para powers sem alvo (buffs/gatilhos)
+          descargaMultiplier,
+          ...(currentGradativoProgress ? { gradativoProgress: currentGradativoProgress } : {}),
           casterState: {
             id: characterId,
             keyPhysicalModifier: physMod,
@@ -172,13 +234,14 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
         nome: string;
         icone?: string | null;
         duracao: number;
+        acao?: number;
         peCost: number;
         efeitos?: any[];
         originItemId?: string;
         originItemTipo?: string;
         dominio?: { name: string; peculiarId?: string | null; espiritual?: boolean | null };
       },
-      options?: { skipActivation?: boolean; mutations?: any[]; character?: CharacterResponse }
+      options?: { skipActivation?: boolean; mutations?: any[]; character?: CharacterResponse; descargaMultiplier?: number }
     ) => {
       setIsConfirming(true);
       try {
@@ -186,7 +249,6 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
         let peChange = 0;
         let tempPvChange = 0;
         let tempPeChange = 0;
-
         if (options?.mutations && Array.isArray(options.mutations)) {
           for (const mut of options.mutations) {
             const targetIsCaster = !mut.targetId || mut.targetId === characterId;
@@ -269,7 +331,13 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
           }
         }
 
-        const finalPeCost = power.peCost * multiplier;
+        const descargaMultiplier = power.duracao === 0 ? Math.max(1, options?.descargaMultiplier ?? 1) : 1;
+        if (descargaMultiplier > 1) {
+          multiplier *= descargaMultiplier;
+        }
+
+        const isFreePassive = power.duracao === 4 && power.acao === 5;
+        const finalPeCost = isFreePassive ? 0 : power.peCost * multiplier;
         const finalPeChange = peChange - finalPeCost;
 
         if (
@@ -404,6 +472,8 @@ export function usePowerUsage({ characterId, onSync }: UsePowerUsageOptions) {
     maintainPower,
     deactivatePower,
     clearAll,
+    gradativoProgress,
+    updateGradativoProgress,
   };
 }
 

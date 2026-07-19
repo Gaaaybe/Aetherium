@@ -9,8 +9,7 @@ import {
   calcularEspacosTotal,
   calcularDetalhesPoder,
   type Poder,
-  type EfeitoAplicado,
-  type ModificacaoAplicada
+  type EfeitoAplicado
 } from '../../features/criador-de-poder/regras/calculadoraCusto';
 import { Efeito, Modificacao } from '../../data';
 
@@ -22,6 +21,7 @@ const mockEfeitoDano: Efeito = {
   descricao: 'Causa dano',
   parametrosPadrao: { acao: 1, alcance: 1, duracao: 0 },
   categorias: ['Ataque'],
+  exemplos: 'Exemplo dano',
 };
 
 const mockEfeitoCura: Efeito = {
@@ -31,8 +31,10 @@ const mockEfeitoCura: Efeito = {
   descricao: 'Cura PV',
   parametrosPadrao: { acao: 1, alcance: 2, duracao: 0 },
   categorias: ['Cura'],
+  exemplos: 'Exemplo cura',
   configuracoes: {
-    tipo: 'selecao',
+    tipo: 'select',
+    label: 'Opções',
     opcoes: [
       { id: 'patamar-2', nome: 'Patamar 2', modificadorCusto: 2, grauMinimo: 1, descricao: 'Melhoria' },
       { id: 'progressivo', nome: 'Progressivo', modificadorCusto: 0, grauMinimo: 1, descricao: 'Custo Dobrado', custoProgressivo: 'dobrado' }
@@ -48,8 +50,11 @@ const mockModificacaoArea: Modificacao = {
   custoFixo: 1,
   custoPorGrau: 0,
   descricao: 'Afeta área',
+  requerParametros: false,
+  categoria: 'Área',
   configuracoes: {
-    tipo: 'selecao',
+    tipo: 'select',
+    label: 'Área',
     opcoes: [
       { id: 'afeta-intangivel', nome: 'Afeta Intangível', modificadorCusto: 0, modificadorCustoFixo: 2, descricao: 'Extra' }
     ]
@@ -59,19 +64,23 @@ const mockModificacaoArea: Modificacao = {
 const mockModificacaoCustoPEDobrado: Modificacao = {
   id: 'custo-pe-dobrado',
   nome: 'Custo PE Dobrado',
-  tipo: 'custom',
+  tipo: 'extra',
   custoFixo: 0,
   custoPorGrau: 0,
   descricao: 'Dobra PE',
+  requerParametros: false,
+  categoria: 'Custo',
 };
 
 const mockModificacaoCustoPEReduzido: Modificacao = {
   id: 'custo-pe-reduzido',
   nome: 'Custo PE Reduzido',
-  tipo: 'custom',
+  tipo: 'extra',
   custoFixo: 0,
   custoPorGrau: 0,
   descricao: 'Metade do PE',
+  requerParametros: false,
+  categoria: 'Custo',
 };
 
 const todosEfeitosMock = [mockEfeitoDano, mockEfeitoCura];

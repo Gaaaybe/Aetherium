@@ -1,13 +1,19 @@
-import { useState, useEffect } from 'react';
-import { Modal, ModalFooter, Button, Badge } from '@/shared/ui';
-import { Zap, Clock, Ruler, Timer, Play, Dices, AlertTriangle, ChevronDown, ChevronUp, Flame, Heart, Shield, Settings, Tag, Wind, FlaskConical, RotateCcw } from 'lucide-react';
-import { ESCALAS, buscarGrauNaTabela, buscarDominio } from '@/data';
+import { useState } from 'react';
+import { Modal, ModalFooter, Button, Badge, toast } from '@/shared/ui';
+import { Zap, Clock, Ruler, Timer, Play, Dices, AlertTriangle, ChevronDown, ChevronUp, ChevronRight, Flame, Heart, Shield, Settings, Tag, Wind, FlaskConical, RotateCcw, Repeat, Minus } from 'lucide-react';
+import { ESCALAS, buscarGrauNaTabela, buscarDominio, buscarEfeito, buscarModificacao } from '@/data';
 import type { PoderResponse } from '@/services/types';
 import type { ResolvePowerResponse } from '@/services/powers.service';
 import { describeMutations } from '@/features/ficha-personagem/hooks/usePowerUsage';
 import { DiceRoller } from '@/shared/components/DiceRoller';
-import { obterBonusFortalecerAtivos, obterBonusFortalecerDanoRecuperacao } from '@/features/ficha-personagem/utils/fortalecerHelper';
-import { fortaleceAlvoMatch, getRollAdvantageDisadvantage, calcPsychicStressGain, getPsychicPenalties, rollScientificPrecision } from '@aetherium/rules-engine';
+import {
+  aplicarGradativoAosEfeitosDoPoder,
+  obterAlocacoesFortalecerEfetivas,
+  obterBonusFortalecerAtivos,
+  obterBonusFortalecerDanoEfetivo,
+  obterBonusFortalecerDanoRecuperacao,
+} from '@/features/ficha-personagem/utils/fortalecerHelper';
+import { applyDescargaToFormula, applyGradativoExcessToFormula, resolveGradativoStage, fortaleceAlvoMatch, getRollAdvantageDisadvantage, calcPsychicStressGain, getPsychicPenalties, rollScientificPrecision } from '@aetherium/rules-engine';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -50,6 +56,63 @@ function obterModulacoesDeDados(formulaOriginal: string): Array<{ label: string;
   return opcoes;
 }
 
+function getDiceCharacteristic(formula: string): number | null {
+  const match = formula.match(/^(\d+)d(\d+)$/i);
+  return match ? Number.parseInt(match[1], 10) * Number.parseInt(match[2], 10) : null;
+}
+
+function humanizeIdentifier(value: string): string {
+  return value
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatEffectInput(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+
+  let parsed = value;
+  if (typeof value === 'string') {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
+
+  if (Array.isArray(parsed)) {
+    if (parsed.length === 0) return null;
+    return parsed.map((item) => formatEffectInput(item)).filter(Boolean).join(', ');
+  }
+
+  if (typeof parsed !== 'object' || parsed === null) return String(parsed);
+
+  const data = parsed as Record<string, any>;
+  const parts: string[] = [];
+  const target = data.alvo;
+
+  if (target && typeof target === 'object') {
+    if (target.tipo === 'DOMINIO' && target.dominio) {
+      parts.push(`Domínio: ${humanizeIdentifier(String(target.dominio))}`);
+    } else if (target.tipo === 'DESARMADO') {
+      parts.push('Alvo: Desarmado');
+    } else {
+      const formattedTarget = formatEffectInput(target);
+      if (formattedTarget) parts.push(`Alvo: ${formattedTarget}`);
+    }
+  }
+
+  if (data.bonusDescritor) parts.push(`Descritor: ${data.bonusDescritor}`);
+
+  if (parts.length === 0) {
+    for (const [key, nestedValue] of Object.entries(data)) {
+      const formatted = formatEffectInput(nestedValue);
+      if (formatted) parts.push(`${humanizeIdentifier(key)}: ${formatted}`);
+    }
+  }
+
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 interface PowerUsageModalProps {
@@ -62,7 +125,11 @@ interface PowerUsageModalProps {
   resolution: ResolvePowerResponse | null;
   isResolving: boolean;
   isConfirming: boolean;
-  onConfirm: (options: { spendPE: boolean }) => void;
+  descargaMultiplier: number;
+  onDescargaMultiplierChange: (value: number) => void;
+  gradativoProgress: Record<string, number>;
+  onGradativoProgressChange: (key: string, value: number) => void;
+  onConfirm: (options: { spendPE: boolean; descargaMultiplier?: number }) => void;
   showOptionalPE?: boolean;
   activePowers?: any[];
   onSync?: (data: any) => Promise<void>;
@@ -80,6 +147,10 @@ export function PowerUsageModal({
   resolution,
   isResolving,
   isConfirming,
+  descargaMultiplier,
+  onDescargaMultiplierChange,
+  gradativoProgress,
+  onGradativoProgressChange,
   onConfirm,
   showOptionalPE = false,
   activePowers = [],
@@ -93,6 +164,7 @@ export function PowerUsageModal({
   const [spendPE, setSpendPE] = useState(true);
   const [scientificRoll, setScientificRoll] = useState<{ roll: number; success: boolean } | null>(null);
   const [isRollingScientific, setIsRollingScientific] = useState(false);
+  const [expandedEffects, setExpandedEffects] = useState<Record<string, boolean>>({});
 
   const hasAlquebrado = (character?.conditions || []).some((c: string) => {
     const clean = c.includes('(') ? c.split('(')[0].trim() : c;
@@ -110,10 +182,9 @@ export function PowerUsageModal({
   if (hasAlquebrado) peCostMultiplier *= 2;
   if (isPsychicDouble) peCostMultiplier *= 2;
 
-  const peCost = (power.custoTotal?.pe ?? 0) * peCostMultiplier;
-  const effectivePECost = spendPE ? peCost : 0;
   const duracao = power.parametros.duracao;
-  const hasEnoughPE = currentPE >= effectivePECost;
+  const isFreePassive = duracao === 4 && power.parametros.acao === 5;
+  const peCost = isFreePassive ? 0 : (power.custoTotal?.pe ?? 0) * peCostMultiplier;
 
   // Dados do caster para o assistente de rolagem
   const activeFortalecer = obterBonusFortalecerAtivos(activePowers, character);
@@ -160,28 +231,114 @@ export function PowerUsageModal({
   const eficiencia = character?.efficiencyBonus || 0;
   const cdInfo = 10 + effTeste;
 
-  // Filtra todos os efeitos que possuem rolagens de dano/cura
-  const damageEffects = power.effects.filter(
-    (e: any) => e.effectBaseId === 'dano' || e.effectBaseId === 'fortalecer' || e.effectBaseId === 'recuperacao',
+  // Filtra os efeitos que possuem interação no assistente (rolagens ou ações rápidas de PE)
+  const assistantEffects = power.effects.filter((e: any) => {
+    const effectBaseId = e.effectBaseId || e.id;
+    const configId = e.configuracaoSelecionada || e.configuracaoId || '';
+
+    if (effectBaseId === 'dano') return true;
+    if (effectBaseId === 'recuperacao') {
+      return configId === 'dano' || configId === 'energia' || configId === 'pe' || !configId;
+    }
+    if (effectBaseId === 'fortalecer') {
+      return configId === 'pv' || configId === 'pe';
+    }
+    return false;
+  });
+
+  const descargaEligibleEffects = power.effects.filter((effect: any) => {
+    const effectBaseId = effect.effectBaseId || effect.id;
+    const configId = effect.configuracaoSelecionada || effect.configuracaoId || '';
+    return effectBaseId === 'dano' ||
+      (effectBaseId === 'recuperacao' && (configId === 'dano' || !configId));
+  });
+
+  const descargaCap = Math.max(
+    1,
+    ...descargaEligibleEffects.flatMap((effect: any) =>
+      (effect.modifications || [])
+        .filter((mod: any) => mod.modificationBaseId === 'descarga')
+        .map((mod: any) => Number(mod.grau || 1)),
+    ),
+    ...(power.globalModifications || [])
+      .filter((mod: any) => mod.modificationBaseId === 'descarga')
+      .map((mod: any) => Number(mod.grau || 1)),
   );
 
-  useEffect(() => {
-    const initial: Record<string, string> = {};
-    damageEffects.forEach((e: any) => {
-      const effectBaseId = e.effectBaseId || e.id;
-      const configId = e.configuracaoSelecionada || e.configuracaoId || '';
-      const baseFormula = getBaseFormula(e.grau, effectBaseId, configId);
-      initial[e.id] = e.dadoModularizado || baseFormula;
-    });
-    setFormulasModularizadas(initial);
-  }, [power.effects, isDanoAcoplado, isRecuperacaoAcoplada]);
+  const supportsDescarga = duracao === 0 && descargaCap > 1 && descargaEligibleEffects.length > 0;
+  const selectedDescargaMultiplier = supportsDescarga ? Math.min(descargaMultiplier, descargaCap) : 1;
+  const effectivePECost = spendPE ? peCost * selectedDescargaMultiplier : 0;
+  const hasEnoughPE = currentPE >= effectivePECost;
 
-  useEffect(() => {
-    if (isOpen) {
-      setScientificRoll(null);
-      setIsRollingScientific(false);
+  const getEffectDescargaMultiplier = (effect: any): number => {
+    const effectBaseId = effect.effectBaseId || effect.id;
+    const configId = effect.configuracaoSelecionada || effect.configuracaoId || '';
+    const isEligible = effectBaseId === 'dano' ||
+      (effectBaseId === 'recuperacao' && (configId === 'dano' || !configId));
+
+    if (duracao !== 0 || !isEligible) return 1;
+
+    const degrees = [
+      ...(effect.modifications || []),
+      ...(power.globalModifications || []),
+    ]
+      .filter((modification: any) => modification.modificationBaseId === 'descarga')
+      .map((modification: any) => Number(modification.grau || 1));
+
+    if (degrees.length === 0) return 1;
+    return Math.min(selectedDescargaMultiplier, Math.max(...degrees));
+  };
+
+  const hasGlobalGradativo = power.globalModifications.some(
+    (modification: any) => modification.modificationBaseId === 'gradativo',
+  );
+  const localGradativoEffects = power.effects.filter((effect: any) =>
+    effect.modifications?.some(
+      (modification: any) => modification.modificationBaseId === 'gradativo',
+    ),
+  );
+  const supportsGradativo = hasGlobalGradativo || localGradativoEffects.length > 0;
+  const globalGradativoKey = `${power.id}:global`;
+  const progressiveStructureEffects = aplicarGradativoAosEfeitosDoPoder(power, gradativoProgress);
+
+  const getEffectGradativoStage = (effect: any) => {
+    const hasLocal = effect.modifications?.some(
+      (modification: any) => modification.modificationBaseId === 'gradativo',
+    );
+    if (hasLocal) {
+      const key = `${power.id}:effect:${effect.id}`;
+      return resolveGradativoStage(effect.grau, gradativoProgress[key] ?? 1);
     }
-  }, [isOpen]);
+    if (hasGlobalGradativo) {
+      return resolveGradativoStage(effect.grau, gradativoProgress[globalGradativoKey] ?? 1);
+    }
+    return null;
+  };
+
+  const getProgressiveFormula = (effect: any, effectBaseId: string, configId: string): string => {
+    const formulaAtDegree = (degree: number) => {
+      if (effectBaseId === 'fortalecer' && configId === 'pe') return String(degree * 4);
+      return getBaseFormula(degree, effectBaseId, configId);
+    };
+    const stage = getEffectGradativoStage(effect);
+    if (!stage) return effect.dadoModularizado || formulaAtDegree(effect.grau);
+
+    if (stage.effectiveDegree < effect.grau) {
+      return formulaAtDegree(stage.effectiveDegree);
+    }
+
+    const maximumFormula = effect.dadoModularizado || formulaAtDegree(effect.grau);
+    return applyGradativoExcessToFormula(maximumFormula, stage.excessiveSteps);
+  };
+
+  // Identifica os efeitos que realizam rolagens de dados (para acoplar ao botão de Teste)
+  const diceRollingEffects = assistantEffects.filter((e: any) => {
+    const effectBaseId = e.effectBaseId || e.id;
+    const configId = e.configuracaoSelecionada || e.configuracaoId || '';
+    return effectBaseId === 'dano' ||
+      (effectBaseId === 'recuperacao' && (configId === 'dano' || !configId)) ||
+      (effectBaseId === 'fortalecer' && configId === 'pv');
+  });
 
   const handleScientificRoll = () => {
     setIsRollingScientific(true);
@@ -194,9 +351,15 @@ export function PowerUsageModal({
   };
 
 
-  const firstDamageEffect = damageEffects[0];
-  const firstBaseFormula = firstDamageEffect ? getBaseFormula(firstDamageEffect.grau, firstDamageEffect.effectBaseId || firstDamageEffect.id, firstDamageEffect.configuracaoSelecionada || firstDamageEffect.configuracaoId || '') : '';
-  const firstFormulaSelecionada = firstDamageEffect ? (formulasModularizadas[firstDamageEffect.id] || firstDamageEffect.dadoModularizado || firstBaseFormula) : '';
+  const firstDamageEffect = diceRollingEffects[0];
+  const firstBaseFormula = firstDamageEffect ? getProgressiveFormula(firstDamageEffect, firstDamageEffect.effectBaseId || firstDamageEffect.id, firstDamageEffect.configuracaoId || '') : '';
+  const firstStoredFormula = firstDamageEffect ? formulasModularizadas[firstDamageEffect.id] : undefined;
+  const firstFormulaBase = firstStoredFormula && getDiceCharacteristic(firstStoredFormula) === getDiceCharacteristic(firstBaseFormula)
+    ? firstStoredFormula
+    : firstBaseFormula;
+  const firstFormulaSelecionada = firstDamageEffect
+    ? applyDescargaToFormula(firstFormulaBase, getEffectDescargaMultiplier(firstDamageEffect))
+    : '';
   const firstHasBaseadoAtributos = firstDamageEffect ? (
     power.globalModifications.some((m: any) => m.modificationBaseId === 'baseado-atributos') ||
     firstDamageEffect.modifications?.some((m: any) => m.modificationBaseId === 'baseado-atributos')
@@ -253,6 +416,91 @@ export function PowerUsageModal({
             <label htmlFor="spend-pe-checkbox" className="text-gray-700 dark:text-gray-300 cursor-pointer select-none">
               Gastar PE no uso deste poder ({peCost} PE)
             </label>
+          </div>
+        )}
+
+        {supportsDescarga && (
+          <div className="flex flex-col gap-2 p-3 rounded-xl bg-amber-50/50 dark:bg-amber-950/10 border border-amber-100 dark:border-amber-900/20 text-xs font-bold">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+              <Zap className="w-4 h-4 shrink-0" />
+              <span>Descarga</span>
+            </div>
+            <select
+              value={selectedDescargaMultiplier}
+              onChange={(e) => onDescargaMultiplierChange(Number(e.target.value))}
+              disabled={isResolving}
+              className="h-9 rounded-lg border border-amber-200 dark:border-amber-800 bg-white dark:bg-gray-900 px-3 text-[11px] font-bold text-amber-800 dark:text-amber-300 outline-none"
+            >
+              {Array.from({ length: descargaCap }, (_, index) => index + 1).map((value) => (
+                <option key={value} value={value}>
+                  x{value}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] font-medium text-amber-700/80 dark:text-amber-400/80">
+              Bônus fixos continuam somando uma vez; apenas os dados entram no multiplicador.
+            </p>
+          </div>
+        )}
+
+        {supportsGradativo && (
+          <div className="space-y-2 rounded-xl border border-violet-200 bg-violet-50/50 p-3 dark:border-violet-900/40 dark:bg-violet-950/10">
+            <div className="flex items-center gap-2 text-xs font-black text-violet-700 dark:text-violet-300">
+              <Repeat className="h-4 w-4" />
+              <span>Progressão Gradativa</span>
+            </div>
+            <p className="text-[10px] text-violet-700/75 dark:text-violet-300/70">
+              Avance manualmente quando a condição narrativa acontecer.
+            </p>
+
+            {hasGlobalGradativo && (() => {
+              const progress = gradativoProgress[globalGradativoKey] ?? 1;
+              const maximumDegree = Math.max(1, ...power.effects.map((effect: any) => effect.grau));
+              return (
+                <div className="flex items-center gap-2 rounded-lg border border-violet-200/70 bg-white/70 p-2 dark:border-violet-900/50 dark:bg-gray-900/50">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-black text-gray-700 dark:text-gray-200">Todos os efeitos</div>
+                    <div className="text-[9px] text-gray-500">Progresso {progress} · escopo global</div>
+                  </div>
+                  <Button variant="ghost" size="sm" className="!h-8 !w-8 !min-w-8 shrink-0 !p-0" disabled={progress <= 1 || isResolving} onClick={() => onGradativoProgressChange(globalGradativoKey, progress - 1)}>
+                    <Minus className="h-4 w-4 shrink-0" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-[9px] font-black text-violet-600" disabled={progress >= maximumDegree + 10 || isResolving} onClick={() => onGradativoProgressChange(globalGradativoKey, progress + 1)}>
+                    Avançar
+                  </Button>
+                  <Button variant="ghost" size="sm" className="!h-8 !w-8 !min-w-8 shrink-0 !p-0" disabled={progress === 1 || isResolving} onClick={() => onGradativoProgressChange(globalGradativoKey, 1)} title="Reiniciar progressão">
+                    <RotateCcw className="h-4 w-4 shrink-0" />
+                  </Button>
+                </div>
+              );
+            })()}
+
+            {localGradativoEffects.map((effect: any) => {
+              const key = `${power.id}:effect:${effect.id}`;
+              const progress = gradativoProgress[key] ?? 1;
+              const stage = resolveGradativoStage(effect.grau, progress);
+              const effectName = buscarEfeito(effect.effectBaseId)?.nome || effect.effectBaseId;
+              return (
+                <div key={key} className="flex items-center gap-2 rounded-lg border border-violet-200/70 bg-white/70 p-2 dark:border-violet-900/50 dark:bg-gray-900/50">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[10px] font-black text-gray-700 dark:text-gray-200">{effectName}</div>
+                    <div className="text-[9px] text-gray-500">
+                      Grau efetivo {stage.effectiveDegree}
+                      {stage.excessiveSteps > 0 ? ` · excesso ${stage.excessiveSteps}/10` : `/${effect.grau}`}
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" className="!h-8 !w-8 !min-w-8 shrink-0 !p-0" disabled={progress <= 1 || isResolving} onClick={() => onGradativoProgressChange(key, progress - 1)}>
+                    <Minus className="h-4 w-4 shrink-0" />
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-7 px-2 text-[9px] font-black text-violet-600" disabled={progress >= effect.grau + 10 || isResolving} onClick={() => onGradativoProgressChange(key, progress + 1)}>
+                    Avançar
+                  </Button>
+                  <Button variant="ghost" size="sm" className="!h-8 !w-8 !min-w-8 shrink-0 !p-0" disabled={progress === 1 || isResolving} onClick={() => onGradativoProgressChange(key, 1)} title="Reiniciar progressão">
+                    <RotateCcw className="h-4 w-4 shrink-0" />
+                  </Button>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -413,20 +661,14 @@ export function PowerUsageModal({
         )}
 
         {/* ─── Resultado do motor de automação ─────────────────────────── */}
-        {isResolving && (
-          <div className="flex items-center justify-center gap-2 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/10 text-indigo-600 text-xs font-bold animate-pulse">
-            <Zap className="w-4 h-4" /> Calculando efeitos...
-          </div>
-        )}
-
-        {!isResolving && isNarrative && (
+        {isNarrative && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-400 font-bold">
             <Settings className="w-4 h-4 text-amber-500 shrink-0" />
             <span>Poder narrativo — resolução com o narrador na mesa.</span>
           </div>
         )}
 
-        {!isResolving && !isNarrative && mutationDescriptions.length > 0 && (
+        {!isNarrative && mutationDescriptions.length > 0 && (
           <div className="rounded-xl border border-indigo-100 dark:border-indigo-900/50 overflow-hidden">
             <button
               onClick={() => setShowMutations(v => !v)}
@@ -495,7 +737,7 @@ export function PowerUsageModal({
                   damageFormula: firstBaseFormula ? firstFormulaSelecionada : undefined,
                   damageModifier: firstHasBaseadoAtributos ? effTeste : 0,
                   isDanoAcoplado,
-                  isRecuperacao: firstDamageEffect ? (firstDamageEffect.effectBaseId === 'recuperacao' || firstDamageEffect.configuracaoSelecionada === 'pv' || firstDamageEffect.configuracaoSelecionada === 'pe' || firstDamageEffect.configuracaoId === 'pv' || firstDamageEffect.configuracaoId === 'pe') : false,
+                  isRecuperacao: firstDamageEffect ? (firstDamageEffect.effectBaseId === 'recuperacao' || firstDamageEffect.configuracaoId === 'pv' || firstDamageEffect.configuracaoId === 'pe') : false,
                   initialRule: rule,
                   initialExtraDice: extraDice,
                 });
@@ -506,11 +748,18 @@ export function PowerUsageModal({
               Teste: {effTeste >= 0 ? `+${effTeste}` : effTeste}
             </Button>
 
-            {damageEffects.map((e: any) => {
+            {assistantEffects.map((e: any) => {
               const effectBaseId = e.effectBaseId || e.id;
               const configId = e.configuracaoSelecionada || e.configuracaoId || '';
-              const baseFormula = getBaseFormula(e.grau, effectBaseId, configId);
-              const formulaSelecionada = formulasModularizadas[e.id] || e.dadoModularizado || baseFormula;
+              const baseFormula = getProgressiveFormula(e, effectBaseId, configId);
+              const storedFormula = formulasModularizadas[e.id];
+              const formulaBaseSelecionada = storedFormula && getDiceCharacteristic(storedFormula) === getDiceCharacteristic(baseFormula)
+                ? storedFormula
+                : baseFormula;
+              const formulaSelecionada = applyDescargaToFormula(
+                formulaBaseSelecionada,
+                getEffectDescargaMultiplier(e),
+              );
               const modulacoes = obterModulacoesDeDados(baseFormula);
               const hasBaseadoAtributos = 
                 power.globalModifications.some((m: any) => m.modificationBaseId === 'baseado-atributos') ||
@@ -518,7 +767,7 @@ export function PowerUsageModal({
 
               const isPeRecovery = effectBaseId === 'recuperacao' && (configId === 'energia' || configId === 'pe');
               if (isPeRecovery) {
-                const peAmount = e.grau * 4;
+                const peAmount = Number.parseInt(baseFormula, 10) || e.grau * 4;
                 return (
                   <div key={e.id} className="flex items-center gap-0 animate-in fade-in duration-200">
                     <Button
@@ -541,7 +790,7 @@ export function PowerUsageModal({
 
               const isTempPe = effectBaseId === 'fortalecer' && configId === 'pe';
               if (isTempPe) {
-                const peAmount = e.grau * 4;
+                const peAmount = Number.parseInt(baseFormula, 10) || e.grau * 4;
                 return (
                   <div key={e.id} className="flex items-center gap-0 animate-in fade-in duration-200">
                     <Button
@@ -556,144 +805,151 @@ export function PowerUsageModal({
                       }}
                     >
                       <Zap className="w-3 h-3 text-emerald-500 animate-pulse" />
-                      Aplicar +${peAmount} PE Temp {e.nota ? `(${e.nota})` : ''}
+                      Aplicar +{peAmount} PE Temp {e.nota ? `(${e.nota})` : ''}
                     </Button>
                   </div>
                 );
               }
 
+              const showSelect = modulacoes.length > 1;
+
               return (
-                <div key={e.id} className="flex items-center gap-0 animate-in fade-in duration-200">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={`h-7 text-[10px] gap-1 px-2 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/20 active:scale-95 transition-all ${
-                      modulacoes.length > 1 ? 'rounded-r-none border-r-0' : ''
-                    }`}
-                    onClick={() => {
-                      let onApplyCallback: ((val: number) => void) | undefined = undefined;
-                      let applyLabelText = 'Aplicar na Ficha';
-                      
-                      const effectBaseId = e.effectBaseId || e.id;
-                      const configId = e.configuracaoSelecionada || e.configuracaoId || '';
-                      
-                      if (effectBaseId === 'fortalecer' && configId === 'pv') {
-                        onApplyCallback = async (val: number) => {
-                          if (onSync) {
-                            await onSync({ tempPvChange: val });
-                          }
-                        };
-                        applyLabelText = 'Aplicar PV Temporário';
-                      } else if (effectBaseId === 'fortalecer' && configId === 'pe') {
-                        onApplyCallback = async (val: number) => {
-                          if (onSync) {
-                            await onSync({ tempPeChange: val });
-                          }
-                        };
-                        applyLabelText = 'Aplicar PE Temporário';
-                      } else if (effectBaseId === 'recuperacao' && configId === 'dano') {
-                        onApplyCallback = async (val: number) => {
-                          if (onSync) {
-                            await onSync({ pvChange: val });
-                          }
-                        };
-                        applyLabelText = 'Aplicar Cura de PV';
-                      } else if (effectBaseId === 'recuperacao' && configId === 'energia') {
-                        onApplyCallback = async (val: number) => {
-                          if (onSync) {
-                            await onSync({ peChange: val });
-                          }
-                        };
-                        applyLabelText = 'Aplicar Restauração de PE';
-                      }
+                <div key={e.id} className="flex items-center animate-in fade-in duration-200">
+                  <div className="flex items-stretch h-7 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-500/5 dark:bg-amber-950/20 hover:border-amber-300 dark:hover:border-amber-700 transition-all shadow-sm overflow-hidden">
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 px-2.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 active:scale-[0.98] transition-all"
+                      onClick={() => {
+                        let onApplyCallback: ((val: number) => void) | undefined = undefined;
+                        let applyLabelText = 'Aplicar na Ficha';
 
-                       let finalDamageFormula = formulaSelecionada;
-                       if (effectBaseId === 'dano') {
-                         const customDescriptor = e.inputCustomizado || e.inputValue;
-                         const descriptorVal = customDescriptor ? String(customDescriptor).trim() : (power.dominio?.name || '');
-                         if (descriptorVal) {
-                           finalDamageFormula += ` [${descriptorVal.toUpperCase()}]`;
-                         }
-                       }
-                       const isRecuperacao = effectBaseId === 'recuperacao';
+                        const effectBaseId = e.effectBaseId || e.id;
+                        const configId = e.configuracaoSelecionada || e.configuracaoId || '';
 
-                      const fortalecerBonuses = obterBonusFortalecerDanoRecuperacao(activePowers, {
-                        tipo: 'PODER',
-                        dominio: power.dominio?.name,
-                        originItemId: (power as any).originItemId
-                      }, character);
-
-                      for (const fb of fortalecerBonuses) {
-                        if (!isRecuperacao && fb.configId === 'dano') {
-                          const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
-                          finalDamageFormula += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
-                        } else if (isRecuperacao && fb.configId === 'recuperacao') {
-                          const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
-                          finalDamageFormula += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
+                        if (effectBaseId === 'fortalecer' && configId === 'pv') {
+                          onApplyCallback = async (val: number) => {
+                            if (onSync) {
+                              await onSync({ tempPvChange: val });
+                            }
+                          };
+                          applyLabelText = 'Aplicar PV Temporário';
+                        } else if (effectBaseId === 'fortalecer' && configId === 'pe') {
+                          onApplyCallback = async (val: number) => {
+                            if (onSync) {
+                              await onSync({ tempPeChange: val });
+                            }
+                          };
+                          applyLabelText = 'Aplicar PE Temporário';
+                        } else if (effectBaseId === 'recuperacao' && configId === 'dano') {
+                          onApplyCallback = async (val: number) => {
+                            if (onSync) {
+                              await onSync({ pvChange: val });
+                            }
+                          };
+                          applyLabelText = 'Aplicar Cura de PV';
+                        } else if (effectBaseId === 'recuperacao' && configId === 'energia') {
+                          onApplyCallback = async (val: number) => {
+                            if (onSync) {
+                              await onSync({ peChange: val });
+                            }
+                          };
+                          applyLabelText = 'Aplicar Restauração de PE';
                         }
-                      }
 
-                      setDiceRollerConfig({
-                        label: `${effectBaseId === 'recuperacao' ? 'Cura' : 'Efeito'}: ${power.nome}${e.nota ? ` (${e.nota})` : ''}`,
-                        damageFormula: finalDamageFormula,
-                        damageModifier: hasBaseadoAtributos ? effTeste : 0,
-                        onlyDamage: true,
-                        rollButtonLabel: effectBaseId === 'recuperacao' ? 'Rolar Cura' : 'Rolar Efeito',
-                        isDanoAcoplado,
-                        isRecuperacao: effectBaseId === 'recuperacao' || configId === 'pv' || configId === 'pe',
-                        onApply: onApplyCallback,
-                        applyLabel: applyLabelText,
-                        onRoll: () => {
-                          if (onDeactivate && activePowers) {
-                            for (const ap of activePowers) {
-                              if (ap.duracao === 0) {
-                                const efeitos = ap.efeitos || ap.effects;
-                                if (!efeitos || !Array.isArray(efeitos)) continue;
+                        let finalDamageFormula = formulaSelecionada;
+                        if (effectBaseId === 'dano') {
+                          const customDescriptor = e.inputCustomizado || e.inputValue;
+                          const descriptorVal = customDescriptor ? String(customDescriptor).trim() : (power.dominio?.name || '');
+                          if (descriptorVal) {
+                            finalDamageFormula += ` [${descriptorVal.toUpperCase()}]`;
+                          }
+                        }
+                        const isRecuperacao = effectBaseId === 'recuperacao';
 
-                                let matches = false;
-                                for (const ef of efeitos) {
-                                  const baseId = ef.efeitoBaseId || ef.effectBaseId;
-                                  const configId = ef.configuracaoSelecionada || ef.configuracaoId;
+                        const fortalecerBonuses = obterBonusFortalecerDanoRecuperacao(activePowers, {
+                          tipo: 'PODER',
+                          dominio: power.dominio?.name,
+                          originItemId: (power as any).originItemId
+                        }, character);
 
-                                  if (baseId === 'fortalecer' && (configId === 'dano' || configId === 'recuperacao')) {
-                                    const inputValue = ef.inputCustomizado || ef.inputValue;
-                                    if (!inputValue) continue;
-                                    try {
-                                      const parsed = JSON.parse(String(inputValue));
-                                      if (parsed && parsed.alvo && fortaleceAlvoMatch(parsed.alvo, { tipo: 'PODER', dominio: power.dominio?.name, originItemId: (power as any).originItemId }, ap.originItemId)) {
-                                        matches = true;
-                                        break;
+                        for (const fb of fortalecerBonuses) {
+                          if (!isRecuperacao && fb.configId === 'dano') {
+                            const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
+                            finalDamageFormula += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
+                          } else if (isRecuperacao && fb.configId === 'recuperacao') {
+                            const descSuffix = fb.descritor ? ` [${fb.descritor}]` : '';
+                            finalDamageFormula += ` + ${fb.formula.replace(/^\+/, '')}${descSuffix}`;
+                          }
+                        }
+
+                        setDiceRollerConfig({
+                          label: `${effectBaseId === 'recuperacao' ? 'Cura' : 'Efeito'}: ${power.nome}${e.nota ? ` (${e.nota})` : ''}`,
+                          damageFormula: finalDamageFormula,
+                          damageModifier: hasBaseadoAtributos ? effTeste : 0,
+                          onlyDamage: true,
+                          rollButtonLabel: effectBaseId === 'recuperacao' ? 'Rolar Cura' : 'Rolar Efeito',
+                          isDanoAcoplado,
+                          isRecuperacao: effectBaseId === 'recuperacao' || configId === 'pv' || configId === 'pe',
+                          onApply: onApplyCallback,
+                          applyLabel: applyLabelText,
+                          onRoll: () => {
+                            if (onDeactivate && activePowers) {
+                              for (const ap of activePowers) {
+                                if (ap.duracao === 0) {
+                                  const efeitos = ap.efeitos || ap.effects;
+                                  if (!efeitos || !Array.isArray(efeitos)) continue;
+
+                                  let matches = false;
+                                  for (const ef of efeitos) {
+                                    const baseId = ef.efeitoBaseId || ef.effectBaseId;
+                                    const configId = ef.configuracaoSelecionada || ef.configuracaoId;
+
+                                    if (baseId === 'fortalecer' && (configId === 'dano' || configId === 'recuperacao')) {
+                                      const inputValue = ef.inputCustomizado || ef.inputValue;
+                                      if (!inputValue) continue;
+                                      try {
+                                        const parsed = JSON.parse(String(inputValue));
+                                        if (parsed && parsed.alvo && fortaleceAlvoMatch(parsed.alvo, { tipo: 'PODER', dominio: power.dominio?.name, originItemId: (power as any).originItemId }, ap.originItemId)) {
+                                          matches = true;
+                                          break;
+                                        }
+                                      } catch {
+                                        // Configuração narrativa antiga ou inválida: não consome o bônus.
                                       }
-                                    } catch {}
+                                    }
                                   }
-                                }
-                                if (matches) {
-                                  onDeactivate(ap.id);
+                                  if (matches) {
+                                    onDeactivate(ap.id);
+                                  }
                                 }
                               }
                             }
                           }
-                        }
-                      });
-                      setIsDiceRollerOpen(true);
-                    }}
-                  >
-                    <Dices className="w-3 h-3 text-amber-500" />
-                    Dado: {formulaSelecionada} {e.nota ? `(${e.nota})` : ''}
-                  </Button>
-                  {modulacoes.length > 1 && (
-                    <select
-                      className="h-7 text-[10px] bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-500 rounded-l-none px-1 py-0 focus:outline-none cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-all font-bold"
-                      value={formulaSelecionada}
-                      onChange={(evt) => setFormulasModularizadas(prev => ({ ...prev, [e.id]: evt.target.value }))}
+                        });
+                        setIsDiceRollerOpen(true);
+                      }}
                     >
-                      {modulacoes.map((opt) => (
-                        <option key={opt.formula} value={opt.formula}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+                      <Dices className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+                      <span>Dado: {formulaSelecionada} {e.nota ? `(${e.nota})` : ''}</span>
+                    </button>
+
+                    {showSelect && (
+                      <>
+                        <div className="w-px bg-amber-200 dark:bg-amber-800" />
+                        <select
+                          className="px-2 text-[10px] font-bold bg-transparent text-amber-700 dark:text-amber-400 cursor-pointer outline-none focus:outline-none hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-all border-none"
+                          value={formulaBaseSelecionada}
+                          onChange={(evt) => setFormulasModularizadas(prev => ({ ...prev, [e.id]: evt.target.value }))}
+                        >
+                          {modulacoes.map((opt) => (
+                            <option key={opt.formula} value={opt.formula} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -704,18 +960,190 @@ export function PowerUsageModal({
           </p>
         </div>
 
-        {/* ─── Efeitos do poder (badges) ────────────────────────────────── */}
-        {power.effects && power.effects.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {power.effects.map((e: any, i: number) => (
-              <Badge
-                key={i}
-                variant="secondary"
-                className="text-[9px] px-1.5 py-0 border-indigo-300 text-indigo-600"
-              >
-                {e.effectBaseId} {e.grau !== 0 && (e.grau > 0 ? `+${e.grau}` : e.grau)}
-              </Badge>
-            ))}
+        {/* ─── Detalhes de Efeitos e Modificações ────────────────────────── */}
+        {((power.effects && power.effects.length > 0) || (power.globalModifications && power.globalModifications.length > 0)) && (
+          <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 overflow-hidden text-xs">
+            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800/30 border-b border-gray-200 dark:border-gray-800 text-[10px] font-black uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+              <Settings className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Estrutura do Poder</span>
+            </div>
+
+            <div className="p-3 space-y-3.5">
+              {/* Efeitos */}
+              {power.effects && power.effects.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Efeitos</p>
+                  <div className="space-y-2.5">
+                    {progressiveStructureEffects.map((e: any) => {
+                      const efBase = buscarEfeito(e.effectBaseId);
+                      const efNome = efBase?.nome || e.effectBaseId;
+                      const configId = e.configuracaoSelecionada || e.configuracaoId;
+                      const configOpt = efBase?.configuracoes?.opcoes.find(
+                        (opt) => opt.id === configId
+                      );
+                      const hasNotes = e.nota && e.nota.trim();
+                      const isFortalecer = e.effectBaseId === 'fortalecer';
+                      const effectiveAllocations = isFortalecer && (configId === 'atributo' || configId === 'pericia')
+                        ? obterAlocacoesFortalecerEfetivas(e).map((allocation) => ({
+                            ...allocation,
+                            bonus: `+${allocation.bonus}`,
+                          }))
+                        : null;
+                      const baseDisplayInput = formatEffectInput(
+                        effectiveAllocations ?? (e.inputValue ?? e.inputCustomizado),
+                      );
+                      const damageBonus = isFortalecer && (configId === 'dano' || configId === 'recuperacao')
+                        ? `Bônus: +${obterBonusFortalecerDanoEfetivo(e)}`
+                        : null;
+                      const displayInput = [baseDisplayInput, damageBonus].filter(Boolean).join(' · ') || null;
+                      const hasInput = displayInput !== null;
+
+                      const canExpand = hasNotes || (e.modifications && e.modifications.length > 0);
+                      const isExpanded = !!expandedEffects[e.id];
+
+                      return (
+                        <div key={e.id} className="p-2.5 rounded-lg bg-gray-50/50 dark:bg-gray-950/20 border border-gray-200/60 dark:border-gray-800/50 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            {canExpand ? (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedEffects(prev => ({ ...prev, [e.id]: !prev[e.id] }))}
+                                className="flex items-center gap-1.5 font-extrabold text-gray-900 dark:text-gray-100 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors text-left focus:outline-none group"
+                              >
+                                <ChevronRight className={`w-3.5 h-3.5 text-gray-400 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                                {efNome}
+                              </button>
+                            ) : (
+                              <span className="font-extrabold text-gray-900 dark:text-gray-100 pl-5">{efNome}</span>
+                            )}
+                            <Badge variant="outline" className="text-[9px] font-black uppercase px-1.5 py-0 border-indigo-200 text-indigo-600 dark:border-indigo-800 dark:text-indigo-400 shrink-0">
+                              Grau {e.grau}
+                            </Badge>
+                          </div>
+
+                          {(configOpt || hasInput) && (
+                            <div className="flex flex-wrap gap-1.5 text-[10px] pl-5">
+                              {configOpt && (
+                                <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-100/50 dark:border-indigo-900/30">
+                                  {configOpt.nome}
+                                </span>
+                              )}
+                              {hasInput && (
+                                <span className="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-bold border border-amber-100/50 dark:border-amber-900/30">
+                                  {displayInput}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {canExpand && isExpanded && (
+                            <div className="space-y-2 pl-5 animate-in slide-in-from-top-1 duration-200">
+                              {hasNotes && (
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400 italic bg-white dark:bg-black/10 p-1.5 rounded border border-gray-200/50 dark:border-gray-800/30 leading-snug">
+                                  <strong>Nota:</strong> {e.nota}
+                                </p>
+                              )}
+
+                              {e.modifications && e.modifications.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-dashed border-gray-200 dark:border-gray-800 space-y-1.5">
+                                  <p className="text-[9px] font-black uppercase tracking-wider text-gray-400">Modificações Locais</p>
+                                  <div className="space-y-1.5">
+                                    {e.modifications.map((m: any, mIdx: number) => {
+                                      const mBase = buscarModificacao(m.modificationBaseId);
+                                      const mNome = mBase?.nome || m.modificationBaseId;
+                                      const mConfigOpt = mBase?.configuracoes?.opcoes.find(
+                                        (opt) => opt.id === m.parametros?.configuracaoSelecionada
+                                      );
+                                      const mHasNotes = m.nota && m.nota.trim();
+                                      const mRawDisplayInput = m.parametros ? (
+                                        m.parametros.descricao || m.parametros.valor || m.parametros.opcao || m.parametros.grau
+                                      ) : null;
+                                      const mDisplayInput = formatEffectInput(mRawDisplayInput);
+
+                                      return (
+                                        <div key={mIdx} className="pl-2 border-l-2 border-indigo-400/50 dark:border-indigo-800/50 py-0.5 space-y-1">
+                                          <div className="flex items-center justify-between gap-2 text-[11px]">
+                                            <span className="font-bold text-gray-800 dark:text-gray-200">{mNome}</span>
+                                            {m.grau !== undefined && m.grau > 0 && (
+                                              <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500">Grau {m.grau}</span>
+                                            )}
+                                          </div>
+                                          {mConfigOpt && (
+                                            <div className="text-[9px] text-gray-500 dark:text-gray-400">
+                                              Opção: <span className="font-semibold text-gray-700 dark:text-gray-300">{mConfigOpt.nome}</span>
+                                            </div>
+                                          )}
+                                          {mDisplayInput && (
+                                            <div className="text-[9px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 px-1.5 py-0.5 rounded border border-amber-100 dark:border-amber-900/30 inline-block font-semibold">
+                                              Especificação: {String(mDisplayInput)}
+                                            </div>
+                                          )}
+                                          {mHasNotes && (
+                                            <p className="text-[9px] text-gray-500 dark:text-gray-400 italic leading-snug">
+                                              {m.nota}
+                                            </p>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Modificações Globais */}
+              {power.globalModifications && power.globalModifications.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-800">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">Modificações Globais</p>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {power.globalModifications.map((m: any, mIdx: number) => {
+                      const mBase = buscarModificacao(m.modificationBaseId);
+                      const mNome = mBase?.nome || m.modificationBaseId;
+                      const mConfigOpt = mBase?.configuracoes?.opcoes.find(
+                        (opt) => opt.id === m.parametros?.configuracaoSelecionada
+                      );
+                      const mHasNotes = m.nota && m.nota.trim();
+                      const mDisplayInput = m.parametros ? (
+                        m.parametros.descricao || m.parametros.valor || m.parametros.opcao || m.parametros.grau
+                      ) : null;
+
+                      return (
+                        <div key={mIdx} className="p-2 rounded bg-indigo-50/20 dark:bg-indigo-950/10 border border-indigo-100/30 dark:border-indigo-900/20 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-gray-800 dark:text-gray-200">{mNome}</span>
+                            {m.grau !== undefined && m.grau > 0 && (
+                              <span className="text-[9px] font-black text-indigo-500 dark:text-indigo-400">Grau {m.grau}</span>
+                            )}
+                          </div>
+                          {mConfigOpt && (
+                            <div className="text-[9px] text-gray-500 dark:text-gray-400">
+                              Opção: <span className="font-semibold text-gray-700 dark:text-gray-300">{mConfigOpt.nome}</span>
+                            </div>
+                          )}
+                          {mDisplayInput && (
+                            <div className="text-[9px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 px-1.5 py-0.5 rounded border border-amber-100 dark:border-amber-900/30 inline-block font-semibold">
+                              Especificação: {String(mDisplayInput)}
+                            </div>
+                          )}
+                          {mHasNotes && (
+                            <p className="text-[9px] text-gray-400 dark:text-gray-500 italic leading-snug">
+                              {m.nota}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -725,13 +1153,13 @@ export function PowerUsageModal({
           Cancelar
         </Button>
         <Button
-          onClick={() => onConfirm({ spendPE })}
+          onClick={() => onConfirm({ spendPE, descargaMultiplier: selectedDescargaMultiplier })}
           loading={isConfirming}
           disabled={!hasEnoughPE || isConfirming || isResolving}
           className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white"
         >
           <Play className="w-4 h-4" />
-          {showOptionalPE ? (effectivePECost > 0 ? `Usar (−${effectivePECost} PE)` : 'Usar') : (peCost > 0 ? `Usar (−${peCost} PE)` : 'Ativar')}
+          {showOptionalPE ? (effectivePECost > 0 ? `Usar (−${effectivePECost} PE)` : 'Usar') : (effectivePECost > 0 ? `Ativar (−${effectivePECost} PE)` : 'Ativar')}
         </Button>
       </ModalFooter>
 

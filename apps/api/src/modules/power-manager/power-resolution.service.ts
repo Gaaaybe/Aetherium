@@ -58,6 +58,11 @@ export interface ResolvePowerUseInput {
   context: PowerUseContext;
   /** IDs escolhidos explicitamente pelo jogador (para modificações SELETIVO) */
   selectedTargetIds?: string[];
+  descargaMultiplier?: number;
+  gradativoProgress?: {
+    global?: number;
+    effects?: Record<string, number>;
+  };
 }
 
 export interface ResolvePowerUseResult {
@@ -97,7 +102,7 @@ export class PowerResolutionService {
    * decidir como persistir (diretamente, ou aguardando confirmação do narrador).
    */
   async resolvePower(input: ResolvePowerUseInput): Promise<ResolvePowerUseResult> {
-    const { powerId, context, selectedTargetIds } = input;
+    const { powerId, context, selectedTargetIds, descargaMultiplier, gradativoProgress } = input;
 
     // 1. Busca o poder com efeitos, modificações e catalog entries
     const power = await this.prisma.power.findUnique({
@@ -145,7 +150,12 @@ export class PowerResolutionService {
 
     // Passivos e narrativos não produzem GameMutation via este endpoint
     if (resolutionMode.mode !== 'ON_USE') {
-      return { mutations: [], resolutionMode: resolutionMode.mode, isDanoAcoplado: false, isRecuperacaoAcoplada: false };
+      return {
+        mutations: [],
+        resolutionMode: resolutionMode.mode,
+        isDanoAcoplado: false,
+        isRecuperacaoAcoplada: false,
+      };
     }
 
     // 3. Busca marcadores de cena ativos para o contexto
@@ -170,7 +180,13 @@ export class PowerResolutionService {
       let behavior = parseBehavior(ae.effectBase.behavior);
       if (behavior && behavior.kind === 'FORTALECER') {
         const configId = ae.configuracaoId;
-        let targetAlvo: 'PV_TEMP' | 'PE_TEMP' | 'DANO_BONUS' | 'RECUPERACAO_BONUS' | 'RD_BONUS' | 'ACOES' = 'PV_TEMP';
+        let targetAlvo:
+          | 'PV_TEMP'
+          | 'PE_TEMP'
+          | 'DANO_BONUS'
+          | 'RECUPERACAO_BONUS'
+          | 'RD_BONUS'
+          | 'ACOES' = 'PV_TEMP';
         if (configId === 'pe') targetAlvo = 'PE_TEMP';
         else if (configId === 'pv') targetAlvo = 'PV_TEMP';
         else if (configId === 'dano') targetAlvo = 'DANO_BONUS';
@@ -218,7 +234,39 @@ export class PowerResolutionService {
         }
       }
 
-      const modifications: ResolvedModification[] = ae.appliedModifications.map((am) => {
+      const modifications: ResolvedModification[] = ae.appliedModifications
+        .filter((am) => am.scope === 'LOCAL')
+        .map((am) => {
+          const automation = parseModificationAutomation({
+            targetingEffect: am.modificationBase.targetingEffect,
+            casterEffect: am.modificationBase.casterEffect,
+            markerCondition: am.modificationBase.markerCondition ?? undefined,
+          });
+
+          return {
+            modificationBaseId: am.modificationBaseId,
+            grau: am.grau,
+            targetingEffect: automation?.targetingEffect ?? 'NENHUM',
+            casterEffect: automation?.casterEffect ?? 'NENHUM',
+            markerCondition: automation?.markerCondition,
+          };
+        });
+
+      return {
+        id: ae.id,
+        effectBaseId: ae.effectBaseId,
+        grau: ae.grau,
+        dadoModularizado: ae.dadoModularizado ?? undefined,
+        behavior,
+        modifications,
+      };
+    });
+
+    // Separa modificações globais (scope=GLOBAL) das locais para o ResolvedPower
+    const globalModifications: ResolvedModification[] = power.appliedEffects
+      .flatMap((ae) => ae.appliedModifications)
+      .filter((am) => am.scope === 'GLOBAL')
+      .map((am) => {
         const automation = parseModificationAutomation({
           targetingEffect: am.modificationBase.targetingEffect,
           casterEffect: am.modificationBase.casterEffect,
@@ -232,25 +280,6 @@ export class PowerResolutionService {
           casterEffect: automation?.casterEffect ?? 'NENHUM',
           markerCondition: automation?.markerCondition,
         };
-      });
-
-      return {
-        id: ae.id,
-        effectBaseId: ae.effectBaseId,
-        grau: ae.grau,
-        dadoModularizado: ae.dadoModularizado ?? undefined,
-        behavior,
-        modifications,
-      };
-    });
-
-    // Separa modificações globais (scope=GLOBAL) das locais para o ResolvedPower
-    const globalModifications: ResolvedModification[] = resolvedEffects
-      .flatMap((re) => re.modifications)
-      .filter((_, i) => {
-        // Modificações globais ficam nas appliedModifications com scope=GLOBAL
-        const allMods = power.appliedEffects.flatMap((ae) => ae.appliedModifications);
-        return allMods[i]?.scope === 'GLOBAL';
       });
 
     // Verifica se o poder pertence a algum Item diretamente
@@ -282,7 +311,8 @@ export class PowerResolutionService {
     // Domínios espirituais: NATURAL, SAGRADO, SACRILEGIO, PSIQUICO
     const espiritualDomains = ['NATURAL', 'SAGRADO', 'SACRILEGIO', 'PSIQUICO'];
     const isEspiritualDomain = espiritualDomains.includes(power.domainName);
-    const isEspiritualPeculiarity = power.domainName === 'PECULIAR' && !!(power.peculiarity as any)?.espiritual;
+    const isEspiritualPeculiarity =
+      power.domainName === 'PECULIAR' && !!(power.peculiarity as any)?.espiritual;
     const isEspiritual = isEspiritualDomain || isEspiritualPeculiarity;
     const isInstantaneous = power.parametrosDuracao === 0;
 
@@ -309,6 +339,8 @@ export class PowerResolutionService {
       power: resolvedPower,
       context: enrichedContext,
       selectedTargetIds,
+      descargaMultiplier,
+      gradativoProgress,
     });
 
     return { mutations, resolutionMode: 'ON_USE', isDanoAcoplado, isRecuperacaoAcoplada };
@@ -340,8 +372,14 @@ export class PowerResolutionService {
 
     const equippedPassivePowersBehaviors = passivePowers.flatMap((p) =>
       p.appliedEffects
-        .map((ae) => ({ powerId: p.id, effectId: ae.id, behavior: parseBehavior(ae.effectBase.behavior) }))
-        .filter((x): x is typeof x & { behavior: NonNullable<typeof x.behavior> } => x.behavior !== null),
+        .map((ae) => ({
+          powerId: p.id,
+          effectId: ae.id,
+          behavior: parseBehavior(ae.effectBase.behavior),
+        }))
+        .filter(
+          (x): x is typeof x & { behavior: NonNullable<typeof x.behavior> } => x.behavior !== null,
+        ),
     );
 
     // Benefícios ativos — por ora sem mapeamento de behavior (Fase futura)

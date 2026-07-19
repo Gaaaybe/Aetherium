@@ -23,11 +23,13 @@ import {
   obterBonusFortalecerDanoRecuperacao,
   obterBonusFortalecerCaracteristicasItem,
   obterBonusFortalecerCaracteristicasDesarmado,
-  obterBonusFortalecerAcoes
+  obterBonusFortalecerAcoes,
+  aplicarGradativoAosEfeitosDoPoder,
 } from '../../../../utils/fortalecerHelper';
 import { fortaleceAlvoMatch, getRollAdvantageDisadvantage } from '@aetherium/rules-engine';
 import { isArmaDistancia, isArmaCorpoACorpo, obterReducaoCriticoParaArma } from '@/features/ficha-personagem/utils/benefitsHelper';
 import { renderDescriptionWithTooltips } from '@/features/ficha-personagem/utils/conditionsHelper';
+import { CustomResourcesCard } from './CustomResourcesCard';
 
 interface AcoesTabProps {
   character: CharacterResponse;
@@ -40,6 +42,8 @@ interface AcoesTabProps {
   confirmUsePower: any;
   maintainPower: any;
   deactivatePower: any;
+  gradativoProgress: Record<string, number>;
+  updateGradativoProgress: (key: string, value: number) => void;
 }
 
 export function AcoesTab({
@@ -53,6 +57,8 @@ export function AcoesTab({
   confirmUsePower,
   maintainPower,
   deactivatePower,
+  gradativoProgress,
+  updateGradativoProgress,
 }: AcoesTabProps) {
   const [detailedItems, setDetailedItems] = useState<Record<string, ItemResponse>>({});
   const [detailedPowers, setDetailedPowers] = useState<Record<string, PoderResponse>>({});
@@ -66,6 +72,55 @@ export function AcoesTab({
   const [usingPower, setUsingPower] = useState<(PoderResponse & { originItemId?: string }) | null>(null);
   const [usingPowerFromActive, setUsingPowerFromActive] = useState<boolean>(false);
   const [resolution, setResolution] = useState<ResolvePowerResponse | null>(null);
+  const [descargaMultiplier, setDescargaMultiplier] = useState(1);
+
+  const buildGradativoProgress = (
+    powerDetail: PoderResponse,
+    overrides: Record<string, number> = {},
+  ) => {
+    const globalKey = `${powerDetail.id}:global`;
+    const global = powerDetail.globalModifications.some(
+      (modification) => modification.modificationBaseId === 'gradativo',
+    )
+      ? (overrides[globalKey] ?? gradativoProgress[globalKey] ?? 1)
+      : undefined;
+    const effects = Object.fromEntries(
+      powerDetail.effects
+        .filter((effect) => effect.modifications.some(
+          (modification) => modification.modificationBaseId === 'gradativo',
+        ))
+        .map((effect) => {
+          const key = `${powerDetail.id}:effect:${effect.id}`;
+          return [effect.id, overrides[key] ?? gradativoProgress[key] ?? 1];
+        }),
+    );
+
+    return {
+      global,
+      effects: Object.keys(effects).length > 0 ? effects : undefined,
+    };
+  };
+
+  const runPowerPreview = async (
+    powerDetail: PoderResponse & { originItemId?: string },
+    descarga = 1,
+    gradativoOverrides: Record<string, number> = {},
+  ) => {
+    const isFreePassive = powerDetail.parametros.duracao === 4 && powerDetail.parametros.acao === 5;
+    const peCost = isFreePassive ? 0 : (powerDetail.custoTotal?.pe ?? 0);
+    const res = await previewPower({
+      powerId: powerDetail.id,
+      nome: powerDetail.nome,
+      icone: powerDetail.icone,
+      duracao: powerDetail.parametros.duracao,
+      acao: powerDetail.parametros.acao,
+      peCost,
+    }, character, descarga, buildGradativoProgress(powerDetail, gradativoOverrides));
+
+    if (res) {
+      setResolution(res.resolution);
+    }
+  };
 
   const handleUsePowerFromActive = async (activePower: ActivePower) => {
     const powerDetail = detailedPowers[activePower.powerId];
@@ -76,19 +131,9 @@ export function AcoesTab({
     setUsingPower(powerDetail);
     setUsingPowerFromActive(true);
     setResolution(null);
+    setDescargaMultiplier(1);
 
-    const peCost = powerDetail.custoTotal?.pe ?? 0;
-    const res = await previewPower({
-      powerId: powerDetail.id,
-      nome: powerDetail.nome,
-      icone: powerDetail.icone,
-      duracao: powerDetail.parametros.duracao,
-      peCost,
-    }, character);
-
-    if (res) {
-      setResolution(res.resolution);
-    }
+    await runPowerPreview(powerDetail, 1);
   };
 
   // Contadores locais de turno
@@ -342,9 +387,11 @@ export function AcoesTab({
     ].map(p => [p.id, p])).values()
   );
 
-  // 5. Filtra para exibir apenas poderes ativos (qualquer ação que não seja passiva - valor 5 e não permanente - valor 4)
+  // 5. Poderes Permanentes usam obrigatoriamente ação 5 (Nenhuma), mas ainda podem
+  // expor interações manuais na ficha, como rolagens e controles de Gradativo.
+  // Outros poderes de ação 5 continuam exclusivamente na seção passiva.
   const activeEquippedPowers = allUsablePowers.filter(
-    p => p.parametros?.duracao !== 4
+    p => p.parametros?.acao !== 5 || p.parametros?.duracao === 4
   );
 
   const handleRestartTurn = async () => {
@@ -379,9 +426,11 @@ export function AcoesTab({
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-10">
-      {/* ─── Gerenciamento de Turno ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="border-none shadow-md bg-white dark:bg-gray-900 overflow-hidden group">
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
+        {/* Coluna esquerda: cada painel ocupa somente a própria altura. */}
+        <div className="space-y-6">
+          {/* ─── Gerenciamento de Turno ─────────────────────────────────────── */}
+          <Card className="h-fit border-none shadow-md bg-white dark:bg-gray-900 overflow-hidden group transition-all duration-500 ease-out animate-in fade-in slide-in-from-top-2">
           <div className="absolute top-0 left-0 w-1 h-full bg-red-500 opacity-20 group-hover:opacity-100 transition-opacity" />
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-bold flex items-center justify-between text-gray-500 uppercase tracking-wider">
@@ -430,38 +479,10 @@ export function AcoesTab({
               </div>
             </div>
           </CardContent>
-        </Card>
+          </Card>
 
-        <Card className="border-none shadow-md bg-white dark:bg-gray-900 border-l-4 border-l-blue-500/20">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-bold flex items-center gap-2 text-gray-500 uppercase tracking-wider">
-              <Shield className="w-4 h-4 text-blue-500" />
-              Recursos / Reações
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Inspiração</span>
-              </div>
-              <span className="text-lg font-black text-amber-600">{character.inspiration}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Repeat className="w-4 h-4 text-blue-500" />
-                <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Reação / Rodada</span>
-              </div>
-              <span className="text-lg font-black text-blue-600">1</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* ─── Ações Ativas (Itens e Poderes) ─────────────────────────────── */}
-        <div className="space-y-6">
-          <Card className="border-none shadow-md bg-white dark:bg-gray-900">
+          {/* ─── Ações Ativas (Itens e Poderes) ───────────────────────────── */}
+          <Card className="border-none shadow-md bg-white dark:bg-gray-900 transition-all duration-500 ease-out animate-in fade-in slide-in-from-bottom-3">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-bold flex items-center gap-2 text-gray-500 uppercase tracking-wider">
                 <Package className="w-4 h-4 text-indigo-500" />
@@ -757,6 +778,7 @@ export function AcoesTab({
                   const outrasPowers = activeEquippedPowers.filter(p => p.parametros?.acao !== 1 && p.parametros?.acao !== 2);
 
                   const renderPowerRow = (powerDetail: any) => {
+                    const isFreePassive = powerDetail.parametros?.duracao === 4 && powerDetail.parametros?.acao === 5;
                     return (
                       <div key={powerDetail.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 group hover:border-purple-500/30 transition-all gap-3">
                         <div 
@@ -782,7 +804,7 @@ export function AcoesTab({
                             )}
                             <div className="flex items-center gap-1.5 flex-wrap mt-1 min-w-0">
                               <span className="px-1.5 py-0.5 rounded bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 text-[10px] font-extrabold border border-purple-500/15 whitespace-nowrap">
-                                {powerDetail.custoTotal?.pe ? `${powerDetail.custoTotal.pe} PE` : '0 PE'}
+                                {isFreePassive ? '0 PE' : (powerDetail.custoTotal?.pe ? `${powerDetail.custoTotal.pe} PE` : '0 PE')}
                               </span>
                             </div>
                           </div>
@@ -798,20 +820,8 @@ export function AcoesTab({
                               setUsingPower(powerDetail);
                               setUsingPowerFromActive(false);
                               setResolution(null);
-                              
-                              const peCost = powerDetail.custoTotal?.pe ?? 0;
-
-                              const res = await previewPower({
-                                powerId: powerDetail.id,
-                                nome: powerDetail.nome,
-                                icone: powerDetail.icone,
-                                duracao: powerDetail.parametros.duracao,
-                                peCost,
-                              }, character);
-
-                              if (res) {
-                                setResolution(res.resolution);
-                              }
+                                                setDescargaMultiplier(1);
+                                                await runPowerPreview(powerDetail, 1);
                             }}
                           >
                             <Zap className="w-4 h-4" /> Usar
@@ -879,9 +889,12 @@ export function AcoesTab({
           </Card>
         </div>
 
-        {/* ─── Efeitos Passivos e Ações Gerais ────────────────────────────── */}
+        {/* Coluna direita: Recursos pode crescer sem criar vazio à esquerda. */}
         <div className="space-y-6">
-          <Card className="border-none shadow-md bg-white dark:bg-gray-900 border-l-4 border-l-emerald-500/20">
+          <CustomResourcesCard characterId={character.id} initialResources={character.customResources || []} />
+
+          {/* ─── Efeitos Passivos e Ações Gerais ──────────────────────────── */}
+          <Card style={{ viewTransitionName: 'passive-effects-card' }} className="border-none shadow-md bg-white dark:bg-gray-900 border-l-4 border-l-emerald-500/20 transition-all duration-500 ease-out animate-in fade-in slide-in-from-bottom-3">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-bold flex items-center gap-2 text-gray-500 uppercase tracking-wider">
                 <Activity className="w-4 h-4 text-emerald-500" />
@@ -919,7 +932,7 @@ export function AcoesTab({
 
                   const entries = new Map<string, { powerId: string; source: 'character' | 'item'; originItemName?: string }>();
 
-                  character.powers.forEach((power) => {
+                  character.powers.filter((power) => power.isEquipped).forEach((power) => {
                     entries.set(`character:${power.powerId}`, {
                       powerId: power.powerId,
                       source: 'character',
@@ -966,10 +979,12 @@ export function AcoesTab({
                     .map((entry) => ({ ...entry, detail: detailedPowers[entry.powerId] }))
                     .filter((entry) => {
                       if (!entry.detail) return false;
-                      return entry.detail.parametros?.duracao === 4 || (entry.detail.parametros?.duracao === 3 && activePowers.some((activePower) => activePower.powerId === entry.powerId));
+                      const isPassivePermanent = entry.detail.parametros?.duracao === 4 && entry.detail.parametros?.acao === 5;
+                      const isActiveInScene = entry.detail.parametros?.duracao === 3 && activePowers.some((activePower) => activePower.powerId === entry.powerId);
+                      return isPassivePermanent || isActiveInScene;
                     });
 
-                  const characterPassivePowers = passiveEntries.filter((entry) => entry.source === 'character' && entry.detail.parametros?.duracao === 4);
+                  const characterPassivePowers = passiveEntries.filter((entry) => entry.source === 'character' && entry.detail.parametros?.duracao === 4 && entry.detail.parametros?.acao === 5);
                   const characterActivePowers = passiveEntries.filter((entry) => entry.source === 'character' && entry.detail.parametros?.duracao === 3);
                   const itemPowers = passiveEntries.filter((entry) => entry.source === 'item');
                   const conditions = character.conditions;
@@ -1251,25 +1266,41 @@ export function AcoesTab({
           resolution={resolution}
           isResolving={isResolving}
           isConfirming={isConfirming}
+          descargaMultiplier={descargaMultiplier}
+          onDescargaMultiplierChange={async (value) => {
+            setDescargaMultiplier(value);
+            if (usingPower) {
+              await runPowerPreview(usingPower, value);
+            }
+          }}
+          gradativoProgress={gradativoProgress}
+          onGradativoProgressChange={async (key, value) => {
+            updateGradativoProgress(key, value);
+            if (usingPower) {
+              await runPowerPreview(usingPower, descargaMultiplier, { [key]: value });
+            }
+          }}
           showOptionalPE={usingPowerFromActive}
           activePowers={activePowers}
           onSync={onSync}
           onDeactivate={deactivatePower}
-          onConfirm={async ({ spendPE }) => {
+          onConfirm={async ({ spendPE, descargaMultiplier }) => {
             const detail = usingPower;
-            const peCost = spendPE ? (detail.custoTotal?.pe ?? 0) : 0;
+            const isFreePassive = detail.parametros.duracao === 4 && detail.parametros.acao === 5;
+            const peCost = !isFreePassive && spendPE ? (detail.custoTotal?.pe ?? 0) : 0;
             await confirmUsePower(
               {
                 powerId: detail.id,
                 nome: detail.nome,
                 icone: detail.icone,
                 duracao: detail.parametros.duracao,
+                acao: detail.parametros.acao,
                 peCost,
-                efeitos: detail.effects,
+                efeitos: aplicarGradativoAosEfeitosDoPoder(detail, gradativoProgress),
                 originItemId: detail.originItemId,
                 dominio: detail.dominio,
               },
-              { skipActivation: usingPowerFromActive, mutations: resolution?.mutations, character }
+              { skipActivation: usingPowerFromActive, mutations: resolution?.mutations, character, descargaMultiplier }
             );
             setUsingPower(null);
             setUsingPowerFromActive(false);

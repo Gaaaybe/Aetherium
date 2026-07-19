@@ -831,11 +831,11 @@ export function CriadorDeItem({
                     </button>
 
                     <div className="flex items-center gap-1 shrink-0">
-                      <Button size="xs" variant="ghost" onClick={() => setPoderResumoId(poder.id)} className="h-8 w-8 !p-0" title="Ver Detalhes">
+                      <Button size="sm" variant="ghost" onClick={() => setPoderResumoId(poder.id)} className="h-8 w-8 !p-0" title="Ver Detalhes">
                         <Eye className="w-4 h-4 text-gray-400 hover:text-purple-500" />
                       </Button>
                       <Button 
-                        size="xs" 
+                        size="sm" 
                         variant="ghost" 
                         onClick={() => togglePower(poder.id)} 
                         className="h-8 w-8 !p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
@@ -895,11 +895,11 @@ export function CriadorDeItem({
                     </button>
 
                     <div className="flex items-center gap-1 shrink-0">
-                      <Button size="xs" variant="ghost" onClick={() => setAcervoResumoId(acervo.id)} className="h-8 w-8 !p-0" title="Ver Detalhes">
+                      <Button size="sm" variant="ghost" onClick={() => setAcervoResumoId(acervo.id)} className="h-8 w-8 !p-0" title="Ver Detalhes">
                         <Eye className="w-4 h-4 text-gray-400 hover:text-blue-500" />
                       </Button>
                       <Button 
-                        size="xs" 
+                        size="sm" 
                         variant="ghost" 
                         onClick={() => togglePowerArray(acervo.id)} 
                         className="h-8 w-8 !p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
