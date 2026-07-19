@@ -1153,6 +1153,7 @@ export function PowerUsageModal({
           Cancelar
         </Button>
         <Button
+          data-testid="confirm-power-use"
           onClick={() => onConfirm({ spendPE, descargaMultiplier: selectedDescargaMultiplier })}
           loading={isConfirming}
           disabled={!hasEnoughPE || isConfirming || isResolving}

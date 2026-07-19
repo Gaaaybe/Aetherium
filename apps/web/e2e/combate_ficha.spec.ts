@@ -349,8 +349,8 @@ test.describe('Ficha de Personagem E2E - Automação de Combate e Poderes', () =
     const modalTitle = page.getByText('Usar: Ataque Rúnico').first();
     await expect(modalTitle).toBeVisible();
 
-    // Clica no botão de confirmação no modal (que diz "Usar (-2 PE)")
-    const confirmarButton = page.locator('button:has-text("Usar")').filter({ hasText: 'PE' }).first();
+    // Confirma pelo identificador estável; o rótulo pode ser "Ativar" ou "Usar" conforme o estado.
+    const confirmarButton = page.getByTestId('confirm-power-use');
     await expect(confirmarButton).toBeVisible();
     await confirmarButton.click();
 
@@ -438,11 +438,11 @@ test.describe('Ficha de Personagem E2E - Automação de Combate e Poderes', () =
     await expect(usarButton).toBeVisible();
     await usarButton.click();
 
-    // 2. Confirma o uso do poder no modal (que diz "Usar (-3 PE)")
+    // 2. Confirma o uso do poder no modal.
     const modalTitle = page.getByText('Usar: Fortalecer Ações').first();
     await expect(modalTitle).toBeVisible();
 
-    const confirmarButton = page.locator('button:has-text("Usar")').filter({ hasText: 'PE' }).first();
+    const confirmarButton = page.getByTestId('confirm-power-use');
     await expect(confirmarButton).toBeVisible();
     await confirmarButton.click();
 
