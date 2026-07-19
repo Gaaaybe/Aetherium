@@ -117,7 +117,9 @@ export function useCharacterSheet(characterId: string) {
     
     setIsSyncing(true);
     try {
-      const updated = await charactersService.acquirePower(characterId, powerId, acquisition);
+      const updated = acquisition
+        ? await charactersService.acquirePower(characterId, powerId, acquisition)
+        : await charactersService.acquirePower(characterId, powerId);
       setCharacter(updated);
       toast.success('Poder adicionado ao acervo do personagem!');
     } catch (err: any) {
@@ -133,7 +135,9 @@ export function useCharacterSheet(characterId: string) {
     
     setIsSyncing(true);
     try {
-      const updated = await charactersService.acquirePowerArray(characterId, powerArrayId, acquisition);
+      const updated = acquisition
+        ? await charactersService.acquirePowerArray(characterId, powerArrayId, acquisition)
+        : await charactersService.acquirePowerArray(characterId, powerArrayId);
       setCharacter(updated);
       toast.success('Acervo adicionado ao personagem!');
     } catch (err: any) {

@@ -238,6 +238,30 @@ describe('useCharacterSheet hook', () => {
       await result.current.acquirePowerArray('pa-1');
     });
     expect(charactersService.acquirePowerArray).toHaveBeenCalledWith('char-123', 'pa-1');
+
+    const narrativeAcquisition = {
+      isFreeAcquisition: true,
+      acquisitionNote: 'Recompensa da campanha',
+    };
+    vi.mocked(charactersService.acquirePower).mockResolvedValueOnce(mockCharacter as any);
+    await act(async () => {
+      await result.current.acquirePower('p-2', narrativeAcquisition);
+    });
+    expect(charactersService.acquirePower).toHaveBeenCalledWith(
+      'char-123',
+      'p-2',
+      narrativeAcquisition,
+    );
+
+    vi.mocked(charactersService.acquirePowerArray).mockResolvedValueOnce(mockCharacter as any);
+    await act(async () => {
+      await result.current.acquirePowerArray('pa-2', narrativeAcquisition);
+    });
+    expect(charactersService.acquirePowerArray).toHaveBeenCalledWith(
+      'char-123',
+      'pa-2',
+      narrativeAcquisition,
+    );
   });
 
   test('deve gerenciar operações de inventário: adicionar, alterar quant e equipar/desequipar', async () => {
